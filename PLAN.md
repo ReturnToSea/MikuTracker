@@ -1,0 +1,263 @@
+# Plan
+
+What we're building for v1.0.0, the versions and steps on the way there, the decisions behind them, and research findings. When a part is built, its description moves into `DESIGN.md` (added with the first code; it describes how the app works **now**), and this file keeps only what's next.
+
+## v1.0.0 in one paragraph
+
+A local website, always running on this Mac, that tracks GMS characters on **Kronos** and **Hyperion**. You add a character by searching its name. Once a day, after 00:00 UTC, the app looks every character up in Nexon's public rankings data and saves a snapshot. From those snapshots it shows:
+- level and EXP progress, as a percentage and as have / needed
+- ranks and Legion
+- a bar chart of EXP gained per UTC day
+- the 7-day total, the 14-day daily average and the best day
+- the estimated time to the next level and to the next multiple of 5
+
+An EXP table tab shows the current GMS EXP for each level. Two themes (Ren and Pochacco) can be switched in a Themes tab. The approved look is the mockup in `docs/theme-examples/index.html`.
+
+## What v1.0.0 includes
+
+**Layout** (as in the mockup)
+- Feature tabs down the far left edge of the screen: Home and the **TBD placeholder tabs** at the top (each opens a "still to be decided" page), EXP table and Themes at the bottom.
+- Home is split into separate sections: world switcher and character tabs; character and stats; daily EXP chart; time to level. Small corners, no single surrounding box.
+
+**Worlds and characters**
+- World switcher: Kronos (ID 45) and Hyperion (ID 70). Each world keeps its own characters and remembers which one was selected.
+- Adding: **+** at the end of the character tabs opens a search box. Search for a name, see the result (avatar, level, job, world), then click **Add**. Clear messages for each case:
+  - not found in the rankings
+  - on the other world
+  - already added
+  - Nexon unreachable
+- Character tabs show the icon, name, level and job. Click to switch; drag left and right (or Alt + ←/→) to reorder. The order is saved.
+- Deleting asks first, and also deletes the character's history.
+
+**The character view**
+- Avatar, name, job, world, overall rank and world rank.
+- Level, with an EXP bar: "86.91% to level 286 · 86.5T / 99.5T EXP".
+- Legion level and raid power: the character's own Legion lookup, since Legion belongs to the account.
+- Stats: EXP over the last 7 days, the 14-day daily average, and the best day.
+- **Daily EXP chart:** one bar per finished UTC day for the last 14 days, with the amount above each bar, a dashed 14-day average and a hover/focus tooltip. A live countdown shows when the next UTC day starts, in local time, and the chart moves on by a day at 00:00 UTC.
+- **Time to level**, at the 14-day daily average: to the next level, and to the next multiple of 5 (207 → 210, 285 → 290). Each shows the EXP still needed, the time ("≈ 4.3 days", "≈ 5.6 months") and an estimated date. It handles "no EXP in 14 days" and level 300.
+
+**Daily refresh**
+- Once a day after 00:00 UTC (the exact time depends on when Nexon updates; see Risk 1). It catches up on start-up or wake if it was missed. It's checked hourly while the app runs, like Goal Tracker's backups.
+- One character at a time with a short pause between requests, a timeout, and a couple of retries.
+- Every Nexon response is checked against the shape we expect. A changed shape is reported, not saved.
+- A snapshot is saved only when the data changed. On failure the last saved data stays on screen, with "Updated …" or the error shown on Home.
+
+**EXP table tab:** levels 1–299 from the GMS table (see the game figures below). Range buttons (1–199, 200–299, All), jump to a level, the short form, the change from the level before, the total from level 1, and a header row that stays visible while scrolling.
+
+**Themes tab:** Ren (the default) and Pochacco, saved as a setting.
+- Theme art (Pochacco's background, and Ren's later) lives in the data folder, never in git. The app serves it from there.
+- Without the art, each theme falls back to its own drawn background: Ren's ink tree with petals, Pochacco's gingham.
+
+**Behind the scenes**
+- **Backups:** daily, plus before every database update. Kept: the newest 30 plus one per month for 12 months.
+- **Always-on app:** a macOS launch agent runs it from its own copy of `main`. Commands: `app:install`, `app:restart`, `app:status`, `app:uninstall`, `app:fresh-start`.
+- **Two databases:** the real one (`miku.db`) and a dev one (`dev.db`), both in `~/Library/Application Support/MikuTracker/`.
+- Only listens on `127.0.0.1`. No analytics. The only outside requests are to Nexon (rankings and avatars) and Google Fonts.
+
+## How the code is organized (same pattern as Goal Tracker)
+
+- `shared/`: zod input rules used by the server and the app (character search, add, reorder, settings).
+- `server/src/config.ts`: **every** setting in one place, from environment variables with local defaults: data folder, database file, backup folder, theme-art folder, host, port, whether backups and the daily refresh run, and the refresh time.
+- `server/src/gameFigures/`: the worlds and the GMS EXP table, each figure with its source and patch/date.
+- `server/src/calc/`: pure calculations, with no database and no HTTP:
+  - UTC days and the next 00:00 UTC
+  - converting level + EXP into total EXP
+  - EXP gained per UTC day from snapshots
+  - stats
+  - time to the next level and the next multiple of 5
+- `server/src/nexon/`: the rankings client. It builds the request, fetches, checks the response with zod, and turns it into our own shape. `fetch` is passed in, so **tests never reach the real Nexon**: they use a fake with saved sample responses.
+- `server/src/services/`: connect the database to `calc/` and `nexon/` (characters, snapshots, refresh, settings).
+- `server/src/routes/`: the API. `server/src/owner.ts`: the one place that says whose data this is.
+- `client/src/api/`: the only place the app talks to the server. `client/src/lib/`: display logic as plain tested functions (EXP formatting, durations, chart scaling). `components/` and `pages/` are mostly layout.
+
+**Database (Prisma, SQLite):**
+- `Character`: owner, world, name, the name in lowercase for finding duplicates, job, latest level and EXP, avatar, tab order, added time, last refresh result.
+- `Snapshot`: character, captured time, UTC day, level, EXP, total EXP, ranks, Legion level, raid power. Big numbers use `BigInt`.
+- `Settings`: theme, selected world, selected character per world.
+- `RefreshRun`: when each daily refresh ran, and what happened.
+- Deleting a character deletes its snapshots.
+
+## Testing at every step
+
+Each step below ends with all of these done and passing:
+1. **Tests for every new behavior.** Prefer checks that don't reuse the code under test: hand-computed values, step-by-step simulations, and facts that must always hold (for example, the daily gains add up to the total change).
+2. **Every new test is shown to fail on the old or broken code** before it's trusted.
+3. `npm test` (server, then app, each in California time and in UTC) and `npm run typecheck`.
+4. **Incremental Stryker** on the code the step touched, with `--concurrency 2` and `nice -n 19`, until every mutant is caught. A mutant is only disabled with a written reason, and only if it provably can't change behavior.
+
+Before each version is committed: `npm run test:coverage`, a **full** Stryker run of the server and the app, a CHANGELOG entry, matching `version` in every `package.json`, and a version number you've agreed to. Then push the version branch so the GitHub checks run. You push `main` and the tags.
+
+Rules carried over from Goal Tracker:
+- Tests use a throwaway database, and the code throws if a test run has none.
+- Only `Date` is faked, starting from a fixed time.
+- API tests use one server per file, bound to `127.0.0.1`.
+- No test ever touches the network.
+- This Mac has 8 GB of memory: at most two mutation runs at once, and nothing else heavy alongside them.
+
+## Versions and steps
+
+### v0.1.0: planning and mockups (this save)
+`README.md`, `PLAN.md`, `CHANGELOG.md`, `.gitignore`, `.claude/settings.json`, and the approved mockup in `docs/theme-examples/`. No app code.
+
+### v0.2.0: the skeleton, and finding out when Nexon updates
+1. **Nexon update watch (research; started first, because it runs for about a week):** a small script, run by hand and never part of the app, that looks up a few active characters every 30 minutes and logs when their numbers change. Its output goes in `tempdata/`. This tells us whether the rankings update daily and at what UTC time. See Risk 1.
+2. Workspaces (`shared`, `server`, `client`), TypeScript, `.nvmrc`, and the `@miku/shared` package.
+3. `config.ts` and the database path guard (throws in a test run without a throwaway database).
+   - Tests: the defaults; environment overrides; the guard throws.
+4. Prisma 7 with an empty schema plus `Settings`, and the test helpers (throwaway database, `ok()`, tables cleared between tests).
+   - Tests: a schema change without a migration fails.
+5. Express app with `/api/health`, the error handler, the empty login check, and `owner.ts`.
+   - Tests: health; unknown API path → 404; bad JSON → 400.
+6. React app shell:
+   - the left tab rail
+   - the Themes tab with Ren and Pochacco
+   - theme saved through `/api/settings`
+   - theme art served from the data folder, with the drawn fallbacks
+   - Tests: the theme switches and is saved; the fallback shows when the art is missing.
+7. Stryker configs and the `/mutation-audit` skill, the GitHub workflow, `DESIGN.md` and `CLAUDE.md`.
+
+### v0.3.0: game figures, EXP math, and the EXP table tab
+1. `gameFigures/`: the worlds (45 Kronos, 70 Hyperion) and the GMS EXP table, with sources.
+   - Tests: 299 levels; the known values (200 → 2,207,026,470; 225, 230, 239; 260; 299); the total from level 1 to 300 is 8,509,498,537,428,819 and under the exact-number limit.
+2. `calc/`:
+   - converting level + EXP to total EXP
+   - UTC day keys and the next 00:00 UTC
+   - time to the next level and the next multiple of 5
+   - Tests: hand-computed cases (207 → 210 adds up three levels); level 300; zero EXP per day; UTC day edges tested at 23:59/00:00 in both time zones.
+3. `/api/exp-table` and the EXP table tab, with ranges, jump to a level, and the sticky header.
+   - App tests with a fake server.
+4. `client/src/lib/`: 3-significant-digit EXP formatting (5.12B, 137B, 999.6B → 1.00T), durations, and dates.
+   - Tests for every rounding edge.
+
+### v0.4.0: the Nexon rankings client
+1. A request builder for the rankings types we use (overall, world, Legion), the `na` region, and names in the right form.
+2. zod checks of the response shape, and turning it into our shape (BigInt EXP, world ID, avatar link).
+3. Error kinds: not found, other world, Nexon unreachable, timeout, changed shape. Retries with backoff, and a pause between requests.
+4. Saved sample responses as test fixtures, with made-up names, and a fake `fetch`.
+   - Tests for every error kind, and for retries using the fake clock.
+5. `/api/search?world=&name=`.
+   - Tests through the API with the fake Nexon.
+6. `npm run nexon:check <name>`: a manual live check, never run by the tests, to confirm that the real data still has the shape we expect.
+
+### v0.5.0: characters on Home
+1. `Character` model and migration; services: add (from a search result, saving its first snapshot), list by world, reorder, delete (with snapshots).
+   - Tests: duplicate names; other world; deleting removes the snapshots; the order holds after add and delete.
+2. Avatars saved locally: the server downloads each avatar when it adds or refreshes a character, stores it in the data folder and serves it, so the page never contacts Nexon. Tests: the download uses the fake `fetch`; a failed download keeps the previous avatar.
+3. API routes for all of this.
+4. Home: world switcher; character tabs with drag and Alt + arrows; the **+** popover with search and Add; selecting a character; Delete with confirmation; the selected world and character saved.
+   - App tests for each, including the empty world.
+
+### v0.6.0: snapshots and the daily refresh
+1. `Snapshot` and `RefreshRun` models; saving only when the data changed.
+2. The refresh service: when it's due (after the refresh time on each UTC day, catching up if missed), one character at a time, partial failures, and recording the run.
+   - Tests: fake clock across UTC midnight, in both time zones; a missed day; Nexon down; one bad character among good ones; no duplicate runs.
+3. Scheduling: check on start, then hourly (a timer that doesn't keep the process alive), turned off for `npm run dev` like backups.
+4. "Updated today at 00:05 UTC", or the error, shown on Home.
+
+### v0.7.0: the character view
+1. `calc/`: EXP gained per UTC day from snapshots (across level-ups, using total EXP), the 7-day total, the 14-day average, the best day, and missing days: UTC days with no snapshot show as empty "no data" bars, and the combined EXP goes on the next day that has data, labeled with how many days it covers (e.g. "3 days"). The average still divides by 14 calendar days.
+   - Tests: step-by-step simulations; a fact that must hold: the daily gains add up to the change in total EXP.
+2. `/api/characters/:id`: everything the view needs in one response.
+3. The hero section (EXP bar with have / needed), the stats, ranks and Legion.
+4. The daily EXP chart: amounts above the bars, the average line and legend, the tooltip, the countdown, and moving on a day at 00:00 UTC.
+   - App tests with the fake clock.
+5. The time-to-level section.
+
+### v0.8.0: backups and the always-on app
+1. Backups, adapted from Goal Tracker: daily, before database updates, and kept for 30 days plus 12 months.
+2. The launch agent and `app:*` commands on port 4750, from its own copy of `main`, with the real database; `npm run dev` on 4751/4752 with `dev.db`.
+3. The daily refresh runs only in the always-on app.
+4. Tests: as in Goal Tracker (the settings file, which backups are kept, the copy is made under a temporary name first).
+
+### v1.0.0: first real use
+Use it for a few days, fix what comes up, re-check the EXP table against the latest GMS patch, do the full mutation runs, and update `README.md` with how to run it.
+
+## Risks
+
+1. **How often Nexon updates the rankings is not confirmed.** One unverified quote says the rankings page updates weekly. If EXP only changes there once a week, a *daily* EXP chart can't come from the rankings, and we would need to re-plan (for example, weekly bars). That's why the update watch starts first, in v0.2.0, before any chart work.
+2. **The rankings data is undocumented** and could change or disappear. The shape checks, `nexon:check`, and showing the last saved data keep the app usable, and nothing is lost.
+3. **Characters that rename or drop out of the rankings** stop being found. They're marked "not found since …" and keep their history until you delete them.
+4. **EXP table changes in a patch** can make one day's bar wrong at the moment of the patch. The table records its patch, and it gets re-checked after each GMS patch.
+
+## Open questions
+
+None right now.
+
+## Decided
+
+- **Name:** MikuTracker everywhere: the app, the data folder (`~/Library/Application Support/MikuTracker/`), the shared package (`@miku/shared`), and the launch agent (`com.mikutracker.app`).
+- **Region:** GMS. **Worlds:** Kronos (ID 45) and Hyperion (ID 70), both Heroic and both NA. The IDs come from the world list in Nexon's own rankings page code (2026-10-20).
+- **Character data:** from Nexon's rankings data (see the research below). Anything else is manual. Nothing reads the game client.
+- **Stack:** Express 5 + Prisma 7 (SQLite), a zod `shared/` folder, and React 19 + Vite + Tailwind 4, as in Goal Tracker.
+- **Ports:** 4750 for the app, 4751 for the dev API, 4752 for the dev page. All three were free on 2026-10-20.
+- **Changes from Goal Tracker:**
+  - one config module
+  - game time is UTC (shown in local time, and tested in both time zones)
+  - big numbers are `BigInt` in the database
+  - "whose data is this" in one place (`owner.ts`)
+- **Themes:** only Ren (the default) and Pochacco for now. Colors only come from CSS variables. Art is never committed.
+- **Saved as v0.1.0** (decided 2026-10-20): the planning docs and the mockup, with no app code.
+- **Missing days in the chart:** empty "no data" bars, with the combined EXP on the next day that has data, labeled with how many days it covers.
+- **Avatars:** saved locally by the server; the page never contacts Nexon.
+- **TBD tabs:** shown as placeholders in v1.0.0.
+- **Legion:** each character's own Legion lookup, since Legion belongs to the account.
+- **Claude Code settings (`.claude/`):** as in Goal Tracker. `/mutation-audit` will be adapted when Stryker is set up.
+- All the layout, chart, EXP and time-to-level decisions listed under "What v1.0.0 includes".
+
+## Research
+
+### Nexon's rankings data (unofficial, no key)
+
+GMS has no official API: Nexon's Open API covers only KMS, TMS and MSEA. The rankings page on nexon.com loads its data from a public JSON address. Tested 2026-10-20:
+
+```
+https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na?type=overall&id=legendary&reboot_index=0&page_index=1&character_name=<name>
+https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na?type=world&id=<worldID>&reboot_index=0&page_index=1&character_name=<name>
+https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na?type=legion&id=<worldID>&page_index=1&character_name=<name>
+```
+
+Each entry has: `characterName`, `level`, `exp` (EXP into the current level), `rank`, `worldID`, `jobName` and `characterImgURL`, plus `legionLevel` and `raidPower` for `type=legion`.
+
+| `type` / `id` | What it returns |
+| --- | --- |
+| `overall` / `legendary` | the all-time overall ranking |
+| `overall` / `weekly` | a weekly ranking (what `gap` means there is unclear) |
+| `overall` / `daily` | nothing |
+| `world` / `<worldID>` | a ranking within one world |
+| `legion` / `<worldID>` | Legion level and raid power |
+
+Sites like MapleRanks most likely request this same data on a schedule and keep their own history. The Raycast MapleStory extension says it uses this data for NA and EU.
+
+### GMS EXP table
+
+Source: whackybeanz.com "Everything EXP", from its MapleSEA / KMS / TMS table (updated 3 June 2026). That table matches GMS after **v.271 (September 2026)**, which cut levels 210–259 by the same amounts as KMS in March 2026:
+
+| Levels | Cut |
+| --- | --- |
+| 210–214 | ~8% |
+| 215–219 | ~15% |
+| 220–224 | ~21% |
+| 225–229 | ~27% |
+| 230–234 | ~33% |
+| 235–239 | ~38% |
+| 240–244 | ~43% |
+| 245–249 | ~47% |
+| 250–259 | ~58% |
+
+- Checked against Nexon's v.271 patch notes and Namu Wiki's KMS values for levels 225, 230 and 239.
+- The same site's "GMS" option still shows the table from before v.271.
+- Above level 270 the site's two tables differ by a few hundred EXP out of trillions, which is rounding.
+- The total from level 1 to 300 is 8,509,498,537,428,819, below JavaScript's exact limit of 9,007,199,254,740,992.
+
+### Reset times (GMS)
+
+From third-party guides that agree with each other; I couldn't find an official Nexon page.
+
+| Reset | Time |
+| --- | --- |
+| Daily | 00:00 UTC |
+| Weekly bosses | Thursday 00:00 UTC |
+| Weekly quests | Monday 00:00 UTC |
+
+v1.0.0 only uses the daily one (UTC days). Check the weekly ones before any weekly features rely on them.

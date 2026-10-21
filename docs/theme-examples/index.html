@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="en" data-theme="ren">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MikuTracker Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Theme examples for MikuTracker. Every color, font and corner size comes from the variables
+   in each [data-theme] block; the layout below never uses colors directly. The data is made up. */
+
+[data-theme="pochacco"] {
+  color-scheme: light;
+  --bg: #e4f3fc;
+  /* A white veil over Sanrio's art (kept out of git in tempdata/), with plain gingham underneath if the art is missing. */
+  --bg-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), url("../../tempdata/theme-art/pochacco.png"), repeating-linear-gradient(0deg, rgba(126, 196, 238, 0.28) 0 22px, transparent 22px 44px), repeating-linear-gradient(90deg, rgba(126, 196, 238, 0.28) 0 22px, transparent 22px 44px);
+  --bg-size: auto, cover, auto, auto;
+  --bg-position: center, center bottom, 0 0, 0 0;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-2: #eaf6fd;
+  --border: #231f20;
+  --border-width: 2px;
+  --text: #231f20;
+  --text-muted: #5a5557;
+  --accent: #3b9fe0;
+  --accent-soft: rgba(59, 159, 224, 0.16);
+  --on-accent: #ffffff;
+  --bar: #8fd0f4;
+  --bar-hover: #3b9fe0;
+  --bar-outline: #231f20;
+  --line: #ef7fae;
+  --exp: linear-gradient(90deg, #8fd0f4, #f7d94c);
+  --danger: #e60012;
+  --shadow: 2px 2px 0 #231f20;
+  --radius: 6px;
+  --font: "Nunito", system-ui, sans-serif;
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --surface-blur: none;
+}
+[data-theme="ren"] {
+  color-scheme: dark;
+  --bg: #26253a;
+  --bg-image: radial-gradient(circle at 82% 14%, rgba(226, 222, 232, 0.22), transparent 22%), linear-gradient(180deg, #3d3c58 0%, #2a2940 55%, #1c1b2b 100%);
+  --surface: rgba(30, 29, 46, 0.74);
+  --surface-2: rgba(50, 48, 72, 0.88);
+  --border: #4a4766;
+  --border-width: 1px;
+  --text: #f3eee6;
+  --text-muted: #b6afc4;
+  --accent: #e5484d;
+  --accent-soft: rgba(229, 72, 77, 0.16);
+  --on-accent: #ffffff;
+  --bar: linear-gradient(180deg, #ff6b6b, #b8283a);
+  --bar-hover: linear-gradient(180deg, #ff9a9a, #e5484d);
+  --line: #d4b46e;
+  --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
+  --danger: #ff6b6b;
+  --shadow: 0 8px 30px rgba(10, 8, 25, 0.45);
+  --radius: 6px;
+  --font: "Inter", system-ui, sans-serif;
+  --font-display: "Shippori Mincho", Georgia, serif;
+  --surface-blur: blur(8px);
+  --petal-1: #e5484d;
+  --petal-2: #ff8a8f;
+  --petal-3: #f6e3e4;
+  --ink: #141320;
+  --moon: #e6e2ea;
+}
+
+/* Layout: the feature tabs down the left edge of the screen, and the page beside them */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image: var(--bg-image);
+  background-size: var(--bg-size, auto);
+  background-position: var(--bg-position, 0 0);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: calc(15px * var(--font-scale, 1));
+  line-height: 1.45;
+  transition: background-color 0.3s, color 0.3s;
+}
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 700; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.muted { color: var(--text-muted); }
+
+.app { position: relative; z-index: 1; min-height: 100vh; padding-left: 88px; }
+.page { position: relative; min-width: 0; max-width: 1180px; margin: 0 auto; padding: 22px 40px 40px; }
+
+/* Feature tabs */
+.rail {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 20;
+  width: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 8px;
+  background: var(--surface);
+  border-right: var(--border-width) solid var(--border);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
+}
+.rail-brand { width: 34px; height: 34px; margin: 0 auto 14px; border-radius: calc(var(--radius) * 0.6); background: var(--exp); }
+.rail-spacer { flex: 1; }
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border: 0;
+  border-radius: calc(var(--radius) * 0.8);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78em;
+}
+.tab svg { width: 22px; height: 22px; }
+.tab:hover { color: var(--text); background: var(--accent-soft); }
+.tab[aria-current="page"] { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+
+@media (max-width: 760px) {
+  .app { padding-left: 0; padding-bottom: 76px; }
+  .page { padding: 16px; }
+  .rail {
+    top: auto; width: auto;
+    flex-direction: row; overflow-x: auto;
+    padding: 6px 8px;
+    right: 0; border-right: 0; border-top: var(--border-width) solid var(--border);
+    background: var(--surface);
+    backdrop-filter: var(--surface-blur);
+  }
+  .rail-brand, .rail-spacer { display: none; }
+  .tab { flex: 1 0 64px; }
+}
+
+/* Home is split into separate pieces, so the background shows between them */
+.block {
+  margin-bottom: 16px;
+  padding: 16px 24px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
+}
+.block.top { padding-bottom: 0; }
+@media (max-width: 760px) { .block { padding: 14px; } }
+
+/* Home: top row */
+.page-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.segmented { display: inline-flex; padding: 3px; border-radius: var(--pill, var(--radius)); background: var(--surface-2); }
+.segmented button { border: 0; background: transparent; padding: 5px 16px; border-radius: var(--pill, var(--radius)); }
+.segmented button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.updated { font-size: 0.85em; color: var(--text-muted); }
+
+/* Character strip: drag left and right to reorder, click to switch */
+.strip-wrap { position: relative; }
+.strip { display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; scrollbar-width: thin; }
+.ctab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 9px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: calc(var(--radius) * 0.7) calc(var(--radius) * 0.7) 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  user-select: none;
+}
+.ctab:hover { color: var(--text); background: var(--accent-soft); }
+.ctab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.ctab.dragging { opacity: 0.35; }
+.ctab b { display: block; white-space: nowrap; }
+.ctab small { display: block; font-size: 0.8em; color: var(--text-muted); white-space: nowrap; }
+.add-tab {
+  flex: none;
+  width: 40px; height: 40px;
+  margin: 0 6px 10px;
+  border: var(--border-width) dashed var(--border);
+  border-radius: var(--pill, var(--radius));
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.3em;
+  line-height: 1;
+}
+.add-tab:hover, .add-tab[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.avatar { flex: none; border-radius: var(--pill, var(--radius)); background: var(--accent-soft); }
+
+/* Add-a-character popover, opened from the + at the end of the strip */
+.popover {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.popover h3 { font-size: 0.95em; margin-bottom: 8px; }
+.search { display: flex; gap: 8px; }
+.search input {
+  flex: 1; min-width: 0;
+  padding: 8px 12px;
+  border: var(--border-width) solid var(--border);
+  border-radius: calc(var(--radius) * 0.7);
+  background: var(--surface);
+  outline: none;
+}
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.btn {
+  padding: 8px 14px;
+  border: var(--border-width) solid var(--accent);
+  border-radius: calc(var(--radius) * 0.7);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.result { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.result .grow { flex: 1; min-width: 0; }
+.result small { display: block; color: var(--text-muted); }
+
+/* The selected character */
+.hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 4px 0 18px; }
+.hero .who { flex: 1; min-width: 240px; }
+.hero h2 { font-size: 2em; line-height: 1.1; }
+.meta { margin-top: 4px; color: var(--text-muted); }
+.expbar { height: 8px; margin-top: 14px; border-radius: var(--pill, var(--radius)); background: var(--surface-2); overflow: hidden; }
+.expbar > div { height: 100%; background: var(--exp); }
+.level-box { text-align: right; }
+.level { font-family: var(--font-display); font-size: 3em; font-weight: 700; line-height: 1; }
+
+/* Stats: one row split by thin lines */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: var(--border-width) solid var(--border); }
+.stat { padding: 14px 18px 0; }
+.stat:first-child { padding-left: 0; }
+.stat + .stat { border-left: var(--border-width) solid var(--border); }
+.stat .label { font-size: 0.82em; color: var(--text-muted); }
+.stat .value { font-family: var(--font-display); font-size: 1.4em; font-weight: 700; }
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+  .stat:nth-child(n + 3) { border-top: var(--border-width) solid var(--border); }
+}
+
+/* Daily EXP chart */
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.chart-head h3 { font-size: 1.1em; }
+.countdown { font-size: 0.88em; color: var(--text-muted); }
+.countdown b { color: var(--text); font-variant-numeric: tabular-nums; }
+.chart { display: grid; grid-template-columns: 52px 1fr; height: 270px; padding-top: 24px; }
+.yaxis { position: relative; font-size: 0.78em; color: var(--text-muted); }
+.yaxis span { position: absolute; right: 8px; transform: translateY(50%); }
+.plot { position: relative; border-bottom: var(--border-width) solid var(--border); }
+.grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); opacity: 0.7; }
+.avg-line { position: absolute; left: 0; right: 0; z-index: 2; border-top: 2px dashed var(--line); pointer-events: none; }
+.legend { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; font-size: 0.82em; color: var(--text-muted); font-family: var(--font); font-weight: 400; }
+.legend i { width: 18px; border-top: 2px dashed var(--line); }
+.legend b { color: var(--line); }
+.bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 6px; padding: 0 4px; }
+.bar-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.bar-col:focus { outline: none; }
+.bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--bar);
+  border: var(--border-width) solid var(--bar-outline, transparent);
+  border-bottom: 0;
+  border-radius: calc(var(--radius) * 0.4) calc(var(--radius) * 0.4) 0 0;
+  transition: height 0.4s ease;
+}
+.bar-col:hover .bar, .bar-col:focus .bar { background: var(--bar-hover); }
+.bar-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.74em;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  transition: bottom 0.4s ease;
+}
+.bar-label { z-index: 3; padding: 0 3px; border-radius: 4px; background: var(--surface); }
+.bar-label.zero { color: var(--text-muted); font-weight: 400; }
+@media (max-width: 600px) {
+  .bar-label { font-size: 0.62em; writing-mode: vertical-rl; transform: translateX(-50%) rotate(180deg); }
+}
+.xaxis { display: flex; gap: 6px; padding: 6px 4px 0 56px; font-size: 0.75em; color: var(--text-muted); }
+.xaxis span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+.tip {
+  position: absolute; z-index: 5;
+  display: none;
+  padding: 6px 10px;
+  border: var(--border-width) solid var(--border);
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  font-size: 0.85em;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 22px));
+  pointer-events: none;
+}
+.chart-foot { margin: 10px 0 0; font-size: 0.85em; color: var(--text-muted); }
+.page-foot { padding: 0 4px; }
+.exp-have { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.eta { display: grid; grid-template-columns: repeat(2, 1fr); margin-top: 6px; }
+.eta-item { padding: 6px 18px 4px; }
+.eta-item:first-child { padding-left: 0; }
+.eta-item + .eta-item { border-left: var(--border-width) solid var(--border); }
+.eta-item .label { font-size: 0.82em; color: var(--text-muted); }
+.eta-level { font-weight: 700; }
+.eta-item .value { font-family: var(--font-display); font-size: 1.5em; font-weight: 700; }
+@media (max-width: 640px) {
+  .eta { grid-template-columns: 1fr; }
+  .eta-item { padding-left: 0; }
+  .eta-item + .eta-item { border-left: 0; border-top: var(--border-width) solid var(--border); margin-top: 8px; padding-top: 10px; }
+}
+.danger-link { padding: 6px 0; border: 0; background: none; color: var(--danger); font-weight: 600; }
+.empty { padding: 48px 0; text-align: center; color: var(--text-muted); }
+
+/* EXP table */
+.exp-tools { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.exp-tools .search { width: 240px; }
+.exp-block { padding: 0; overflow: clip; } /* clip, not hidden, so the header row can stick while scrolling */
+.exp-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.exp-table th {
+  position: sticky; top: 0;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.82em;
+  font-weight: 600;
+  text-align: left;
+}
+.exp-table td { padding: 7px 16px; border-top: 1px solid var(--border); }
+.exp-table .num { text-align: right; }
+.exp-table .short { color: var(--accent); font-weight: 700; }
+.exp-table .big { color: var(--danger); font-weight: 700; }
+.exp-table tbody tr:hover { background: var(--accent-soft); }
+.exp-table tr.jump { background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (max-width: 640px) {
+  .exp-table th, .exp-table td { padding: 6px 8px; font-size: 0.85em; }
+  .exp-table th:nth-child(5), .exp-table td:nth-child(5) { display: none; }
+}
+
+/* Themes page: each card previews its own theme */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; margin-top: 18px; }
+.theme-card {
+  padding: 0;
+  overflow: hidden;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--bg);
+  background-image: var(--bg-image);
+  background-size: var(--bg-size, auto);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: calc(14px * var(--font-scale, 1));
+  text-align: left;
+  box-shadow: var(--shadow);
+}
+.theme-card[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+.mini { display: flex; align-items: flex-end; gap: 4px; height: 96px; margin: 12px; padding: 10px; border: var(--border-width) solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.mini span { flex: 1; background: var(--bar); border-radius: calc(var(--radius) * 0.25) calc(var(--radius) * 0.25) 0 0; border: var(--border-width) solid var(--bar-outline, transparent); border-bottom: 0; }
+.mini-exp { height: 6px; margin: 0 12px; border-radius: var(--pill, var(--radius)); background: var(--exp); }
+.theme-card .name { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px 2px; font-family: var(--font-display); font-weight: 700; font-size: 1.1em; }
+.theme-card .name small { font-family: var(--font); font-size: 0.7em; color: var(--accent); }
+.theme-card p { margin: 0; padding: 0 12px 12px; font-size: 0.86em; color: var(--text-muted); }
+.tbd { padding: 80px 0; text-align: center; }
+.tbd h1 { font-size: 1.6em; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Features"></nav>
+  <main class="page" id="page"></main>
+</div>
+
+<script>
+const THEMES = [
+  { id: "ren", name: "Ren", note: "Ren's colors: a moonlit violet night, silver-white, red eyes and gold, with an ink blossom tree and red petals drifting down (animated)." },
+  { id: "pochacco", name: "Pochacco", note: "Sanrio's Pochacco on light-blue gingham, with black ink outlines, sky blue, pink and chick yellow." },
+];
+
+const ICONS = {
+  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>`,
+  tbd: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>`,
+  table: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V6"/><path d="M16 20v-8"/><path d="M22 20H2"/><path d="M20 20V3"/></svg>`,
+  themes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4.1-4-7.4-9-7.4z"/><circle cx="7.5" cy="11.5" r="1.2" fill="currentColor"/><circle cx="10" cy="7.5" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7.5" r="1.2" fill="currentColor"/></svg>`,
+};
+// Home and the features still to be decided at the top; the reference pages (EXP table, Themes) at the bottom.
+const TABS = [
+  { id: "home", label: "Home", icon: "home" },
+  { id: "tbd1", label: "TBD", icon: "tbd" },
+  { id: "tbd2", label: "TBD", icon: "tbd" },
+  { id: "tbd3", label: "TBD", icon: "tbd" },
+  { id: "tbd4", label: "TBD", icon: "tbd" },
+  { id: "exp", label: "EXP table", icon: "table" },
+  { id: "themes", label: "Themes", icon: "themes" },
+];
+
+const WORLDS = [{ id: 45, name: "Kronos" }, { id: 70, name: "Hyperion" }];
+const JOBS = ["Night Walker", "Bishop", "Kanna", "Hoyoung", "Adele", "Bow Master", "Kain", "Lara", "Hero", "Lynn"];
+
+// Made-up characters (names are invented).
+const state = {
+  page: "home",
+  theme: "ren",
+  world: 45,
+  chars: {
+    45: [
+      { name: "MikuBeam", job: "Kanna", level: 285 },
+      { name: "LeekSpin", job: "Bishop", level: 272 },
+      { name: "NegiMage", job: "Lara", level: 261 },
+      { name: "PochaHop", job: "Hoyoung", level: 245 },
+      { name: "TwinTails", job: "Lynn", level: 238 },
+      { name: "VocaloidV", job: "Kain", level: 231 },
+    ],
+    70: [
+      { name: "SakuraRin", job: "Adele", level: 279 },
+      { name: "TealTwin", job: "Bow Master", level: 260 },
+    ],
+  },
+  selected: { 45: "MikuBeam", 70: "SakuraRin" },
+  adding: false,
+  expRange: "200-299",
+  expJump: null,
+  query: "",
+  found: null,
+};
+
+// A small number generator seeded by text, so the fake data stays the same between visits.
+function seeded(text) {
+  let h = 2166136261;
+  for (const c of text) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+// EXP to 3 significant digits: 5.12B, 20.7B, 137B, 1.04T.
+const UNITS = [[1e3, "K"], [1e6, "M"], [1e9, "B"], [1e12, "T"], [1e15, "Q"]];
+function fmtExp(n) {
+  for (let i = UNITS.length - 1; i >= 0; i--) {
+    const [size, unit] = UNITS[i];
+    if (n < size) continue;
+    const digits = Number((n / size).toPrecision(3));
+    // 999.6B rounds to 1000B: show it as 1.00T instead.
+    if (digits >= 1000 && UNITS[i + 1]) return (n / UNITS[i + 1][0]).toPrecision(3) + UNITS[i + 1][1];
+    return (n / size).toPrecision(3) + unit;
+  }
+  return String(Math.round(n));
+}
+const fmtInt = (n) => n.toLocaleString("en-US");
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+// The last 14 finished UTC days ("YYYY-MM-DD"), oldest first. Today isn't finished, so it's not shown.
+function lastUtcDays(count = 14) {
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const days = [];
+  for (let i = count; i >= 1; i--) days.push(new Date(today - i * 86400000).toISOString().slice(0, 10));
+  return days;
+}
+function nextUtcMidnight() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+}
+// GMS EXP needed to go from each level to the next: index 0 is level 1 → 2, index 298 is 299 → 300.
+// Current as of GMS v.271 (September 2026), which cut levels 210–259 by about 8% (210–214) up to
+// about 58% (250–259), the same cuts KMS made in March 2026.
+// Source: whackybeanz.com "Everything EXP" table (its MapleSEA / KMS / TMS table, last updated
+// 3 June 2026). Its separate "GMS" table still shows GMS before v.271. Checked against Nexon's v.271
+// patch notes (the cut for each level range) and Namu Wiki's KMS table (levels 225, 230, 239).
+const GMS_EXP_TO_NEXT = [
+  15, 34, 57, 92, 135, 372, 560, 840, 1242, 1242,
+  1242, 1242, 1242, 1242, 1490, 1788, 2145, 2574, 3088, 3705,
+  4446, 5335, 6402, 7682, 9218, 11061, 13273, 15927, 19112, 19112,
+  19112, 19112, 19112, 19112, 22934, 27520, 33024, 39628, 47553, 51357,
+  55465, 59902, 64694, 69869, 75458, 81494, 88013, 95054, 102658, 110870,
+  119739, 129318, 139663, 150836, 162902, 175934, 190008, 205208, 221624, 221624,
+  221624, 221624, 221624, 221624, 238245, 256113, 275321, 295970, 318167, 342029,
+  367681, 395257, 424901, 456768, 488741, 522952, 559558, 598727, 640637, 685481,
+  733464, 784806, 839742, 898523, 961419, 1028718, 1100728, 1177778, 1260222, 1342136,
+  1429374, 1522283, 1621231, 1726611, 1838840, 1958364, 2085657, 2221224, 2365603, 2365603,
+  2365603, 2365603, 2365603, 2365603, 2519367, 2683125, 2857528, 3043267, 3241079, 3451749,
+  3676112, 3915059, 4169537, 4440556, 4729192, 5036589, 5363967, 5712624, 6083944, 6479400,
+  6900561, 7349097, 7826788, 8335529, 8877338, 9454364, 10068897, 10723375, 11420394, 12162719,
+  12953295, 13795259, 14691950, 15646926, 16663976, 17747134, 18900697, 20129242, 21437642, 22777494,
+  24201087, 25713654, 27320757, 29028304, 30842573, 32770233, 34818372, 36994520, 39306677, 41763344,
+  44373553, 47146900, 50093581, 53224429, 56550955, 60085389, 63840725, 67830770, 72070193, 76574580,
+  81360491, 86445521, 91848366, 97588888, 103688193, 110168705, 117054249, 124370139, 132143272, 138750435,
+  145687956, 152972353, 160620970, 168652018, 177084618, 185938848, 195235790, 204997579, 215247457, 226009829,
+  237310320, 249175836, 261634627, 274716358, 288452175, 302874783, 318018522, 333919448, 350615420, 368146191,
+  386553500, 405881175, 426175233, 447483994, 469858193, 493351102, 518018657, 543919589, 571115568, 2207026470,
+  2471869646, 2768494003, 3100713283, 3472798876, 3889534741, 4356278909, 4879032378, 5464516263, 6120258214, 7344309856,
+  8152183940, 9048924173, 10044305832, 11149179473, 13379015367, 14583126750, 15895608157, 17326212891, 18885572051, 22662686461,
+  24249074513, 25946509728, 27762765408, 29706158986, 35647390783, 38142708137, 40812697706, 43669586545, 46726457603, 56071749123,
+  57753901596, 59486518643, 61271114202, 63109247628, 75731097153, 78003030067, 80343120969, 82753414598, 85236017035, 102283220442,
+  105351717055, 108512268566, 111767636622, 115120665720, 138144798864, 142289142829, 146557817113, 150954551626, 155483188174, 186579825808,
+  192177220582, 197942537199, 203880813314, 209997237713, 216297154844, 222786069489, 229469651573, 236353741120, 243444353353, 1731919984062,
+  1749239183902, 1766731575741, 1784398891498, 1802242880412, 2342915744535, 2366344901980, 2390008350999, 2413908434508, 2438047518853, 5412465491853,
+  5466590146771, 5521256048238, 5576468608720, 5632233294807, 11377111255510, 12514822381061, 13766304619167, 15142935081083, 16657228589191, 33647601750165,
+  37012361925181, 40713598117699, 44784957929468, 49263453722414, 99512176519276, 109463394171214, 120409733588335, 132450706947169, 145695777641870, 294305470836577,
+  323736017920234, 356109619712257, 391720581683482, 430892639851830, 870403132500696, 957443445750765, 1053187790325841, 1158506569358425, 1737759854037637,
+];
+const MAX_LEVEL = 300;
+const expToNext = (level) => GMS_EXP_TO_NEXT[level - 1];
+
+function expForDay(c, day) {
+  const r = seeded(c.name + day);
+  if (r() < 0.12) return 0; // a day off
+  const base = expToNext(c.level) * (0.02 + seeded(c.name)() * 0.05);
+  return Math.round(base * (0.35 + r() * 1.3));
+}
+
+// "≈ 3.2 days", "≈ 5 hours", "≈ 4.1 months"
+function fmtDuration(days) {
+  if (days < 1) return `≈ ${Math.max(1, Math.round(days * 24))} hours`;
+  if (days < 60) return `≈ ${days.toFixed(1)} days`;
+  if (days < 730) return `≈ ${(days / 30.44).toFixed(1)} months`;
+  return `≈ ${(days / 365.25).toFixed(1)} years`;
+}
+function fmtFutureDate(days) {
+  const when = new Date(Date.now() + days * 86400000);
+  const sameYear = when.getFullYear() === new Date().getFullYear();
+  return when.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}
+// How long until `target`, from `have` EXP into `level`, at `perDay`.
+function timeToLevel(level, have, target, perDay) {
+  let remaining = expToNext(level) - have;
+  for (let l = level + 1; l < target; l++) remaining += expToNext(l);
+  return { target, remaining, days: perDay > 0 ? remaining / perDay : Infinity };
+}
+
+// A simple stand-in avatar; the real app shows the character image from the rankings.
+function avatarSvg(name, size) {
+  const r = seeded(name);
+  const hair = `hsl(${Math.floor(r() * 360)} 70% 55%)`;
+  return `<svg class="avatar" width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true">
+    <path d="M9 22c0-8 5-13 11-13s11 5 11 13v6H9z" fill="${hair}"/>
+    <circle cx="20" cy="23" r="9" fill="#ffe3cf"/>
+    <path d="M10.5 21c2-6 6-8.5 9.5-8.5s7.5 2.5 9.5 8.5c-3-2.5-6-3.5-9.5-3.5s-6.5 1-9.5 3.5z" fill="${hair}"/>
+    <circle cx="16.5" cy="24" r="1.4" fill="#2b2b2b"/><circle cx="23.5" cy="24" r="1.4" fill="#2b2b2b"/>
+    <path d="M18 28q2 1.4 4 0" stroke="#c46" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+const store = {
+  get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch { /* not available */ } },
+};
+
+/* Feature tabs */
+function renderRail() {
+  const tabs = TABS.map((t) =>
+    `<button class="tab" data-page="${t.id}" ${t.id === state.page ? 'aria-current="page"' : ""}>${ICONS[t.icon]}${t.label}</button>`
+  );
+  document.getElementById("rail").innerHTML =
+    `<div class="rail-brand" title="MikuTracker"></div>` + tabs.slice(0, -2).join("") + `<div class="rail-spacer"></div>` + tabs.slice(-2).join("");
+}
+document.getElementById("rail").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-page]");
+  if (!b) return;
+  state.page = b.dataset.page;
+  state.adding = false;
+  renderAll();
+});
+
+function renderPage() {
+  if (state.page === "home") return renderHome();
+  if (state.page === "themes") return renderThemes();
+  if (state.page === "exp") return renderExpTable();
+  document.getElementById("page").innerHTML = `<div class="tbd"><h1>TBD</h1><p class="muted">A feature still to be decided.</p></div>`;
+}
+
+/* Home */
+function renderHome() {
+  const page = document.getElementById("page");
+  const list = state.chars[state.world];
+  const world = WORLDS.find((w) => w.id === state.world).name;
+  const c = list.find((x) => x.name === state.selected[state.world]) ?? list[0];
+  if (c) state.selected[state.world] = c.name;
+
+  page.innerHTML = `
+    <section class="block top">
+    <div class="page-head">
+      <div class="segmented" role="group" aria-label="World">
+        ${WORLDS.map((w) => `<button data-world="${w.id}" aria-pressed="${w.id === state.world}">${w.name}</button>`).join("")}
+      </div>
+      <span class="updated">Updated today at 00:05 UTC</span>
+    </div>
+
+    <div class="strip-wrap" id="stripWrap">
+      <div class="strip" id="strip" role="tablist" aria-label="Characters">
+        ${list.map((x) => `
+          <button class="ctab" role="tab" draggable="true" data-name="${escapeHtml(x.name)}" aria-selected="${x.name === state.selected[state.world]}">
+            ${avatarSvg(x.name, 38)}<span><b>${escapeHtml(x.name)}</b><small>Lv. ${x.level} · ${x.job}</small></span>
+          </button>`).join("")}
+        <button class="add-tab" id="addTab" aria-expanded="${state.adding}" aria-label="Add a character" title="Add a character">+</button>
+      </div>
+      ${state.adding ? addPopover(world) : ""}
+    </div>
+    </section>
+
+    ${c ? characterView(c, world) : `<div class="empty">No characters on ${world} yet. Use + to add one.</div>`}`;
+
+  if (state.adding) placePopover();
+  if (c) {
+    const values = lastUtcDays().map((d) => expForDay(c, d));
+    drawChart(lastUtcDays(), values);
+    tickCountdown();
+  }
+  document.querySelector(`.ctab[aria-selected="true"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function addPopover(world) {
+  const f = state.found;
+  const added = f && state.chars[state.world].some((x) => x.name.toLowerCase() === f.name.toLowerCase());
+  return `<div class="popover" id="popover" role="dialog" aria-label="Add a character">
+    <h3>Add a character on ${world}</h3>
+    <form class="search" id="searchForm" autocomplete="off">
+      <input id="searchInput" placeholder="Character name" aria-label="Character name" value="${escapeHtml(state.query)}">
+      <button class="btn" type="submit">Search</button>
+    </form>
+    ${f ? `<div class="result">${avatarSvg(f.name, 40)}
+      <div class="grow"><b>${escapeHtml(f.name)}</b><small>Lv. ${f.level} · ${f.job} · ${world}</small></div>
+      <button class="btn" id="addBtn" ${added ? "disabled" : ""}>${added ? "Added" : "Add"}</button></div>` : ""}
+  </div>`;
+}
+// Puts the popover under the + button, kept inside the page.
+function placePopover() {
+  const wrap = document.getElementById("stripWrap");
+  const pop = document.getElementById("popover");
+  const btn = document.getElementById("addTab");
+  const w = wrap.getBoundingClientRect();
+  const b = btn.getBoundingClientRect();
+  const left = Math.min(Math.max(b.left - w.left - 8, 16), w.width - pop.offsetWidth - 16);
+  pop.style.left = left + "px";
+  document.getElementById("searchInput").focus();
+}
+
+function characterView(c, world) {
+  const r = seeded(c.name + "stats");
+  const expPct = 5 + r() * 90;
+  const overall = 1000 + Math.floor(r() * 90000);
+  const worldRank = Math.floor(overall / 3);
+  const values = lastUtcDays().map((d) => expForDay(c, d));
+  const week = values.slice(-7).reduce((a, b) => a + b, 0);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const legion = 6000 + Math.floor(seeded(world)() * 3000);
+  const need = expToNext(c.level);
+  const have = Math.round(need * expPct / 100);
+  // The next level, and the next multiple of 5 (207 → 210, 285 → 290), up to the level cap.
+  const goals = [];
+  if (c.level < MAX_LEVEL) {
+    goals.push({ label: "Next level", ...timeToLevel(c.level, have, c.level + 1, avg) });
+    const five = Math.min(MAX_LEVEL, Math.floor(c.level / 5) * 5 + 5);
+    if (five > c.level + 1) goals.push({ label: "Next multiple of 5", ...timeToLevel(c.level, have, five, avg) });
+  }
+  return `
+    <section class="block">
+    <div class="hero">
+      ${avatarSvg(c.name, 104)}
+      <div class="who">
+        <h2>${escapeHtml(c.name)}</h2>
+        <div class="meta">${c.job} · ${world} · #${fmtInt(overall)} overall · #${fmtInt(worldRank)} in ${world}</div>
+        <div class="expbar" title="EXP into level ${c.level}"><div style="width:${expPct.toFixed(2)}%"></div></div>
+        <small class="muted">${expPct.toFixed(2)}% to level ${c.level + 1} · <b class="exp-have">${fmtExp(have)} / ${fmtExp(need)} EXP</b></small>
+      </div>
+      <div class="level-box"><div class="muted" style="font-size:.85em">Level</div><div class="level">${c.level}</div></div>
+    </div>
+
+    <section class="stats">
+      <div class="stat"><div class="label">EXP last 7 days</div><div class="value">${fmtExp(week)}</div></div>
+      <div class="stat"><div class="label">Daily average (14 days)</div><div class="value">${fmtExp(avg)}</div></div>
+      <div class="stat"><div class="label">Best day</div><div class="value">${fmtExp(Math.max(...values))}</div></div>
+      <div class="stat"><div class="label">${world} Legion</div><div class="value">${fmtInt(legion)}</div></div>
+    </section>
+    </section>
+
+    <section class="block chart-section">
+      <div class="chart-head">
+        <h3>EXP farmed per day (UTC)<span class="legend" id="avgLegend"></span></h3>
+        <span class="countdown" id="countdown"></span>
+      </div>
+      <div class="chart"><div class="yaxis" id="yaxis"></div><div class="plot" id="plot"></div></div>
+      <div class="xaxis" id="xaxis"></div>
+      <p class="chart-foot">Each bar is one finished UTC day. The data refreshes once a day, after 00:00 UTC.</p>
+    </section>
+
+    <section class="block">
+      <div class="chart-head">
+        <h3>Time to level</h3>
+        <span class="countdown">At the 14-day average of <b>${fmtExp(avg)}</b> a day</span>
+      </div>
+      ${goals.length ? `<div class="eta">${goals.map((g) => `
+        <div class="eta-item">
+          <div class="label">${g.label}</div>
+          <div class="eta-level">Level ${g.target}</div>
+          <div class="value">${Number.isFinite(g.days) ? fmtDuration(g.days) : "No EXP in the last 14 days"}</div>
+          <small class="muted">${fmtExp(g.remaining)} EXP to go${Number.isFinite(g.days) ? ` · around ${fmtFutureDate(g.days)}` : ""}</small>
+        </div>`).join("")}</div>` : `<p class="muted">Level ${MAX_LEVEL}: nothing left to reach.</p>`}
+      <p class="chart-foot">EXP needed per level: GMS table, current as of v.271 (September 2026). See the EXP table tab.</p>
+    </section>
+
+    <div class="page-foot"><button class="danger-link" id="deleteBtn">Delete ${escapeHtml(c.name)}…</button></div>`;
+}
+
+function niceMax(v) {
+  if (v <= 0) return 1e9;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+
+function drawChart(days, values) {
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const max = niceMax(Math.max(...values));
+  const pct = (v) => (v / max) * 100;
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  document.getElementById("yaxis").innerHTML = ticks.map((t) => `<span style="bottom:${t * 100}%">${t === 0 ? "0" : fmtExp(max * t)}</span>`).join("");
+  document.getElementById("avgLegend").innerHTML = `<i></i>14-day average <b>${fmtExp(avg)}</b>`;
+  const plot = document.getElementById("plot");
+  plot.innerHTML =
+    ticks.slice(1).map((t) => `<div class="grid-line" style="bottom:${t * 100}%"></div>`).join("") +
+    `<div class="avg-line" style="bottom:${pct(avg)}%"></div>` +
+    `<div class="bars">${values.map((v, i) => `
+      <div class="bar-col" tabindex="0" data-i="${i}" aria-label="${days[i]}: ${fmtInt(v)} EXP">
+        <span class="bar-label${v ? "" : " zero"}" style="bottom:4px">${v ? fmtExp(v) : "0"}</span>
+        <div class="bar" style="height:0%"></div>
+      </div>`).join("")}</div><div class="tip" id="tip"></div>`;
+  // Grow the bars in, with each amount riding on top of its bar.
+  requestAnimationFrame(() => {
+    plot.querySelectorAll(".bar-col").forEach((col, i) => {
+      col.querySelector(".bar").style.height = pct(values[i]) + "%";
+      col.querySelector(".bar-label").style.bottom = `calc(${pct(values[i])}% + 4px)`;
+    });
+  });
+  document.getElementById("xaxis").innerHTML = days.map((d) =>
+    `<span>${new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>`
+  ).join("");
+
+  const tip = document.getElementById("tip");
+  const show = (col) => {
+    const i = Number(col.dataset.i);
+    const date = new Date(days[i] + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+    tip.innerHTML = `<b>${date}</b><br>${values[i] ? fmtInt(values[i]) + " EXP" : "No EXP"}`;
+    const pr = plot.getBoundingClientRect();
+    const cr = col.getBoundingClientRect();
+    tip.style.left = cr.left - pr.left + cr.width / 2 + "px";
+    tip.style.top = cr.bottom - (pct(values[i]) / 100) * cr.height - pr.top + "px";
+    tip.style.display = "block";
+  };
+  plot.querySelectorAll(".bar-col").forEach((col) => {
+    col.addEventListener("mouseenter", () => show(col));
+    col.addEventListener("focus", () => show(col));
+    col.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+    col.addEventListener("blur", () => { tip.style.display = "none"; });
+  });
+}
+
+// Home's clicks, typing and dragging, handled once for the whole page.
+const page = document.getElementById("page");
+page.addEventListener("click", (e) => {
+  const worldBtn = e.target.closest("[data-world]");
+  if (worldBtn) {
+    state.world = Number(worldBtn.dataset.world);
+    state.adding = false;
+    state.found = null;
+    return renderHome();
+  }
+  const ctab = e.target.closest(".ctab");
+  if (ctab) {
+    state.selected[state.world] = ctab.dataset.name;
+    state.adding = false;
+    return renderHome();
+  }
+  if (e.target.closest("#addTab")) {
+    state.adding = !state.adding;
+    return renderHome();
+  }
+  if (e.target.closest("#addBtn")) {
+    state.chars[state.world].push(state.found);
+    state.selected[state.world] = state.found.name;
+    state.adding = false;
+    state.found = null;
+    state.query = "";
+    return renderHome();
+  }
+  if (e.target.closest("#deleteBtn")) {
+    const name = state.selected[state.world];
+    if (!confirm(`Delete ${name}? This also deletes all of its saved history.`)) return;
+    state.chars[state.world] = state.chars[state.world].filter((x) => x.name !== name);
+    state.selected[state.world] = state.chars[state.world][0]?.name;
+    return renderHome();
+  }
+  const rangeBtn = e.target.closest("[data-exp-range]");
+  if (rangeBtn) {
+    state.expRange = rangeBtn.dataset.expRange;
+    state.expJump = null;
+    return renderExpTable();
+  }
+  const themeCard = e.target.closest("[data-theme-id]");
+  if (themeCard) {
+    setTheme(themeCard.dataset.themeId);
+    renderThemes();
+  }
+});
+page.addEventListener("submit", (e) => {
+  if (e.target.id === "expJumpForm") {
+    e.preventDefault();
+    const level = Number(document.getElementById("expJumpInput").value);
+    if (!Number.isInteger(level) || level < 1 || level > 299) return;
+    state.expJump = level;
+    const range = EXP_RANGES.find((r) => r.id === state.expRange);
+    if (level < range.from || level > range.to) state.expRange = EXP_RANGES.find((r) => r.id !== "all" && level >= r.from && level <= r.to).id;
+    return renderExpTable();
+  }
+  if (e.target.id !== "searchForm") return;
+  e.preventDefault();
+  const name = document.getElementById("searchInput").value.trim();
+  if (!name) return;
+  const r = seeded(name.toLowerCase());
+  state.query = name;
+  state.found = { name, job: JOBS[Math.floor(r() * JOBS.length)], level: 200 + Math.floor(r() * 95) };
+  renderHome();
+});
+// Closing the popover: Escape, or a click anywhere outside it.
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && state.adding) { state.adding = false; renderHome(); document.getElementById("addTab").focus(); }
+});
+document.addEventListener("mousedown", (e) => {
+  if (state.adding && !e.target.closest("#popover, #addTab")) { state.adding = false; renderHome(); }
+});
+
+// Reordering: drag a character left or right (or Alt + ←/→ on the keyboard).
+let dragName = null;
+function moveChar(name, toIndex) {
+  const list = state.chars[state.world];
+  const from = list.findIndex((x) => x.name === name);
+  const [moved] = list.splice(from, 1);
+  list.splice(toIndex, 0, moved);
+}
+page.addEventListener("dragstart", (e) => {
+  const ctab = e.target.closest(".ctab");
+  if (!ctab) return;
+  dragName = ctab.dataset.name;
+  ctab.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", dragName);
+});
+page.addEventListener("dragover", (e) => {
+  if (!dragName) return;
+  e.preventDefault();
+  const over = e.target.closest(".ctab");
+  if (!over || over.dataset.name === dragName) return;
+  moveChar(dragName, state.chars[state.world].findIndex((x) => x.name === over.dataset.name));
+  const strip = document.getElementById("strip");
+  const dragged = strip.querySelector(`[data-name="${CSS.escape(dragName)}"]`);
+  // Move the existing element instead of redrawing, so the drag isn't interrupted.
+  const after = [...strip.querySelectorAll(".ctab")].indexOf(over) > [...strip.querySelectorAll(".ctab")].indexOf(dragged);
+  over.insertAdjacentElement(after ? "afterend" : "beforebegin", dragged);
+});
+page.addEventListener("dragend", () => { dragName = null; renderHome(); });
+page.addEventListener("keydown", (e) => {
+  const ctab = e.target.closest(".ctab");
+  if (!ctab || !e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+  e.preventDefault();
+  const list = state.chars[state.world];
+  const i = list.findIndex((x) => x.name === ctab.dataset.name);
+  const j = e.key === "ArrowLeft" ? i - 1 : i + 1;
+  if (j < 0 || j >= list.length) return;
+  moveChar(ctab.dataset.name, j);
+  renderHome();
+  document.querySelector(`.ctab[data-name="${CSS.escape(ctab.dataset.name)}"]`).focus();
+});
+
+/* EXP table: reference only, not tied to the added characters */
+const EXP_RANGES = [
+  { id: "1-199", label: "1–199", from: 1, to: 199 },
+  { id: "200-299", label: "200–299", from: 200, to: 299 },
+  { id: "all", label: "All", from: 1, to: 299 },
+];
+function renderExpTable() {
+  const range = EXP_RANGES.find((r) => r.id === state.expRange);
+  let total = 0;
+  const rows = [];
+  for (let level = 1; level <= 299; level++) {
+    const need = expToNext(level);
+    total += need;
+    if (level < range.from || level > range.to) continue;
+    const change = level === 1 ? null : (need / expToNext(level - 1) - 1) * 100;
+    rows.push(`<tr id="lvl-${level}" class="${level === state.expJump ? "jump" : ""}">
+      <td><b>${level}</b> → ${level + 1}</td>
+      <td class="num">${fmtInt(need)}</td>
+      <td class="num short">${fmtExp(need)}</td>
+      <td class="num ${change !== null && change >= 100 ? "big" : ""}">${change === null ? "—" : (change >= 0 ? "+" : "") + change.toFixed(1) + "%"}</td>
+      <td class="num">${fmtExp(total)}</td>
+    </tr>`);
+  }
+  document.getElementById("page").innerHTML = `
+    <section class="block">
+      <div class="chart-head">
+        <h3>EXP table (GMS)</h3>
+        <span class="countdown">Current as of <b>v.271</b> (September 2026)</span>
+      </div>
+      <p class="muted" style="margin:4px 0 12px">EXP needed to reach the next level. Levels 210–259 include v.271's reduction (about 8% at 210 up to 58% at 250–259).</p>
+      <div class="exp-tools">
+        <div class="segmented" role="group" aria-label="Levels">
+          ${EXP_RANGES.map((r) => `<button data-exp-range="${r.id}" aria-pressed="${r.id === state.expRange}">${r.label}</button>`).join("")}
+        </div>
+        <form class="search" id="expJumpForm" autocomplete="off">
+          <input id="expJumpInput" type="number" min="1" max="299" placeholder="Jump to level" aria-label="Jump to level" value="${state.expJump ?? ""}">
+          <button class="btn" type="submit">Go</button>
+        </form>
+      </div>
+    </section>
+    <section class="block exp-block">
+      <table class="exp-table">
+        <thead><tr><th>Level</th><th class="num">EXP to next level</th><th class="num">Short</th><th class="num">Change</th><th class="num">Total from level 1</th></tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </section>
+    <p class="chart-foot" style="padding:0 4px">Source: whackybeanz.com "Everything EXP" (its MapleSEA / KMS / TMS table), checked against Nexon's GMS v.271 patch notes and Namu Wiki. Its "GMS" option still shows the table from before v.271.</p>`;
+  if (state.expJump) document.getElementById(`lvl-${state.expJump}`)?.scrollIntoView({ block: "center" });
+}
+
+/* Themes */
+function renderThemes() {
+  const r = seeded("preview");
+  const bars = Array.from({ length: 9 }, () => 20 + Math.floor(r() * 80));
+  document.getElementById("page").innerHTML = `
+    <h1>Themes</h1>
+    <p class="muted" style="margin:4px 0 0">Pick how MikuTracker looks. Each card shows its own colors.</p>
+    <div class="theme-grid">
+      ${THEMES.map((t) => `
+        <button class="theme-card" data-theme="${t.id}" data-theme-id="${t.id}" aria-pressed="${t.id === state.theme}">
+          <div class="mini">${bars.map((h) => `<span style="height:${h}%"></span>`).join("")}</div>
+          <div class="mini-exp"></div>
+          <div class="name">${t.name}${t.id === state.theme ? "<small>In use</small>" : ""}</div>
+          <p>${t.note}</p>
+        </button>`).join("")}
+    </div>`;
+}
+function setTheme(id) {
+  state.theme = id;
+  document.documentElement.dataset.theme = id;
+  store.set("miku-theme", id);
+  sky.start(id);
+}
+
+// The countdown to the next UTC day. When it passes, the chart moves on by one day.
+let lastDay = new Date().toISOString().slice(0, 10);
+function tickCountdown() {
+  const el = document.getElementById("countdown");
+  if (!el) return;
+  const next = nextUtcMidnight();
+  const ms = next - new Date();
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
+  const local = next.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  el.innerHTML = `New day in <b>${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s</b> · 00:00 UTC is ${local} your time`;
+}
+setInterval(() => {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== lastDay) {
+    lastDay = today;
+    if (state.page === "home" && !state.adding) renderHome();
+  } else tickCountdown();
+}, 1000);
+
+/* Animated background (Ren): a moonlit blossom tree with red petals drifting down */
+const sky = (() => {
+  const canvas = document.getElementById("sky");
+  const ctx = canvas.getContext("2d");
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let items = [], mode = null, frame = 0, w = 0, h = 0;
+  let tree = null, tips = []; // Ren: the moon and tree, drawn once per size; petals start from the branch tips
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    w = innerWidth; h = innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function makePetals() {
+    const colors = [css("--petal-1"), css("--petal-2"), css("--petal-3")];
+    const n = Math.round(Math.min(60, (w * h) / 22000));
+    items = Array.from({ length: n }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      size: 6 + Math.random() * 8,
+      speed: 0.4 + Math.random() * 0.9,
+      sway: Math.random() * Math.PI * 2,
+      swaySpeed: 0.01 + Math.random() * 0.02,
+      spin: Math.random() * Math.PI,
+      spinSpeed: (Math.random() - 0.5) * 0.04,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+  }
+  function drawPetal(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.spin);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = 0.85;
+    const s = p.size;
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.bezierCurveTo(s * 0.9, -s * 0.6, s * 0.7, s * 0.7, 0, s);
+    ctx.bezierCurveTo(-s * 0.7, s * 0.7, -s * 0.9, -s * 0.6, 0, -s);
+    ctx.fill();
+    ctx.restore();
+  }
+  // A blossom tree in ink, leaning in from the bottom left, under a full moon. Seeded, so it
+  // grows the same way every time.
+  function makeTree() {
+    const dpr = window.devicePixelRatio || 1;
+    tree = document.createElement("canvas");
+    tree.width = w * dpr; tree.height = h * dpr;
+    const t = tree.getContext("2d");
+    t.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const rand = seeded("ren-tree");
+    const ink = css("--ink");
+    const blossoms = [css("--petal-1"), css("--petal-2"), css("--petal-3")];
+    const scale = Math.max(0.55, Math.min(w, h) / 900);
+
+    const mx = w * 0.84, my = h * 0.17, mr = Math.min(w, h) * 0.12;
+    const glow = t.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 2.6);
+    glow.addColorStop(0, "rgba(230, 226, 234, 0.25)");
+    glow.addColorStop(1, "rgba(230, 226, 234, 0)");
+    t.fillStyle = glow;
+    t.fillRect(0, 0, w, h);
+    t.fillStyle = css("--moon");
+    t.globalAlpha = 0.92;
+    t.beginPath(); t.arc(mx, my, mr, 0, Math.PI * 2); t.fill();
+    t.globalAlpha = 0.08;
+    t.fillStyle = ink;
+    for (const [dx, dy, r] of [[-0.3, -0.2, 0.22], [0.25, 0.1, 0.15], [-0.05, 0.35, 0.12]]) {
+      t.beginPath(); t.arc(mx + dx * mr, my + dy * mr, r * mr, 0, Math.PI * 2); t.fill();
+    }
+    t.globalAlpha = 1;
+
+    tips = [];
+    t.strokeStyle = ink;
+    t.lineCap = "round";
+    function branch(x, y, len, angle, width, depth) {
+      const x2 = x + Math.cos(angle) * len, y2 = y + Math.sin(angle) * len;
+      const cx = (x + x2) / 2 + (rand() - 0.5) * len * 0.35, cy = (y + y2) / 2 + (rand() - 0.5) * len * 0.35;
+      t.lineWidth = width;
+      t.beginPath(); t.moveTo(x, y); t.quadraticCurveTo(cx, cy, x2, y2); t.stroke();
+      if (depth === 0) { tips.push([x2, y2]); return; }
+      if (depth < 4) tips.push([x2, y2]);
+      const n = rand() < 0.35 ? 3 : 2;
+      for (let i = 0; i < n; i++) {
+        const a = angle + (i - (n - 1) / 2) * 0.55 + (rand() - 0.5) * 0.5 + 0.06; // leans a little to the right
+        branch(x2, y2, len * (0.66 + rand() * 0.16), a, Math.max(1, width * 0.66), depth - 1);
+      }
+    }
+    branch(w * 0.05, h + 20, 230 * scale, -Math.PI / 2 + 0.3, 34 * scale, 8);
+
+    function flower(x, y, r, color) {
+      t.fillStyle = color;
+      t.globalAlpha = 0.92;
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2 + r;
+        t.beginPath(); t.arc(x + Math.cos(a) * r * 0.75, y + Math.sin(a) * r * 0.75, r * 0.62, 0, Math.PI * 2); t.fill();
+      }
+      t.fillStyle = "#d4b46e";
+      t.beginPath(); t.arc(x, y, r * 0.28, 0, Math.PI * 2); t.fill();
+      t.globalAlpha = 1;
+    }
+    for (const [x, y] of tips) {
+      const count = 2 + Math.floor(rand() * 4);
+      for (let i = 0; i < count; i++) {
+        const color = blossoms[rand() < 0.55 ? 0 : rand() < 0.6 ? 1 : 2];
+        flower(x + (rand() - 0.5) * 30 * scale, y + (rand() - 0.5) * 30 * scale, (3 + rand() * 3.5) * scale * 1.3, color);
+      }
+    }
+  }
+
+  function step() {
+    ctx.clearRect(0, 0, w, h);
+    if (mode === "ren") {
+      ctx.drawImage(tree, 0, 0, w, h);
+      for (const p of items) {
+        if (!still) {
+          p.sway += p.swaySpeed;
+          p.y += p.speed;
+          p.x += Math.sin(p.sway) * 0.8 + 0.3;
+          p.spin += p.spinSpeed;
+          if (p.y > h + 20) {
+            // Most petals fall from the tree; the rest from the top of the screen.
+            const tip = Math.random() < 0.7 ? tips[Math.floor(Math.random() * tips.length)] : null;
+            p.x = tip ? tip[0] : Math.random() * w;
+            p.y = tip ? tip[1] : -20;
+          }
+          if (p.x > w + 20) p.x = -20;
+        }
+        drawPetal(p);
+      }
+    }
+    if (!still && mode) frame = requestAnimationFrame(step);
+  }
+  function start(theme) {
+    cancelAnimationFrame(frame);
+    mode = theme === "ren" ? theme : null;
+    resize();
+    ctx.clearRect(0, 0, w, h);
+    if (!mode) return;
+    makeTree();
+    makePetals();
+    step();
+  }
+  addEventListener("resize", () => { if (mode) start(mode); });
+  return { start };
+})();
+
+function renderAll() {
+  renderRail();
+  renderPage();
+}
+
+// ?theme=pochacco and ?page=themes in the address open that theme or tab directly.
+const params = new URLSearchParams(location.search);
+const saved = params.get("theme") ?? store.get("miku-theme");
+if (TABS.some((t) => t.id === params.get("page"))) state.page = params.get("page");
+if (params.has("adding")) { state.adding = true; state.query = "Hatsune"; state.found = { name: "Hatsune", job: "Kanna", level: 250 }; }
+setTheme(THEMES.some((t) => t.id === saved) ? saved : "ren");
+renderAll();
+</script>
+</body>
+</html>

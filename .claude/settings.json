@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run test:coverage)",
+      "Bash(npm run test:utc)",
+      "Bash(npm run test:mutate *)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx stryker run *)",
+      "Bash(node scripts/survivors.mjs *)",
+      "Bash(node scripts/survivors.mjs)",
+      "Bash(git status *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git diff)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git branch)"
+    ]
+  }
+}
