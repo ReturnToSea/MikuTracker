@@ -16,7 +16,10 @@ function serverFolder() {
 }
 const here = serverFolder();
 
-// Every test run gets throwaway places for its database and backups, never the real ones.
+// Every test run gets a throwaway data folder and database, never the real ones. It also gets a
+// fake home folder: even code broken on purpose (mutation testing breaks config.ts too) can then
+// only ever find a fake "real" data folder, never ~/Library/Application Support/MikuTracker.
+// (Before this, a broken config sent a test's clean-up to the real theme-art folder.)
 const scratch = path.join(os.tmpdir(), `miku-tracker-test-${process.pid}`);
 
 export default defineConfig({
@@ -30,6 +33,7 @@ export default defineConfig({
       TZ: process.env.TEST_TZ ?? "America/Los_Angeles",
       DATABASE_URL: `file:${path.join(scratch, "test.db")}`,
       MIKU_DATA_DIR: scratch,
+      HOME: path.join(scratch, "home"),
       MIKU_BACKUPS: "off",
       MIKU_REFRESH: "off",
     },

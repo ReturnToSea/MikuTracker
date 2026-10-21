@@ -2,6 +2,47 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.5.0 (2026-10-21): characters on Home
+
+- **Home has characters:**
+  - the world switcher (saved)
+  - character tabs with avatars: click to select; drag or Alt + ←/→ to reorder, shown at once and saved
+  - **+** to search a name and **Add** it
+  - the selected character's level, EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"), ranks and Legion
+  - **Delete**, which asks first and removes the history too
+- **Adding looks the character up in Nexon itself**, saves its first snapshot, selects it, and downloads its avatar.
+  - Duplicates are refused (named as Nexon spells them), even when added at the same moment.
+  - A failed avatar download doesn't stop the add.
+- **Avatars are saved in the data folder:** only from Nexon's https servers, checked to really be pictures, named after their contents, and kept for the planned avatar history. Unused files are removed after a delete.
+- **New tables:** `Character`, `Snapshot`, `Avatar` and `Selection`. Tab positions are always 0, 1, 2… in each world.
+- **API:** `/api/characters` (list, add, reorder, select, delete), and settings can save the world. `AVATAR_DIR` was added to the config. The Nexon client can download images, through the same polite queue.
+- **Tried for real** in the dev copy: batterboi was added through the real API and Nexon, shown in both themes, then deleted (its avatar file was removed too).
+- **Incident, found and fixed:** the real `theme-art/` folder, with the Pochacco picture from v0.2.0, was deleted, and an empty `fresh/` test folder appeared in the real data folder.
+  - **Cause:** mutation testing broke `config.ts` so the data folder fell back to the real one. The config's guard only checked the database path, so a test's clean-up (`rmSync` of the theme-art folder) and a database test then worked in the real folder.
+  - **No database was touched,** and the art was restored from `tempdata/`.
+  - **The fix has three layers:**
+    - test runs get a fake home folder, set in the test setup, which mutation testing never changes
+    - the guard now covers every folder, against both the given and the account's own home
+    - tests that create or delete files use the test setup's paths
+
+    Reproduced first. Afterwards, four broken configs (including the guard switched off) and full mutation runs of server and app left the real folder exactly as it was.
+  - **Follow-up found while checking:** in worker threads (how mutation testing runs tests), `os.homedir()` ignores a changed `HOME`, so the fake home only worked under plain `npm test`. The config now takes the home folder from `HOME` when it's set, and a test checks this; the suite also passes when run in threads.
+- **Prisma 7:** `migrate dev` no longer regenerates the database code, so `npm run db:migrate` now does it.
+- **Tests:** 266 server and 105 app tests, in California time and UTC. Server coverage is 100%. Mutation testing: server 820/820 (plus 6 mutants that looped forever and were stopped), app 557/557.
+  - Mutation runs and deliberate bugs found many untested behaviors, all now covered. Among them:
+    - an old look returning as the current avatar
+    - each character showing its own avatar
+    - closing the gap after deleting a middle or first tab in either world
+    - Alt + arrow not triggering the browser's own Back/Forward
+    - the + box starting clean
+    - Home while loading
+    - errors during saving other than duplicates
+  - **Corrected along the way:**
+    - two "saves nothing" tests that checked before anything could have been sent
+    - one test that compared a list with itself
+    - one drag test that expected the wrong order (the code was right)
+    - my claim that a missing avatars folder crashed delete (it didn't: the guard was already there, just untested)
+
 ## v0.4.0 (2026-10-21): the Nexon rankings client
 
 - **Looking a character up** in Nexon's public rankings on Kronos or Hyperion (`server/src/nexon/`).

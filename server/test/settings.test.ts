@@ -28,7 +28,18 @@ describe("settings", () => {
     expect((await api().get("/api/settings")).body.theme).toBe("ren");
   });
 
-  it.each([{ theme: "dark" }, { theme: "" }, {}, { theme: "ren", worldId: 70 }, { theme: 1 }])("refuses %j", async (body) => {
+  it("saving the world shown on Home keeps it, and the theme with it", async () => {
+    await ok(api().put("/api/settings").send({ theme: "pochacco" }));
+    const saved = await api().put("/api/settings").send({ worldId: 70 });
+    expect([saved.status, saved.body]).toEqual([200, { theme: "pochacco", worldId: 70 }]);
+    expect((await api().put("/api/settings").send({ theme: "ren", worldId: 45 })).body).toEqual({ theme: "ren", worldId: 45 });
+  });
+
+  it("names the problem with an empty save", async () => {
+    expect((await api().put("/api/settings").send({})).body.issues).toEqual([{ path: "", message: "Nothing to save" }]);
+  });
+
+  it.each([{ theme: "dark" }, { theme: "" }, {}, { worldId: 1 }, { worldId: "kronos" }, { theme: "ren", extra: 1 }, { theme: 1 }])("refuses %j", async (body) => {
     const res = await api().put("/api/settings").send(body);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("Invalid input");

@@ -60,7 +60,7 @@ describe("/api/search", () => {
     ["changed", 502],
     ["exp-table", 502],
   ])("Nexon's %s becomes %i, with the message and kind", async (kind, status) => {
-    const failing = { lookUp: async () => Promise.reject(new NexonError(kind, `the ${kind} message`)) };
+    const failing = { lookUp: async () => Promise.reject(new NexonError(kind, `the ${kind} message`)), downloadImage: async () => Promise.reject(new Error("unused")) };
     const res = await search("world=45&name=MikuBeam", failing);
     expect([res.status, res.body]).toEqual([status, { error: `the ${kind} message`, kind }]);
   });

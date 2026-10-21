@@ -12,6 +12,7 @@ export interface Config {
   databaseFile: string;
   backupDir: string;
   themeArtDir: string;
+  avatarDir: string; // character avatars, each named after its contents
   host: string;
   port: number;
   backups: boolean; // daily backups (off for the development copy)
@@ -67,8 +68,10 @@ function host(env: Env): string {
   );
 }
 
-// `env` and `home` are arguments so tests can pass made-up ones.
-export function loadConfig(env: Env = process.env, home: string = os.homedir()): Config {
+// `env` and `home` are arguments so tests can pass made-up ones. The home folder comes from the
+// HOME setting when there is one: a test run's fake HOME is then seen even in worker threads,
+// where os.homedir() would still read the real one (mutation testing runs tests in threads).
+export function loadConfig(env: Env = process.env, home: string = env.HOME || os.homedir()): Config {
   const testRun = Boolean(env.VITEST);
   // Vitest's config always sets a throwaway DATABASE_URL. A test run without one (started some
   // other way) would otherwise write fake data into the real database.
@@ -78,14 +81,25 @@ export function loadConfig(env: Env = process.env, home: string = os.homedir()):
   const databaseUrl = env.DATABASE_URL || `file:${path.join(dataDir, databaseName(env))}`;
   if (!databaseUrl.startsWith("file:")) throw new Error(`Only SQLite databases ("file:…") are supported for now (DATABASE_URL is "${databaseUrl}")`);
   const databaseFile = path.resolve(databaseUrl.slice("file:".length));
-  if (testRun && isInside(databaseFile, realDataDir(home))) throw new Error(`Tests may not use a database inside the real data folder (${databaseFile})`);
+  const folders = {
+    backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, "backups")),
+    themeArtDir: path.resolve(env.THEME_ART_DIR || path.join(dataDir, "theme-art")),
+    avatarDir: path.resolve(env.AVATAR_DIR || path.join(dataDir, "avatars")),
+  };
+  // A test run may not reach the real data folder at all: not its database, nor any folder.
+  // Checked against the home folder given and the account's own (which a test's HOME can't hide).
+  if (testRun) {
+    const real = [realDataDir(home), realDataDir(os.userInfo().homedir)];
+    for (const place of [databaseFile, dataDir, ...Object.values(folders)]) {
+      if (real.some((r) => isInside(place, r))) throw new Error(`Tests may not use anything inside the real data folder (${place})`);
+    }
+  }
 
   return {
     dataDir,
     databaseUrl,
     databaseFile,
-    backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, "backups")),
-    themeArtDir: path.resolve(env.THEME_ART_DIR || path.join(dataDir, "theme-art")),
+    ...folders,
     host: host(env),
     port: port(env.PORT ?? "4750"),
     backups: onOff(env, "MIKU_BACKUPS"),

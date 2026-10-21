@@ -8,7 +8,8 @@ import { getConfig } from "../src/config";
 import { themeArt } from "../src/routes/themeArt";
 import { api } from "./api";
 
-const artDir = getConfig().themeArtDir; // inside this test run's scratch folder
+// This test run's own theme-art folder, from the test setup (not from the code under test).
+const artDir = path.join(process.env.MIKU_DATA_DIR!, "theme-art");
 afterEach(() => rmSync(artDir, { recursive: true, force: true }));
 
 function addArt(name: string, contents = "picture", mtime = new Date(Date.UTC(2026, 9, 1))) {
@@ -18,6 +19,10 @@ function addArt(name: string, contents = "picture", mtime = new Date(Date.UTC(20
 }
 
 describe("theme art", () => {
+  it("is looked for in this test run's own folder", () => {
+    expect(getConfig().themeArtDir).toBe(artDir);
+  });
+
   it("is listed as missing for every theme when there is none", async () => {
     expect((await api().get("/api/theme-art")).body).toEqual({ ren: null, pochacco: null });
   });

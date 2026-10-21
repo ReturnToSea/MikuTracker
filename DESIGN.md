@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.4.0)
+## The app (as of v0.5.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -10,7 +10,22 @@ A website that only this Mac can open. Its feature tabs run down the left edge o
 
 Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
 
-Home is a placeholder until v0.5.0.
+## Home: characters
+
+- **World switcher:** Kronos and Hyperion. The choice is saved, like the theme. Each world has its own characters and remembers which one is selected.
+- **Character tabs:** each shows the avatar, name, level and job.
+  - Click a tab to select it.
+  - **Drag left or right** to reorder: the tabs move as you drag, and the order is saved when you let go. **Alt + ←/→** does the same from the keyboard, without triggering the browser's own Back/Forward.
+  - A move shows at once, before the server confirms it. The server's order takes over as soon as it changes.
+- **The + at the end** opens a box: type a name and Search, see the result (name, level, job, world), then **Add**.
+  - Names are checked first (1–12 letters and numbers).
+  - Nexon's answer is shown as is ("SakuraRin is on Hyperion, not Kronos.").
+  - A character already on this world shows as **Added**.
+  - The result shows a stand-in picture: the page never loads Nexon's images, and the server saves the avatar once the character is added.
+  - Escape, a click outside, or + again closes the box, and closing forgets what was in it.
+- **The selected character:** avatar, name, job, world rank and overall rank, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), Legion level and raid power ("Not listed" when the character isn't the account's Legion character). The daily EXP chart and time to level arrive in v0.7.0.
+- **Delete** asks first ("This also deletes all of its saved history").
+- While loading, Home says "Loading…". An empty world says how to add a character. Failures are shown.
 
 ## The EXP table tab
 
@@ -96,9 +111,17 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 
 ## Settings and the API
 
-- **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT `{ theme }` saves the theme. Anything else (an unknown theme, extra fields) is refused with a 400.
+- **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT saves `{ theme }`, `{ worldId }` or both. An empty save, an unknown theme or world, or extra fields are refused with a 400.
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
+- **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
+- **`POST /api/characters`** `{ world, name }`:
+  - **Looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, downloads its avatar, and answers 201.
+  - **A character already added** is refused with "MikuBeam is already added on Kronos." before Nexon is asked, named as it's spelled. Two adds at the same moment are caught by the database's uniqueness check, with the same message.
+  - **Nexon's problems** come back as with `/api/search`.
+  - **A failed avatar download** doesn't stop the add; the character just has no picture yet.
+- **`PUT /api/characters/order`** `{ world, ids }`: every one of the world's characters exactly once, or 400.
+- **`POST /api/characters/:id/select`** and **`DELETE /api/characters/:id`:** 204, or 404 for an unknown character or another owner's. Deleting removes the snapshots, avatars and selection too.
 - **`/api/search?world=45&name=MikuBeam`:** looks a character up in Nexon's rankings (see below). The name must be 1–12 letters and numbers (spaces around it are ignored), and the world 45 or 70. Anything else is a 400, without asking Nexon. Nexon's problems come back with `{ error, kind }`.
 - **Errors** always come back as JSON:
   - invalid input → 400, listing each problem by its path
@@ -119,7 +142,7 @@ Every setting is in `server/src/config.ts`, read from environment variables (or 
 | Data folder | `MIKU_DATA_DIR` | `~/Library/Application Support/MikuTracker` |
 | Which database | `MIKU_DATABASE` | `real` (`miku.db`); `dev` picks `dev.db` |
 | Database (overrides both) | `DATABASE_URL` | `file:<data folder>/miku.db` |
-| Backups / theme art | `BACKUP_DIR`, `THEME_ART_DIR` | `<data folder>/backups`, `/theme-art` |
+| Backups / theme art / avatars | `BACKUP_DIR`, `THEME_ART_DIR`, `AVATAR_DIR` | `<data folder>/backups`, `/theme-art`, `/avatars` |
 | Address and port | `HOST`, `PORT` | `127.0.0.1`, `4750` |
 | Backups, daily refresh | `MIKU_BACKUPS`, `MIKU_REFRESH` | `on` (`off` for the dev copy) |
 | Nexon's rankings data | `NEXON_RANKINGS_URL` | `https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na` |
@@ -129,7 +152,7 @@ The config refuses to load when:
 - **`PORT` isn't 1–65535.**
 - **An on/off setting is anything else.**
 - **The database isn't SQLite** (`file:`).
-- **A test run has no throwaway database, or its database is inside the real data folder.**
+- **A test run has no throwaway database, or its database or any of its folders is inside the real data folder.** Checked against both the given home folder and the account's own.
 
 Settings are read on first use, not on import, and the database connection opens on first use (`db()`), so a problem shows up where it's used. The database's folder is created if it's missing, as on a new Mac or in a new container.
 
@@ -149,7 +172,20 @@ SQLite through Prisma 7 (`server/prisma/schema.prisma`), in the data folder, nev
 - **`miku.db`:** real data, used only by the always-on app.
 - **`dev.db`:** development.
 
-Tables so far: `Settings` (one row per owner: theme and world).
+Tables:
+- **`Settings`:** one row per owner: theme and world.
+- **`Character`:** owner, world, name (as Nexon spells it, plus a lowercase copy for spotting duplicates), job, the latest level, EXP, ranks and Legion, its tab position, added and last-checked times. Unique per owner, world and name. **Tab positions in each world are always exactly 0, 1, 2, …**: adding goes at the end, deleting closes the gap, and reordering renumbers.
+- **`Snapshot`:** a character at one moment: captured time, UTC day, level, EXP, total EXP, ranks and Legion. The first is saved when a character is added; the daily refresh adds one per UTC day from v0.6.0. Kept forever.
+- **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
+- **`Selection`:** the selected character on each world.
+
+Deleting a character deletes its snapshots, avatars and selection.
+
+**Avatar files** are in the data folder's `avatars/`:
+- Downloaded only from Nexon's https image servers, up to 1 MB, and only if the first bytes really are a PNG, GIF or JPEG.
+- Named after their contents (`<hash>.png`), so the same picture is stored once and a new look is a new file. Written under a temporary name first.
+- Served at `/avatars/…` with long caching, since a file never changes.
+- After a delete, files no character uses any more are removed, along with any leftover partly written ones.
 
 ## Tests
 
@@ -159,6 +195,12 @@ Tables so far: `Settings` (one row per owner: theme and world).
   - The clock is fixed at Tue 20 Oct 2026, 19:00 UTC, with only `Date` faked.
 - **The app's tests** run in a simulated browser against a fake server (`client/test/server.tsx`).
 - **No test reaches the network.**
+- **No test can reach the real data folder,** even with the code broken on purpose:
+  - Test runs get a fake home folder (`HOME`, set in `server/vitest.config.ts`, which mutation testing never changes). The config reads the home folder from `HOME` when it's set, so this also works in worker threads, where `os.homedir()` would read the real one.
+  - The config refuses any test folder inside the real data folder.
+  - Tests that create or delete folders use paths from the test setup, not from the code under test.
+
+  (In v0.5.0 a mutation run broke the config in a way the old guard didn't cover, and a test's clean-up deleted the real `theme-art/` folder. See the CHANGELOG.)
 - **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
   - Every mutant must be caught, or be marked with a written reason that it provably can't change behavior.
   - The app's class names and styles are skipped (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`. Looks are checked on screenshots.

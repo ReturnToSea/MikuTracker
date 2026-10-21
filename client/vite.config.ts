@@ -16,8 +16,8 @@ function clientFolder() {
 }
 const here = clientFolder();
 
-// During development (npm run dev) the page is served on 4752 and forwards API calls and theme
-// art to the development server on 4751 (the always-on app has 4750).
+// During development (npm run dev) the page is served on 4752 and forwards API calls, theme art
+// and avatars to the development server on 4751 (the always-on app has 4750).
 const devApi = process.env.MIKU_DEV_API ?? "http://127.0.0.1:4751";
 
 export default defineConfig({
@@ -28,7 +28,7 @@ export default defineConfig({
     host: "127.0.0.1", // only this Mac, like the API
     port: Number(process.env.MIKU_DEV_PAGE_PORT ?? 4752),
     strictPort: true,
-    proxy: { "/api": devApi, "/theme-art": devApi },
+    proxy: { "/api": devApi, "/theme-art": devApi, "/avatars": devApi },
   },
   test: {
     environment: "jsdom",

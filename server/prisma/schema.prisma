@@ -20,3 +20,69 @@ model Settings {
   worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion
   updatedAt DateTime @updatedAt
 }
+
+// A character being tracked, with its latest looked-up details. One per name per world per owner.
+model Character {
+  id          Int        @id @default(autoincrement())
+  ownerId     String
+  worldId     Int // 45 Kronos, 70 Hyperion
+  name        String // as Nexon spells it
+  nameKey     String // the name in lowercase, for spotting duplicates
+  job         String
+  level       Int
+  exp         BigInt // EXP into the current level
+  worldRank   Int
+  overallRank Int? // among all NA worlds; null if Nexon didn't list it
+  legionLevel Int? // null: not the account's listed Legion character
+  raidPower   BigInt?
+  sortOrder   Int // position in the character tabs (0 first)
+  addedAt     DateTime   @default(now())
+  checkedAt   DateTime // last successful lookup
+  snapshots   Snapshot[]
+  avatars     Avatar[]
+  selection   Selection?
+
+  @@unique([ownerId, worldId, nameKey])
+  @@index([ownerId, worldId, sortOrder])
+}
+
+// What a character looked like at one moment (the daily refresh adds one per UTC day from v0.6.0).
+model Snapshot {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  capturedAt  DateTime
+  day         String // the UTC day, "YYYY-MM-DD"
+  level       Int
+  exp         BigInt
+  totalExp    BigInt // everything since level 1, so gains work across level-ups
+  worldRank   Int
+  overallRank Int?
+  legionLevel Int?
+  raidPower   BigInt?
+
+  @@index([characterId, capturedAt])
+}
+
+// Every avatar image a character has had (the file is named after its contents, in the data
+// folder's avatars/). Kept for the avatar history planned after v1.0.0.
+model Avatar {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  file        String
+  firstSeenAt DateTime
+  lastSeenAt  DateTime
+
+  @@unique([characterId, file])
+}
+
+// Which character is selected on each world.
+model Selection {
+  ownerId     String
+  worldId     Int
+  characterId Int       @unique
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, worldId])
+}

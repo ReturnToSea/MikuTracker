@@ -52,8 +52,13 @@ export function entry(c: FakeCharacter, rank: number, legion = c.legion) {
 
 export const reply = (ranks: unknown[]) => new Response(JSON.stringify({ totalCount: ranks.length, pageIndex: 1, ranks }), { status: 200 });
 
-// Answers a rankings address from a list of characters.
+// A small picture file: a real PNG header followed by bytes unique to the text.
+export const PNG_HEADER = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+export const png = (text: string) => new Uint8Array([...PNG_HEADER, ...new TextEncoder().encode(text)]);
+
+// Answers a rankings address from a list of characters, and avatar addresses with a picture.
 export function answer(url: string, characters: FakeCharacter[] = CHARACTERS): Response {
+  if (url.startsWith("https://msavatar1.nexon.net/")) return new Response(png(url), { status: 200, headers: { "Content-Type": "image/png" } });
   const q = new URL(url).searchParams;
   const named = characters.filter((c) => c.characterName.toLowerCase() === q.get("character_name")?.toLowerCase());
   const world = Number(q.get("id"));

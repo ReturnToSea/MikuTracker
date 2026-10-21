@@ -1,4 +1,5 @@
 import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { getConfig, isInside, loadConfig } from "./config";
 
@@ -16,6 +17,7 @@ describe("defaults", () => {
       databaseFile: `${REAL}/miku.db`,
       backupDir: `${REAL}/backups`,
       themeArtDir: `${REAL}/theme-art`,
+      avatarDir: `${REAL}/avatars`,
       host: "127.0.0.1",
       port: 4750,
       backups: true,
@@ -28,18 +30,19 @@ describe("defaults", () => {
 describe("overrides", () => {
   it("MIKU_DATA_DIR moves the database, backups and theme art with it", () => {
     const c = load({ MIKU_DATA_DIR: "/data" });
-    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir]).toEqual([
+    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.avatarDir]).toEqual([
       "/data",
       "file:/data/miku.db",
       "/data/miku.db",
       "/data/backups",
       "/data/theme-art",
+      "/data/avatars",
     ]);
   });
 
   it("each folder and the database can be set on its own", () => {
-    const c = load({ DATABASE_URL: "file:/elsewhere/dev.db", BACKUP_DIR: "/b", THEME_ART_DIR: "/art" });
-    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir]).toEqual([REAL, "file:/elsewhere/dev.db", "/elsewhere/dev.db", "/b", "/art"]);
+    const c = load({ DATABASE_URL: "file:/elsewhere/dev.db", BACKUP_DIR: "/b", THEME_ART_DIR: "/art", AVATAR_DIR: "/av" });
+    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.avatarDir]).toEqual([REAL, "file:/elsewhere/dev.db", "/elsewhere/dev.db", "/b", "/art", "/av"]);
   });
 
   it("MIKU_DATABASE=dev picks the development database next to the real one", () => {
@@ -57,7 +60,7 @@ describe("overrides", () => {
   });
 
   it("empty values count as not set", () => {
-    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", HOST: "", NEXON_RANKINGS_URL: "" })).toEqual(load());
+    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", AVATAR_DIR: "", HOST: "", NEXON_RANKINGS_URL: "" })).toEqual(load());
   });
 
   it("the port, and the other addresses that only reach this Mac", () => {
@@ -113,15 +116,43 @@ describe("refusals", () => {
 });
 
 describe("test runs can never reach the real data", () => {
-  const testRun = (env: Record<string, string>) => loadConfig({ VITEST: "true", ...env }, HOME);
+  // As in a real test run: a throwaway data folder unless a test says otherwise.
+  const testRun = (env: Record<string, string>) => loadConfig({ VITEST: "true", MIKU_DATA_DIR: "/tmp/t", ...env }, HOME);
+
+  it("refuses a run that leaves the data folder at its real default", () => {
+    expect(() => loadConfig({ VITEST: "true", DATABASE_URL: "file:/tmp/t/test.db" }, HOME)).toThrow(`Tests may not use anything inside the real data folder (${REAL})`);
+  });
 
   it("refuses to run without a throwaway database", () => {
     expect(() => testRun({})).toThrow("Tests must use a throwaway database");
   });
 
   it("refuses a database inside the real data folder, at any depth", () => {
-    expect(() => testRun({ DATABASE_URL: `file:${REAL}/miku.db` })).toThrow("Tests may not use a database inside the real data folder");
-    expect(() => testRun({ DATABASE_URL: `file:${REAL}/old/copy.db` })).toThrow("inside the real data folder");
+    expect(() => testRun({ DATABASE_URL: `file:${REAL}/miku.db` })).toThrow("Tests may not use anything inside the real data folder");
+    expect(() => testRun({ DATABASE_URL: `file:${REAL}/old/copy.db` })).toThrow("Tests may not use anything inside the real data folder");
+  });
+
+  it.each(["MIKU_DATA_DIR", "BACKUP_DIR", "THEME_ART_DIR", "AVATAR_DIR"])("refuses %s inside the real data folder", (name) => {
+    expect(() => testRun({ DATABASE_URL: "file:/tmp/t/test.db", [name]: `${REAL}/x` })).toThrow(`Tests may not use anything inside the real data folder (${REAL}/x`);
+  });
+
+  it("refuses the real data folder of the account's own home, whatever HOME says", () => {
+    const own = path.join(os.userInfo().homedir, "Library", "Application Support", "MikuTracker");
+    expect(() => testRun({ DATABASE_URL: "file:/tmp/t/test.db", THEME_ART_DIR: own })).toThrow("Tests may not use anything inside the real data folder");
+    expect(() => testRun({ DATABASE_URL: `file:${own}/dev.db` })).toThrow("Tests may not use anything inside the real data folder");
+  });
+
+  it("this test run's home folder is a fake one in the temporary folder, and the config uses it", () => {
+    const fakeHome = process.env.HOME!;
+    expect(isInside(fakeHome, os.tmpdir())).toBe(true);
+    expect(fakeHome).not.toBe(os.userInfo().homedir);
+    // With no data folder given, the config falls back to the fake home's "real" data folder (and refuses it).
+    expect(() => loadConfig({ VITEST: "true", DATABASE_URL: "file:/tmp/t/test.db", HOME: fakeHome })).toThrow(path.join(fakeHome, "Library", "Application Support", "MikuTracker"));
+  });
+
+  it("the home folder comes from HOME when set, else from the system", () => {
+    expect(loadConfig({ HOME: "/Users/elsewhere" }).dataDir).toBe("/Users/elsewhere/Library/Application Support/MikuTracker");
+    expect(loadConfig({}).dataDir).toBe(path.join(os.homedir(), "Library", "Application Support", "MikuTracker"));
   });
 
   it("allows a throwaway database elsewhere, even in a folder whose name starts the same", () => {

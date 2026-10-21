@@ -5,6 +5,7 @@ import { getConfig } from "./config";
 import { requireAuth } from "./middleware/auth";
 import { errorHandler } from "./middleware/errors";
 import { type NexonClient, nexon as realNexon } from "./nexon";
+import { charactersRouter } from "./routes/characters";
 import { expTableRouter } from "./routes/expTable";
 import { searchRouter } from "./routes/search";
 import { settingsRouter } from "./routes/settings";
@@ -46,6 +47,7 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/settings", settingsRouter);
   app.use("/api/exp-table", expTableRouter);
   app.use("/api/search", searchRouter(nexon));
+  app.use("/api/characters", charactersRouter(nexon));
   app.use("/api/theme-art", themeArtRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {
@@ -55,6 +57,8 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   // Theme art from the data folder, and the built app (any other address gets the app's page,
   // which then shows the right tab).
   app.use("/theme-art", express.static(getConfig().themeArtDir));
+  // Avatar files are named after their contents, so a file never changes: browsers may keep it.
+  app.use("/avatars", express.static(getConfig().avatarDir, { immutable: true, maxAge: "365d" }));
   if (existsSync(clientDist)) {
     app.use(express.static(clientDist));
     app.get("*splat", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));

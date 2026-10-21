@@ -109,13 +109,8 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 ### v0.4.0: the Nexon rankings client — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
-### v0.5.0: characters on Home
-1. `Character` model and migration; services: add (from a search result, saving its first snapshot), list by world, reorder, delete (with snapshots).
-   - Tests: duplicate names; other world; deleting removes the snapshots; the order holds after add and delete.
-2. Avatars saved locally: the server downloads each avatar when it adds or refreshes a character, stores it in the data folder and serves it, so the page never contacts Nexon. Each image file is named after its contents (a hash) and never overwritten, so a changed look becomes a new file. v1.0.0 only shows the latest one, but the old images are kept, ready for the avatar history planned after v1.0.0. Tests: the download uses the fake `fetch`; a failed download keeps the previous avatar; the same image isn't saved twice.
-3. API routes for all of this.
-4. Home: world switcher; character tabs with drag and Alt + arrows; the **+** popover with search and Add; selecting a character; Delete with confirmation; the selected world and character saved.
-   - App tests for each, including the empty world.
+### v0.5.0: characters on Home — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The `Snapshot` table and the first snapshot on adding came in this version; v0.6.0 adds the daily ones and `RefreshRun`.)
 
 ### v0.6.0: snapshots and the daily refresh
 1. `Snapshot` and `RefreshRun` models; saving only when the data changed.

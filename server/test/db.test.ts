@@ -73,7 +73,7 @@ describe("db()", () => {
 
 describe("openDatabase", () => {
   it("creates a missing database folder (first run on a new Mac or in a new container)", async () => {
-    const folder = path.join(getConfig().dataDir, "fresh", "nested");
+    const folder = path.join(process.env.MIKU_DATA_DIR!, "fresh", "nested"); // from the test setup, not the code under test
     const file = path.join(folder, "new.db");
     expect(existsSync(folder)).toBe(false);
     const db = openDatabase({ databaseUrl: `file:${file}`, databaseFile: file });

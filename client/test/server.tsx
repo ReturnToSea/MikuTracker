@@ -11,7 +11,8 @@ export interface Call {
 }
 
 // A fake API: `routes` maps "GET /settings" to a response body (or a function of the request
-// body). Every request is recorded in `calls` so tests can check what was sent.
+// body and the full address, query included). Every request is recorded in `calls` so tests can
+// check what was sent.
 export function fakeServer(routes: Record<string, unknown>) {
   const calls: Call[] = [];
   vi.stubGlobal(
@@ -24,9 +25,10 @@ export function fakeServer(routes: Record<string, unknown>) {
       const key = `${method} ${path.split("?")[0]}`;
       if (!(key in routes)) return new Response(JSON.stringify({ error: `No fake for ${key}` }), { status: 404 });
       const route = routes[key];
-      const out = typeof route === "function" ? await route(body) : route; // a never-settling promise keeps it pending
+      const out = typeof route === "function" ? await route(body, path) : route; // a never-settling promise keeps it pending
       if (out instanceof Response) return out;
-      return new Response(JSON.stringify(out ?? {}), { status: 200 });
+      if (out === undefined) return new Response(null, { status: 204 });
+      return new Response(JSON.stringify(out), { status: 200 });
     }),
   );
   return {
@@ -57,9 +59,10 @@ export function fakeExpTable() {
   return { patch: "v.271", date: "2026-09", rows };
 }
 
-// The usual answers: Ren saved, no theme art.
+// The usual answers: Ren saved on Kronos, no theme art, no characters yet.
 export const BASE_ROUTES = {
   "GET /settings": { theme: "ren", worldId: 45 },
   "GET /theme-art": { ren: null, pochacco: null },
   "GET /exp-table": fakeExpTable(),
+  "GET /characters": { characters: [], selectedId: null },
 };

@@ -9,9 +9,7 @@ export const THEMES = ["ren", "pochacco"] as const;
 export type ThemeId = (typeof THEMES)[number];
 export const themeId = z.enum(THEMES);
 
-// Saving settings: only the theme for now; the selected world joins in v0.5.0.
-export const settingsInput = z.strictObject({ theme: themeId });
-export type SettingsInput = z.infer<typeof settingsInput>;
+
 
 // A world MikuTracker tracks (45 Kronos, 70 Hyperion), from a form or an address.
 export const worldId = z.coerce.number().refine((id) => WORLDS.some((w) => w.id === id), { message: "Unknown world" });
@@ -25,3 +23,23 @@ export const characterName = z
 // Looking a character up on a world: /api/search?world=45&name=…
 export const searchQuery = z.strictObject({ world: worldId, name: characterName });
 export type SearchQuery = z.infer<typeof searchQuery>;
+
+// Saving settings: the theme, the world shown on Home, or both.
+export const settingsInput = z
+  .strictObject({ theme: themeId.optional(), worldId: worldId.optional() })
+  .refine((s) => s.theme !== undefined || s.worldId !== undefined, { message: "Nothing to save" });
+export type SettingsInput = z.infer<typeof settingsInput>;
+
+// Adding a character: looked up again by the server, never taken from the page as is.
+export const addCharacterInput = z.strictObject({ world: worldId, name: characterName });
+export type AddCharacterInput = z.infer<typeof addCharacterInput>;
+
+// The characters of a world: /api/characters?world=45
+export const characterListQuery = z.strictObject({ world: worldId });
+
+// A new order for a world's character tabs: every one of its characters, once, first to last.
+export const reorderInput = z.strictObject({
+  world: worldId,
+  ids: z.array(z.number().int().positive()).max(500),
+});
+export type ReorderInput = z.infer<typeof reorderInput>;
