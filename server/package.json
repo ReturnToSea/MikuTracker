@@ -1,0 +1,39 @@
+{
+  "name": "server",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run && TEST_TZ=UTC vitest run",
+    "test:watch": "vitest",
+    "test:utc": "TEST_TZ=UTC vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "MIKU_DATABASE=dev CHECKPOINT_DISABLE=1 prisma migrate dev",
+    "db:generate": "CHECKPOINT_DISABLE=1 prisma generate",
+    "postinstall": "CHECKPOINT_DISABLE=1 prisma generate",
+    "start": "CHECKPOINT_DISABLE=1 prisma migrate deploy && tsx src/index.ts",
+    "dev": "export MIKU_DATABASE=dev PORT=4751 MIKU_BACKUPS=off MIKU_REFRESH=off CHECKPOINT_DISABLE=1; prisma migrate deploy && tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@miku/shared": "*",
+    "@prisma/adapter-better-sqlite3": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "prisma": "^7.10.1",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

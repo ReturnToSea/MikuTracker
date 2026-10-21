@@ -1,0 +1,38 @@
+import type { ReactNode } from "react";
+import { NavLink } from "react-router";
+import { HomeIcon, TableIcon, TbdIcon, ThemesIcon } from "./icons";
+
+export interface Tab {
+  path: string;
+  label: string;
+  icon: ReactNode;
+}
+
+// Home and the features still to be decided at the top; the reference pages at the bottom.
+export const TOP_TABS: Tab[] = [
+  // Stryker disable next-line StringLiteral: the rail sits outside the page routes, so an empty link also means the root
+  { path: "/", label: "Home", icon: <HomeIcon /> },
+  ...[1, 2, 3, 4].map((n) => ({ path: `/tbd/${n}`, label: "TBD", icon: <TbdIcon /> })),
+];
+export const BOTTOM_TABS: Tab[] = [
+  { path: "/exp-table", label: "EXP table", icon: <TableIcon /> },
+  { path: "/themes", label: "Themes", icon: <ThemesIcon /> },
+];
+
+const link = (t: Tab) => (
+  <NavLink key={t.path} to={t.path} end className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+    {t.icon}
+    {t.label}
+  </NavLink>
+);
+
+export function Rail() {
+  return (
+    <nav className="rail" aria-label="Features">
+      <div className="rail-brand" title="MikuTracker" />
+      {TOP_TABS.map(link)}
+      <div className="rail-spacer" />
+      {BOTTOM_TABS.map(link)}
+    </nav>
+  );
+}

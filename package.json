@@ -1,0 +1,32 @@
+{
+  "name": "mikutracker",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run build && npm start -w server",
+    "test": "npm test -w server && npm test -w client",
+    "typecheck": "npm run typecheck -w server && tsc -p shared && npm run typecheck -w client",
+    "db:migrate": "npm run db:migrate -w server",
+    "test:coverage": "npm run test:coverage -w server",
+    "test:utc": "npm run test:utc -w server",
+    "test:mutate": "stryker run",
+    "test:mutate:client": "stryker run stryker.client.config.mjs",
+    "test:mutate:full": "stryker run --force && stryker run stryker.client.config.mjs --force"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "concurrently": "^10.0.6"
+  }
+}

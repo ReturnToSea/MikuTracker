@@ -1,0 +1,67 @@
+/* Every color, font and corner size comes from these variables. A new theme is a new block with
+   the same names; components never use colors directly.
+   --art-<theme> is set by the app only when that theme's art exists in the data folder (it
+   never lives in git); without it each theme falls back to its own drawn background. */
+
+[data-theme="ren"] {
+  color-scheme: dark;
+  --bg: #26253a;
+  /* Ren's own art when present, else a moonlit violet sky (the blossom tree and petals are drawn on top, see looks/RenSky.tsx) */
+  --bg-image: var(--art-ren, none), radial-gradient(circle at 82% 14%, rgba(226, 222, 232, 0.22), transparent 22%), linear-gradient(180deg, #3d3c58 0%, #2a2940 55%, #1c1b2b 100%);
+  --bg-size: cover, auto, auto;
+  --bg-position: center, 0 0, 0 0;
+  --surface: rgba(30, 29, 46, 0.74);
+  --surface-2: rgba(50, 48, 72, 0.88);
+  --border: #4a4766;
+  --border-width: 1px;
+  --text: #f3eee6;
+  --text-muted: #b6afc4;
+  --accent: #e5484d;
+  --accent-soft: rgba(229, 72, 77, 0.16);
+  --on-accent: #ffffff;
+  --bar: linear-gradient(180deg, #ff6b6b, #b8283a);
+  --bar-hover: linear-gradient(180deg, #ff9a9a, #e5484d);
+  --line: #d4b46e;
+  --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
+  --danger: #ff6b6b;
+  --shadow: 0 8px 30px rgba(10, 8, 25, 0.45);
+  --radius: 4px;
+  --font: "Inter", system-ui, sans-serif;
+  --font-display: "Shippori Mincho", Georgia, serif;
+  --surface-blur: blur(8px);
+  --petal-1: #e5484d;
+  --petal-2: #ff8a8f;
+  --petal-3: #f6e3e4;
+  --ink: #141320;
+  --moon: #e6e2ea;
+  --blossom-center: #d4b46e;
+}
+
+[data-theme="pochacco"] {
+  color-scheme: light;
+  --bg: #e4f3fc;
+  /* A white veil over Sanrio's art when present, with plain gingham underneath */
+  --bg-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), var(--art-pochacco, none), repeating-linear-gradient(0deg, rgba(126, 196, 238, 0.28) 0 22px, transparent 22px 44px), repeating-linear-gradient(90deg, rgba(126, 196, 238, 0.28) 0 22px, transparent 22px 44px);
+  --bg-size: auto, cover, auto, auto;
+  --bg-position: center, center bottom, 0 0, 0 0;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-2: #eaf6fd;
+  --border: #231f20;
+  --border-width: 2px;
+  --text: #231f20;
+  --text-muted: #5a5557;
+  --accent: #3b9fe0;
+  --accent-soft: rgba(59, 159, 224, 0.16);
+  --on-accent: #ffffff;
+  --bar: #8fd0f4;
+  --bar-hover: #3b9fe0;
+  --bar-outline: #231f20;
+  --line: #ef7fae;
+  --exp: linear-gradient(90deg, #8fd0f4, #f7d94c);
+  --danger: #e60012;
+  --shadow: 2px 2px 0 #231f20;
+  --radius: 6px;
+  --font: "Nunito", system-ui, sans-serif;
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --surface-blur: none;
+}

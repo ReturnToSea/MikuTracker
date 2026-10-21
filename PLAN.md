@@ -100,22 +100,8 @@ Rules carried over from Goal Tracker:
 ### v0.1.0: planning and mockups (this save)
 `README.md`, `PLAN.md`, `CHANGELOG.md`, `.gitignore`, `.claude/settings.json`, and the approved mockup in `docs/theme-examples/`. No app code.
 
-### v0.2.0: the skeleton, and finding out when Nexon updates
-1. **Nexon update watch (research; started first, because it runs for a few days):** a small script, run by hand and never part of the app, that looks up a few active characters every 30 minutes and logs when their numbers change. Its output goes in `tempdata/`. This tells us at what UTC times the rankings update, so the daily refresh picks up the previous day's EXP. See Risk 1.
-2. Workspaces (`shared`, `server`, `client`), TypeScript, `.nvmrc`, and the `@miku/shared` package.
-3. `config.ts` and the database path guard (throws in a test run without a throwaway database).
-   - Tests: the defaults; environment overrides; the guard throws.
-4. Prisma 7 with an empty schema plus `Settings`, and the test helpers (throwaway database, `ok()`, tables cleared between tests).
-   - Tests: a schema change without a migration fails.
-5. Express app with `/api/health`, the error handler, the empty login check, and `owner.ts`.
-   - Tests: health; unknown API path → 404; bad JSON → 400.
-6. React app shell:
-   - the left tab rail
-   - the Themes tab with Ren and Pochacco
-   - theme saved through `/api/settings`
-   - theme art served from the data folder, with the drawn fallbacks
-   - Tests: the theme switches and is saved; the fallback shows when the art is missing.
-7. Stryker configs and the `/mutation-audit` skill, the GitHub workflow, `DESIGN.md` and `CLAUDE.md`.
+### v0.2.0: the skeleton — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. Still running: the **Nexon update watch** (`scripts/nexon-watch.mjs`, research only), started 2026-10-21 03:35 UTC on the top 5 of that week's EXP ranking. Check it with `node scripts/nexon-watch.mjs --summary`; its result picks the daily refresh time in v0.6.0. As of 04:06 UTC: no changes in about 1.5 hours.
 
 ### v0.3.0: game figures, EXP math, and the EXP table tab
 1. `gameFigures/`: the worlds (45 Kronos, 70 Hyperion) and the GMS EXP table, with sources.
@@ -176,6 +162,9 @@ Use it for a few days, fix what comes up, re-check the EXP table against the lat
 ## After v1.0.0
 
 - **Avatar history:** every avatar a character has had is kept, so you can look back at its old looks, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
+- **Leveling progress line chart on Home:** level over time, in days, so you can see your leveling progress. The line includes progress through each level, so 285 at 86.91% plots as 285.87 and the line climbs steadily between level-ups instead of jumping in steps. It comes from the saved snapshots (one point per UTC day), so nothing new needs collecting.
+- **Docker check:** a Dockerfile and compose file, plus a check that the app runs in a container. Data lives on a volume (`MIKU_DATA_DIR=/data`), with `HOST=0.0.0.0` and `MIKU_IN_CONTAINER=1`, the port published only to `127.0.0.1`, and `restart: unless-stopped` doing the launch agent's job. This proves the move off the Mac works before it's needed. (Moving to Postgres is separate: it needs a fresh starting migration, and `pg_dump` for backups.)
+- **Check the real data size:** after some real use, measure the database (snapshots), the avatar images and the backups folder, and compare them with the estimates (about 100 bytes per snapshot, so about 36 KB per character per year). Revisit the "keep forever" decision only if the real numbers are much bigger.
 
 ## Risks
 
@@ -205,6 +194,7 @@ None right now.
 - **Missing days in the chart:** empty "no data" bars, with the combined EXP on the next day that has data, labeled with how many days it covers.
 - **Avatars:** saved locally by the server; the page never contacts Nexon. Old images are kept for the avatar history planned after v1.0.0.
 - **TBD tabs:** shown as placeholders in v1.0.0.
+- **Saved data is kept forever** (decided 2026-10-20): one snapshot per character per UTC day, saved only when something changed, and never trimmed, because the charts are redrawn from it each time. Estimated at about 100 bytes per snapshot, about 36 KB per character per year. Avatar images: a new file only for a new outfit, all kept. Deleting a character still deletes its history. The real size gets checked after v1.0.0.
 - **Rankings update often enough:** you expect EXP to update more than once a day. The watch only decides the refresh time.
 - **Legion:** each character's own Legion lookup, since Legion belongs to the account.
 - **Claude Code settings (`.claude/`):** as in Goal Tracker. `/mutation-audit` will be adapted when Stryker is set up.

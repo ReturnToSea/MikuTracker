@@ -1,0 +1,22 @@
+// The database: tables ("models") and their columns. Prisma writes the code that reads and
+// writes them (into src/generated/, not in git) and the migrations that create them.
+// Conventions: big numbers (EXP, raid power) are BigInt; "enum" fields are plain strings so the
+// schema also works on Postgres later; every top-level table says whose data it is (ownerId,
+// see src/owner.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// One row per owner: what the app remembers between visits.
+model Settings {
+  ownerId   String   @id
+  theme     String   @default("ren") // "ren" | "pochacco"
+  worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion
+  updatedAt DateTime @updatedAt
+}

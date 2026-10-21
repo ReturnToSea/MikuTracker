@@ -1,0 +1,29 @@
+# A backup check on GitHub's machines when a version branch (v0.2.0, …) is pushed: the
+# typecheck and every test, in California time and UTC. Mutation testing runs on the Mac.
+# Tests use made-up data only and never reach Nexon.
+name: Tests
+
+on:
+  push:
+    branches: ["v*"]
+  workflow_dispatch:
+
+# A newer push to the same branch replaces a run still going.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Typecheck and tests (California time and UTC)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
