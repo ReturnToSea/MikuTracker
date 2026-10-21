@@ -101,7 +101,7 @@ Rules carried over from Goal Tracker:
 `README.md`, `PLAN.md`, `CHANGELOG.md`, `.gitignore`, `.claude/settings.json`, and the approved mockup in `docs/theme-examples/`. No app code.
 
 ### v0.2.0: the skeleton, and finding out when Nexon updates
-1. **Nexon update watch (research; started first, because it runs for about a week):** a small script, run by hand and never part of the app, that looks up a few active characters every 30 minutes and logs when their numbers change. Its output goes in `tempdata/`. This tells us whether the rankings update daily and at what UTC time. See Risk 1.
+1. **Nexon update watch (research; started first, because it runs for a few days):** a small script, run by hand and never part of the app, that looks up a few active characters every 30 minutes and logs when their numbers change. Its output goes in `tempdata/`. This tells us at what UTC times the rankings update, so the daily refresh picks up the previous day's EXP. See Risk 1.
 2. Workspaces (`shared`, `server`, `client`), TypeScript, `.nvmrc`, and the `@miku/shared` package.
 3. `config.ts` and the database path guard (throws in a test run without a throwaway database).
    - Tests: the defaults; environment overrides; the guard throws.
@@ -143,7 +143,7 @@ Rules carried over from Goal Tracker:
 ### v0.5.0: characters on Home
 1. `Character` model and migration; services: add (from a search result, saving its first snapshot), list by world, reorder, delete (with snapshots).
    - Tests: duplicate names; other world; deleting removes the snapshots; the order holds after add and delete.
-2. Avatars saved locally: the server downloads each avatar when it adds or refreshes a character, stores it in the data folder and serves it, so the page never contacts Nexon. Tests: the download uses the fake `fetch`; a failed download keeps the previous avatar.
+2. Avatars saved locally: the server downloads each avatar when it adds or refreshes a character, stores it in the data folder and serves it, so the page never contacts Nexon. Each image file is named after its contents (a hash) and never overwritten, so a changed look becomes a new file. v1.0.0 only shows the latest one, but the old images are kept, ready for the avatar history planned after v1.0.0. Tests: the download uses the fake `fetch`; a failed download keeps the previous avatar; the same image isn't saved twice.
 3. API routes for all of this.
 4. Home: world switcher; character tabs with drag and Alt + arrows; the **+** popover with search and Add; selecting a character; Delete with confirmation; the selected world and character saved.
    - App tests for each, including the empty world.
@@ -173,9 +173,13 @@ Rules carried over from Goal Tracker:
 ### v1.0.0: first real use
 Use it for a few days, fix what comes up, re-check the EXP table against the latest GMS patch, do the full mutation runs, and update `README.md` with how to run it.
 
+## After v1.0.0
+
+- **Avatar history:** every avatar a character has had is kept, so you can look back at its old looks, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
+
 ## Risks
 
-1. **How often Nexon updates the rankings is not confirmed.** One unverified quote says the rankings page updates weekly. If EXP only changes there once a week, a *daily* EXP chart can't come from the rankings, and we would need to re-plan (for example, weekly bars). That's why the update watch starts first, in v0.2.0, before any chart work.
+1. **When Nexon updates the rankings.** You expect EXP to update more than once a day, so the daily chart is fine. The update watch in v0.2.0 still runs, to choose **when** the daily refresh should happen: soon enough after 00:00 UTC to have the previous day's EXP.
 2. **The rankings data is undocumented** and could change or disappear. The shape checks, `nexon:check`, and showing the last saved data keep the app usable, and nothing is lost.
 3. **Characters that rename or drop out of the rankings** stop being found. They're marked "not found since …" and keep their history until you delete them.
 4. **EXP table changes in a patch** can make one day's bar wrong at the moment of the patch. The table records its patch, and it gets re-checked after each GMS patch.
@@ -199,8 +203,9 @@ None right now.
 - **Themes:** only Ren (the default) and Pochacco for now. Colors only come from CSS variables. Art is never committed.
 - **Saved as v0.1.0** (decided 2026-10-20): the planning docs and the mockup, with no app code.
 - **Missing days in the chart:** empty "no data" bars, with the combined EXP on the next day that has data, labeled with how many days it covers.
-- **Avatars:** saved locally by the server; the page never contacts Nexon.
+- **Avatars:** saved locally by the server; the page never contacts Nexon. Old images are kept for the avatar history planned after v1.0.0.
 - **TBD tabs:** shown as placeholders in v1.0.0.
+- **Rankings update often enough:** you expect EXP to update more than once a day. The watch only decides the refresh time.
 - **Legion:** each character's own Legion lookup, since Legion belongs to the account.
 - **Claude Code settings (`.claude/`):** as in Goal Tracker. `/mutation-audit` will be adapted when Stryker is set up.
 - All the layout, chart, EXP and time-to-level decisions listed under "What v1.0.0 includes".
