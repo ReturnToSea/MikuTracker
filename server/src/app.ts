@@ -4,6 +4,7 @@ import express, { type Express } from "express";
 import { getConfig } from "./config";
 import { requireAuth } from "./middleware/auth";
 import { errorHandler } from "./middleware/errors";
+import { expTableRouter } from "./routes/expTable";
 import { settingsRouter } from "./routes/settings";
 import { themeArtRouter } from "./routes/themeArt";
 
@@ -35,6 +36,7 @@ export function createApp({ clientDist = CLIENT_DIST, extraRoutes }: { clientDis
     res.json({ ok: true });
   });
   app.use("/api/settings", settingsRouter);
+  app.use("/api/exp-table", expTableRouter);
   app.use("/api/theme-art", themeArtRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {

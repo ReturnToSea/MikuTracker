@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.2.0)
+## The app (as of v0.3.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -10,7 +10,40 @@ A website that only this Mac can open. Its feature tabs run down the left edge o
 
 Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
 
-Home and the EXP table are placeholders until v0.5.0 and v0.3.0.
+Home is a placeholder until v0.5.0.
+
+## The EXP table tab
+
+The GMS EXP needed to go from each level to the next, for levels 1–299. It's reference only, not tied to any character.
+- **Ranges:** 1–199, 200–299 (the default) and All.
+- **Jump to a level:** type it and press Go. The row is marked and scrolled into view. If the level isn't in the range shown, the range switches to 1–199 or 200–299. Anything but a whole level from 1 to 299 says so and changes nothing else.
+- **Each row shows:**
+  - the level ("285 → 286")
+  - the exact EXP
+  - the short form (99.5T)
+  - the change from the level before, as "+12.0%", shown in red at +100% or more (the jumps into 200 and 260)
+  - the total from level 1 on reaching the next level
+
+  Level 1 has no change ("—").
+- **The header row** stays visible while scrolling.
+- **It says which patch** the table is current as of (v.271, September 2026) and where the figures come from.
+
+## Game figures and EXP math
+
+- **`server/src/gameFigures/`:** the worlds (Kronos 45, Hyperion 70, the IDs Nexon's rankings use) and the GMS EXP table. Each is written down with its source and patch. The EXP table is current as of **v.271**, which cut levels 210–259 by about 8% (210–214) up to 58% (250–259).
+  - Its source is whackybeanz.com's MapleSEA / KMS / TMS table. The site's "GMS" option is out of date.
+  - A test checks that every level in 210–259 is the old GMS value with exactly the announced cut, and that every other level is unchanged.
+  - Re-check it after each GMS patch.
+- **`server/src/calc/`:** pure calculations, with no database and no HTTP.
+  - **`exp.ts`:** a character's progress is (level, EXP into the level), as the rankings report it. **Total EXP** is everything since level 1, so EXP gained across a level-up is just the difference of two totals. The most possible is 8,509,498,537,428,819, still exact as a JavaScript number. Impossible progress is refused: a level outside 1–300, EXP that isn't a whole number from 0 to one short of the next level, or any EXP at level 300.
+  - **`utcDays.ts`:** MapleStory's days are UTC days (the daily reset is at 00:00 UTC), written "YYYY-MM-DD", whatever the computer's time zone.
+  - **`levelGoals.ts`:** the next level and the next multiple of 5 (207 → 210, 285 → 290; at most 300), each with the EXP still needed and the days at a daily rate. There's one goal when they're the same level (209 → 210), none at 300, and the days are "unknown" (`null`) at 0 EXP a day.
+- **`client/src/lib/format.ts`:** how the app shows things.
+  - EXP to 3 significant digits (5.12B, 137B, 20.7T); a value that rounds up to 1,000 moves to the next unit (999.6B → 1.00T).
+  - Thousands separators.
+  - Changes as "+12.0%".
+  - Durations in the unit that reads best ("≈ 6 hours", "≈ 4.3 days", "≈ 5.7 months", "≈ 2.0 years").
+  - Future dates in local time ("Sun, Oct 25", with the year when it isn't this year).
 
 ## Themes
 
@@ -31,6 +64,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 
 - **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT `{ theme }` saves the theme. Anything else (an unknown theme, extra fields) is refused with a 400.
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
+- **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
 - **Errors** always come back as JSON:
   - invalid input → 400, listing each problem by its path
   - malformed JSON → 400

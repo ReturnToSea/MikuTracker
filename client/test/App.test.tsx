@@ -18,7 +18,7 @@ describe("the feature tabs", () => {
     renderWithApp(<App />);
     const nav = within(screen.getByRole("navigation", { name: "Features" }));
     const pages: [string, number, string][] = [
-      ["EXP table", 0, "EXP table"],
+      ["EXP table", 0, "EXP table (GMS)"],
       ["Themes", 0, "Themes"],
       ["TBD", 2, "TBD"],
       ["Home", 0, "Home"],
@@ -56,7 +56,7 @@ describe("the feature tabs", () => {
     for (const [path, heading] of [
       ["/", "Home"],
       ["/tbd/3", "TBD"],
-      ["/exp-table", "EXP table"],
+      ["/exp-table", "EXP table (GMS)"],
       ["/themes", "Themes"],
     ]) {
       const { unmount } = renderWithApp(<App />, path);

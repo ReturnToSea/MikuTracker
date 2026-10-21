@@ -2,6 +2,29 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.3.0 (2026-10-21): game figures, EXP math, and the EXP table tab
+
+- **The EXP table tab:** the GMS EXP needed for every level from 1 to 299.
+  - Ranges: 1–199, 200–299 (the default) and All.
+  - Jump to a level: marks the row and scrolls to it, switching ranges if needed.
+  - Each row: the exact EXP, the short form, the change from the level before (big jumps in red) and the total from level 1. The header row stays visible while scrolling.
+  - It says the table is current as of GMS v.271.
+- **Game figures** (`server/src/gameFigures/`): the worlds (Kronos 45, Hyperion 70) and the GMS EXP table, with sources. A test confirms that v.271's announced cuts for levels 210–259 turn the old GMS table into this one, and that no other level changed.
+- **EXP math** (`server/src/calc/`):
+  - total EXP and its reverse
+  - progress through a level
+  - EXP to reach a level
+  - UTC days and the next 00:00 UTC
+  - time to the next level and to the next multiple of 5
+
+  Impossible progress is refused.
+- **Formatting** (`client/src/lib/format.ts`): EXP to 3 significant digits, durations and future dates.
+- **`/api/exp-table`.**
+- **GitHub workflow:** the checkout and Node setup actions moved to v7, replacing the retiring versions.
+- **Tests:** 131 server and 69 app tests, in California time and UTC. Mutation testing: server 419/419, app 300/300.
+  - Mutation runs and deliberate bugs exposed untested behavior, now covered: impossible progress passed straight into `totalExp` and `progress`; scrolling to a jumped-to row; jumping at the edges of the ranges; an invalid jump leaving everything else alone; only one range button showing as chosen; and a +50% change not being marked as a big jump.
+  - One of my hand-calculated expected values was wrong (+130.8% instead of +131.7%), not the code, and was corrected.
+
 ## v0.2.0 (2026-10-21): the skeleton
 
 The first app code: a working website with the feature tabs and the two themes, its API, and the full test setup.

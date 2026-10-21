@@ -44,8 +44,22 @@ export function renderWithApp(ui: ReactNode, path = "/") {
   );
 }
 
+// A made-up EXP table: level L needs L × 1,000 EXP (simple to check by hand), except that level
+// 200 needs 300,000 (a +51% jump) and 260 needs 600,000 (a +132% jump, shown as a big one).
+export function fakeExpTable() {
+  let total = 0;
+  const rows = Array.from({ length: 299 }, (_, i) => {
+    const level = i + 1;
+    const expToNext = level === 200 ? 300_000 : level === 260 ? 600_000 : level * 1_000;
+    total += expToNext;
+    return { level, expToNext, total };
+  });
+  return { patch: "v.271", date: "2026-09", rows };
+}
+
 // The usual answers: Ren saved, no theme art.
 export const BASE_ROUTES = {
   "GET /settings": { theme: "ren", worldId: 45 },
   "GET /theme-art": { ren: null, pochacco: null },
+  "GET /exp-table": fakeExpTable(),
 };

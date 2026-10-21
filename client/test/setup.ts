@@ -5,6 +5,8 @@ import { afterEach, beforeEach, vi } from "vitest";
 // same as a browser without canvas support; the drawing code handles that.
 beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+  // jsdom doesn't scroll; browsers all have scrollIntoView. Record calls instead.
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(() => {

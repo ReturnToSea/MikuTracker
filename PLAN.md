@@ -103,18 +103,8 @@ Rules carried over from Goal Tracker:
 ### v0.2.0: the skeleton — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`. Still running: the **Nexon update watch** (`scripts/nexon-watch.mjs`, research only), started 2026-10-21 03:35 UTC on the top 5 of that week's EXP ranking. Check it with `node scripts/nexon-watch.mjs --summary`; its result picks the daily refresh time in v0.6.0. As of 04:06 UTC: no changes in about 1.5 hours.
 
-### v0.3.0: game figures, EXP math, and the EXP table tab
-1. `gameFigures/`: the worlds (45 Kronos, 70 Hyperion) and the GMS EXP table, with sources.
-   - Tests: 299 levels; the known values (200 → 2,207,026,470; 225, 230, 239; 260; 299); the total from level 1 to 300 is 8,509,498,537,428,819 and under the exact-number limit.
-2. `calc/`:
-   - converting level + EXP to total EXP
-   - UTC day keys and the next 00:00 UTC
-   - time to the next level and the next multiple of 5
-   - Tests: hand-computed cases (207 → 210 adds up three levels); level 300; zero EXP per day; UTC day edges tested at 23:59/00:00 in both time zones.
-3. `/api/exp-table` and the EXP table tab, with ranges, jump to a level, and the sticky header.
-   - App tests with a fake server.
-4. `client/src/lib/`: 3-significant-digit EXP formatting (5.12B, 137B, 999.6B → 1.00T), durations, and dates.
-   - Tests for every rounding edge.
+### v0.3.0: game figures, EXP math, and the EXP table tab — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
 ### v0.4.0: the Nexon rankings client
 1. A request builder for the rankings types we use (overall, world, Legion), the `na` region, and names in the right form.
