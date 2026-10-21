@@ -59,6 +59,7 @@ model Snapshot {
   level       Int
   exp         BigInt
   totalExp    BigInt // everything since level 1, so gains work across level-ups
+  gained      BigInt    @default(0) // EXP gained that day: each check adds the change since the check before
   worldRank   Int
   overallRank Int?
   legionLevel Int?

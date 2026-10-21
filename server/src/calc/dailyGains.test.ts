@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CHART_DAYS, dailyBars, daysBetween, expStats, type SnapshotPoint } from "./dailyGains";
+import { CHART_DAYS, dailyBars, daysBetween, RANGES, rangeStats, type SnapshotPoint } from "./dailyGains";
+import { expToNext, totalExp } from "./exp";
 import { addUtcDays } from "./utcDays";
 
 const TODAY = "2026-10-21";
-// A history: totals at the end of the given days.
-const history = (entries: [string, number][]): SnapshotPoint[] => entries.map(([day, totalExp]) => ({ day, totalExp }));
+// A history: the total and the EXP gained on each given day.
+const history = (entries: [string, number, number][]): SnapshotPoint[] => entries.map(([day, totalExp, gained]) => ({ day, totalExp, gained }));
 
 describe("daysBetween", () => {
   it("counts whole UTC days, across months and years", () => {
@@ -16,126 +17,138 @@ describe("daysBetween", () => {
 });
 
 describe("dailyBars", () => {
-  it("one bar per finished UTC day, the 14 before today, oldest first (today isn't finished)", () => {
+  it("one bar per UTC day, the 90 ending today, oldest first", () => {
     const bars = dailyBars([], TODAY);
-    expect(bars).toHaveLength(CHART_DAYS);
-    expect([bars[0]!.day, bars.at(-1)!.day]).toEqual(["2026-10-07", "2026-10-20"]);
+    expect([bars.length, CHART_DAYS]).toEqual([90, 90]);
+    expect([bars[0]!.day, bars.at(-1)!.day]).toEqual(["2026-07-24", "2026-10-21"]);
     expect(bars.every((b) => b.gained === null && b.covers === 0)).toBe(true);
   });
 
-  it("each day's EXP is its total minus the day before's (by hand)", () => {
-    const bars = dailyBars(history([["2026-10-18", 1_000], ["2026-10-19", 1_500], ["2026-10-20", 1_500]]), TODAY);
+  it("each day's bar is the EXP gained that day, today's included (so far)", () => {
+    const bars = dailyBars(history([["2026-10-19", 1_000, 300], ["2026-10-20", 1_500, 500], ["2026-10-21", 1_500, 0]]), TODAY);
     expect(bars.slice(-3)).toEqual([
-      { day: "2026-10-18", gained: null, covers: 0 }, // the first day tracked: nothing before it to compare with
-      { day: "2026-10-19", gained: 500, covers: 1 },
-      { day: "2026-10-20", gained: 0, covers: 1 }, // checked, no EXP: a real 0, not "no data"
+      { day: "2026-10-19", gained: 300, covers: 1 }, // the first day tracked: the EXP since the first check
+      { day: "2026-10-20", gained: 500, covers: 1 },
+      { day: "2026-10-21", gained: 0, covers: 1 }, // checked, no EXP: a real 0, not "no data"
     ]);
   });
 
-  it("days without a snapshot are 'no data', and their EXP lands on the next day with data", () => {
-    const bars = dailyBars(history([["2026-10-15", 100], ["2026-10-19", 4_100]]), TODAY);
-    expect(bars.slice(-6)).toEqual([
-      { day: "2026-10-15", gained: null, covers: 0 },
+  it("days without a snapshot are 'no data', and the next day with data says how many days its EXP covers", () => {
+    const bars = dailyBars(history([["2026-10-15", 100, 0], ["2026-10-19", 4_100, 4_000]]), TODAY);
+    expect(bars.slice(-7)).toEqual([
+      { day: "2026-10-15", gained: 0, covers: 1 },
       { day: "2026-10-16", gained: null, covers: 0 },
       { day: "2026-10-17", gained: null, covers: 0 },
       { day: "2026-10-18", gained: null, covers: 0 },
       { day: "2026-10-19", gained: 4_000, covers: 4 }, // the 16th–19th together
-      { day: "2026-10-20", gained: null, covers: 0 }, // not checked yesterday
+      { day: "2026-10-20", gained: null, covers: 0 },
+      { day: "2026-10-21", gained: null, covers: 0 }, // not checked yet today
     ]);
   });
 
-  it("a snapshot from before the 14 days counts as the starting point", () => {
-    const bars = dailyBars(history([["2026-09-30", 10], ["2026-10-07", 30]]), TODAY);
-    expect(bars[0]).toEqual({ day: "2026-10-07", gained: 20, covers: 7 });
+  it("a snapshot from before the bars counts for the first bar's span", () => {
+    const bars = dailyBars(history([["2026-09-30", 10, 0], ["2026-10-15", 30, 20]]), TODAY, 7);
+    expect(bars[0]).toEqual({ day: "2026-10-15", gained: 20, covers: 15 });
   });
 
-  it("today's snapshot is never a bar (today isn't finished)", () => {
-    const bars = dailyBars(history([["2026-10-20", 10], ["2026-10-21", 99]]), TODAY);
-    expect(bars.map((b) => b.day)).not.toContain(TODAY);
-    expect(bars.at(-1)).toEqual({ day: "2026-10-20", gained: null, covers: 0 });
+  it("a snapshot after today (a clock that went back) isn't a bar", () => {
+    expect(dailyBars(history([["2026-10-22", 5, 5]]), TODAY).at(-1)).toEqual({ day: TODAY, gained: null, covers: 0 });
   });
 
-  it("works whatever order the snapshots arrive in", () => {
-    const sorted = history([["2026-10-17", 0], ["2026-10-18", 100], ["2026-10-19", 300], ["2026-10-20", 600]]);
-    const shuffled = [sorted[2]!, sorted[0]!, sorted[3]!, sorted[1]!];
+  it("works whatever order the snapshots arrive in, without changing the caller's list", () => {
+    const sorted = history([["2026-10-18", 0, 0], ["2026-10-19", 100, 100], ["2026-10-21", 600, 500]]);
+    const shuffled = [sorted[2]!, sorted[0]!, sorted[1]!];
     expect(dailyBars(shuffled, TODAY)).toEqual(dailyBars(sorted, TODAY));
-    expect(dailyBars(shuffled, TODAY).slice(-3).map((b) => b.gained)).toEqual([100, 200, 300]);
-    expect(expStats(shuffled, TODAY)).toEqual({ last7: 600, average: 200, best: { day: "2026-10-20", gained: 300 } });
-    expect(shuffled.map((p) => p.day)).toEqual(["2026-10-19", "2026-10-17", "2026-10-20", "2026-10-18"]); // the caller's list isn't changed
+    expect(dailyBars(shuffled, TODAY).slice(-3).map((b) => [b.gained, b.covers])).toEqual([[100, 1], [null, 0], [500, 2]]);
+    expect(rangeStats(shuffled, TODAY, 7)).toEqual(rangeStats(sorted, TODAY, 7));
+    expect(shuffled.map((p) => p.day)).toEqual(["2026-10-21", "2026-10-18", "2026-10-19"]);
   });
 
   it("a different count of days", () => {
-    expect(dailyBars([], TODAY, 3).map((b) => b.day)).toEqual(["2026-10-18", "2026-10-19", "2026-10-20"]);
+    expect(dailyBars([], TODAY, 3).map((b) => b.day)).toEqual(["2026-10-19", "2026-10-20", "2026-10-21"]);
   });
 
-  it("the gains always add up to the real change in total EXP (simulated histories with missed days)", () => {
+  it("the bars always add up to the real change in total EXP (simulated histories with missed days)", () => {
     let seed = 7;
     const random = () => ((seed = (seed * 1_103_515_245 + 12_345) % 2 ** 31) / 2 ** 31);
     for (let trial = 0; trial < 200; trial++) {
+      // a character checked on ~60% of days, its EXP growing every day
       const points: SnapshotPoint[] = [];
       let total = Math.floor(random() * 1e12);
+      let lastChecked: number | null = null;
       for (let back = 25; back >= 0; back--) {
         total += Math.floor(random() * 5e9);
-        if (random() < 0.6) points.push({ day: addUtcDays(TODAY, -back), totalExp: total }); // ~40% of days missed
-      }
-      const bars = dailyBars(points, TODAY);
-      const withData = bars.filter((b) => b.gained !== null);
-      if (withData.length === 0) continue;
-      const sum = withData.reduce((s, b) => s + b.gained!, 0);
-      const first = withData[0]!;
-      const startDay = addUtcDays(first.day, -first.covers);
-      const start = points.find((p) => p.day === startDay)!.totalExp;
-      const end = points.find((p) => p.day === withData.at(-1)!.day)!.totalExp;
-      expect(sum).toBe(end - start);
-      // and every day in a combined bar's span (but the last) is "no data"
-      for (const b of withData) {
-        for (let d = 1; d < b.covers; d++) {
-          const skipped = bars.find((x) => x.day === addUtcDays(b.day, -d));
-          if (skipped) expect(skipped.gained).toBeNull();
+        if (random() < 0.6) {
+          points.push({ day: addUtcDays(TODAY, -back), totalExp: total, gained: lastChecked === null ? 0 : total - lastChecked });
+          lastChecked = total;
         }
+      }
+      const bars = dailyBars(points, TODAY, 26);
+      const withData = bars.filter((b) => b.gained !== null);
+      const sum = withData.reduce((s, b) => s + b.gained!, 0);
+      expect(sum).toBe(points.length ? points.at(-1)!.totalExp - points[0]!.totalExp : 0);
+      // and every day inside a combined bar's span is "no data"
+      for (const b of withData) {
+        for (let d = 1; d < b.covers; d++) expect(bars.find((x) => x.day === addUtcDays(b.day, -d))!.gained).toBeNull();
       }
     }
   });
 });
 
-describe("expStats", () => {
-  // 15 days of steady play, 1,000 a day, ending yesterday (and a snapshot today, which doesn't count).
-  const steady = history(Array.from({ length: 16 }, (_, i) => [addUtcDays(TODAY, i - 15), i * 1_000] as [string, number]));
+describe("rangeStats", () => {
+  // 100 days of steady play, 1,000 a day, ending today.
+  const steady = history(Array.from({ length: 100 }, (_, i) => [addUtcDays(TODAY, i - 99), 1e9 + i * 1_000, i === 0 ? 0 : 1_000] as [string, number, number]));
 
-  it("7-day total, daily average and best day (by hand)", () => {
-    const points = steady.map((p) => (p.day === "2026-10-17" ? { ...p, totalExp: p.totalExp + 4_000 } : p.day > "2026-10-17" ? { ...p, totalExp: p.totalExp + 4_000 } : p));
-    // the 17th gained 5,000 instead of 1,000
-    expect(expStats(points, TODAY)).toEqual({ last7: 11_000, average: 18_000 / 14, best: { day: "2026-10-17", gained: 5_000 } });
+  it("the ranges are 7, 14, 30 and 90 days", () => {
+    expect(RANGES).toEqual([7, 14, 30, 90]);
   });
 
-  it("with less history than the windows, uses the days tracked", () => {
-    const points = history([["2026-10-17", 0], ["2026-10-18", 600], ["2026-10-20", 1_500]]);
-    expect(expStats(points, TODAY)).toEqual({ last7: 1_500, average: 500, best: { day: "2026-10-18", gained: 600 } }); // 1,500 over 3 days
+  it("each range counts today and the days before it, from the end of the day before the range", () => {
+    for (const days of RANGES) expect([days, rangeStats(steady, TODAY, days)]).toEqual([days, { total: days * 1_000, average: 1_000, levelPerDay: expect.any(Number) }]);
   });
 
-  it("a combined bar (after missed days) is never the best single day", () => {
-    const gap = history([["2026-10-16", 0], ["2026-10-19", 9_000], ["2026-10-20", 9_100]]);
-    expect(expStats(gap, TODAY).best).toEqual({ day: "2026-10-20", gained: 100 }); // not the 9,000 spread over three days
+  it("by hand: the 7 days are the 15th to the 21st, from the total at the end of the 14th", () => {
+    const points = history([["2026-10-14", 500, 0], ["2026-10-15", 600, 100], ["2026-10-20", 1_200, 600], ["2026-10-21", 1_900, 700]]);
+    expect(rangeStats(points, TODAY, 7)).toMatchObject({ total: 1_400, average: 200 });
+    // the 14th itself only counts in the longer ranges
+    expect(rangeStats(points, TODAY, 8)).toMatchObject({ total: 1_400, average: 1_400 / 8 }); // started on the 14th with 0 gained
   });
 
-  it("days without EXP are never a best day; a tie keeps the earlier day", () => {
-    expect(expStats(history([["2026-10-18", 5], ["2026-10-19", 5], ["2026-10-20", 5]]), TODAY).best).toBeNull();
-    expect(expStats(history([["2026-10-18", 0], ["2026-10-19", 7], ["2026-10-20", 14]]), TODAY).best).toEqual({ day: "2026-10-19", gained: 7 });
+  it("today counts as a day even before it's over", () => {
+    const points = history([["2026-10-20", 1_000, 0], ["2026-10-21", 1_100, 100]]);
+    expect(rangeStats(points, TODAY, 7)).toMatchObject({ total: 100, average: 50 }); // the 20th and the 21st
   });
 
-  it("without two snapshots to compare, there's nothing to say", () => {
-    expect(expStats([], TODAY)).toEqual({ last7: null, average: null, best: null });
-    expect(expStats(history([["2026-10-20", 5]]), TODAY)).toEqual({ last7: null, average: null, best: null });
-    expect(expStats(history([["2026-10-21", 5], ["2026-10-21", 9]]), TODAY)).toEqual({ last7: null, average: null, best: null }); // only today
+  it("a character first tracked within the range: from where its first day started, over the days since", () => {
+    // added on the 19th; by its last check that day it had gained 300
+    const points = history([["2026-10-19", 5_300, 300], ["2026-10-21", 6_000, 700]]);
+    expect(rangeStats(points, TODAY, 30)).toMatchObject({ total: 1_000, average: 1_000 / 3 }); // the 19th, 20th and 21st
   });
 
-  it("with no snapshot in the last 14 days, there's no average (nothing is known about them)", () => {
-    const points = history([["2026-09-01", 0], ["2026-10-01", 3_000]]);
-    expect(expStats(points, TODAY)).toEqual({ last7: null, average: null, best: null });
+  it("days not checked just before the range: from the last snapshot before it, over the days since then", () => {
+    const points = history([["2026-10-10", 0, 0], ["2026-10-18", 900, 900], ["2026-10-21", 1_100, 200]]);
+    expect(rangeStats(points, TODAY, 7)).toMatchObject({ total: 1_100, average: 100 }); // 11 days from the end of the 10th
   });
 
-  it("windows: the 7 days start from the end of the 8th day back", () => {
-    const points = history([["2026-10-12", 0], ["2026-10-13", 10], ["2026-10-20", 80]]);
-    expect(expStats(points, TODAY).last7).toBe(70); // from the end of the 13th to the end of the 20th
+  it("not checked today: up to the last check in the range, still over the days to today", () => {
+    const points = history([["2026-10-14", 0, 0], ["2026-10-18", 700, 700]]);
+    expect(rangeStats(points, TODAY, 7)).toMatchObject({ total: 700, average: 100 });
+  });
+
+  it("nothing to say without a snapshot in the range", () => {
+    expect(rangeStats([], TODAY, 7)).toBeNull();
+    expect(rangeStats(history([["2026-10-14", 5, 0]]), TODAY, 7)).toBeNull(); // only before it
+    expect(rangeStats(history([["2026-10-22", 5, 0]]), TODAY, 7)).toBeNull(); // only after today
+    expect(rangeStats(history([["2026-10-14", 5, 0]]), TODAY, 8)).toMatchObject({ total: 0 }); // the 14th is in 8 days
+  });
+
+  it("levels a day: progress through levels, across level-ups (by hand)", () => {
+    // from level 250 at 0% to level 251 at 50% over 3 days: 1.5 levels, 0.5 a day
+    const start = totalExp(250, 0);
+    const end = totalExp(251, expToNext(251) / 2);
+    const points = history([["2026-10-18", start, 0], ["2026-10-21", end, end - start]]);
+    expect(rangeStats(points, TODAY, 3)).toEqual({ total: end - start, average: (end - start) / 3, levelPerDay: 0.5 });
+    // a character's first day starts from its total minus what it gained that day
+    expect(rangeStats(history([["2026-10-21", end, end - start]]), TODAY, 7)!.levelPerDay).toBe(1.5);
   });
 });

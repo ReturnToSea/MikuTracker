@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.8.0)
+## The app (as of v0.9.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -34,16 +34,18 @@ Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`)
 - **The selected character:** avatar, name, job and world, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), then four tiles: **world rank** ("Kronos rank"), **overall rank** (all NA worlds), and the world's **Legion level** and **raid power** (see below). Below it, the EXP section and Time to level (next).
   - A character no longer found in the rankings says so ("Not found in Nexon's rankings since Oct 21 (renamed, or no longer ranked). Showing its last saved numbers.").
 - **The EXP section** (for the selected character, from `/api/characters/:id/progress`):
-  - **Three stats:** EXP over the last 7 days, the daily average (14 days), and the best single day, with its date.
-  - **The daily EXP chart:** one bar per **finished** UTC day for the last 14 (today isn't finished, so it isn't a bar). Each bar shows:
-    - its amount above it ("5.60T", "0" for a checked day with no EXP), its day below ("Oct 7"), and its exact EXP and day in a tooltip (hover, or focus with the keyboard)
+  - **Four range boxes, 7, 14, 30 and 90 days** (today included), each with the daily average, the share of a level gained a day ("Gained +20.5% a day", from progress through levels, across level-ups), and the total EXP. "—" for a range without history. 14 days is chosen at first.
+  - **Choosing a range:** the buttons at the top right of the chart, or clicking a box; both stay in step. The chart shows that many bars, the dashed line is that range's average, and Time to level uses it.
+  - **The daily EXP chart:** one bar per UTC day, ending with **today, whose bar grows with each check**. Each bar shows:
+    - its amount above it ("5.60T", "0" for a checked day with no EXP), its day below ("Oct 7", and "Today"), and its exact EXP and day in a tooltip (hover, or focus with the keyboard)
     - a **hatched "no data" stub** for a day that wasn't checked; the bar after such days carries their EXP together, with "2 days" under its amount
-  - **Around the bars:** a round-numbered scale (1, 2, 2.5 or 5 × a power of ten), a dashed line at the daily average with its legend, and "New day in 20h 49m 05s · 00:00 UTC is 5:00 PM your time", counting down each second.
-  - **At 00:00 UTC** the chart is fetched again, so yesterday's bar appears.
-  - **With no history yet,** the chart has no scale and says "No EXP history yet: the first bar appears once a full UTC day has been checked."
-- **Time to level:** at the daily average, the next level and the next multiple of 5 (207 → 210), each with the time ("≈ 2.4 days", "≈ 11.4 months") and "7.20T EXP to go · around Fri, Oct 23" (the date in local time).
-  - "Not enough history yet" for a new character.
-  - "Not at this pace" when the history shows no EXP in the last 14 days.
+    - at **30 bars**, smaller amounts (without "2 days") and every 3rd day dated; at **90**, amounts only in the tooltips and every 10th day dated. Dates count back from today, so today always has one.
+  - **Around the bars:** a round-numbered scale (1, 2, 2.5 or 5 × a power of ten; none when nothing is above 0), the average line with its legend, and below, "New day in 20h 49m 05s · 00:00 UTC is 5:00 PM your time", counting down each second.
+  - **When a check of Nexon finishes** (seen through the once-a-minute status), the characters and the chart are loaded again, so today's bar grows without reloading the page. **At 00:00 UTC** the chart is loaded again too, starting the new day's bar.
+  - **With no history yet** (a character not checked since it was added), every day is "no data" and the chart says "No EXP history yet: the first bar appears after the next check of Nexon (every 4 hours)."
+- **Time to level:** at the chosen range's average, the next level and the next multiple of 5 (207 → 210), each with the time ("≈ 2.4 days", "≈ 11.4 months") and "7.20T EXP to go · around Fri, Oct 23" (the date in local time).
+  - "Not enough history yet" when the range has no history.
+  - "Not at this pace" when it shows no EXP (an average of 0 or less).
   - "Level 300: nothing left to reach."
 - **The last check of Nexon** shows at the top right: "Checked Nexon today at 08:03 UTC (1:03 AM your time)" (today and yesterday go by the UTC day), or "Last check (…) had a problem: …", or, before any check, that the always-on app checks every 4 hours. It's asked for again every minute.
 - **Legion is shared by a world's characters.** Nexon lists Legion under one character per account per world (for an account, apparently its highest-level character there; RemyRabbit for one real account). Once that character is added, every character on the world shows its Legion, with "listed under RemyRabbit" on the others. Until then it's **N/A**, with a hint to add that character. With two listed characters on one world (two accounts), the most recently checked one is used. The search preview shows the character's own Legion entry, or else the world's.
@@ -104,10 +106,10 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
 
 `server/src/services/refresh.ts`. Every character is looked up in Nexon's rankings again **every 4 hours**. Nobody knows when Nexon updates its rankings (a watch saw no change for hours), so checking a few times a day catches it whenever it happens.
 - **When:** due when the last run *started* at least 4 hours ago, or there's been none. Checked when the server starts, then every 15 minutes, so a sleeping or switched-off Mac catches up when it's back. Runs never overlap. The timer doesn't keep the server alive, and a failed check is reported, never fatal.
-- **Only where `MIKU_REFRESH` is on:** off in the dev copy and in tests; the always-on app (v0.9.0) does it. `npm run refresh` runs one by hand (e.g. `MIKU_DATABASE=dev npm run refresh`).
+- **Only where `MIKU_REFRESH` is on:** off in the dev copy and in tests; the always-on app (v0.10.0) does it. `npm run refresh` runs one by hand (e.g. `MIKU_DATABASE=dev npm run refresh`).
 - **Each character, in world then tab order,** through the polite Nexon queue:
   - its details are updated (Nexon's current spelling of the name, job, level, EXP, ranks, Legion; `checkedAt`)
-  - today's snapshot is created or **updated in place**
+  - today's snapshot is created or **updated in place**, adding the EXP gained since the check before to the day's `gained` (the first check of a day counts from the last check before it, days that weren't checked included)
   - the avatar is downloaded only if Nexon's address for its look changed; if that download fails, it's tried again next time
 - **Not found** (renamed, dropped out of the rankings, or now on the other world): marked missing since that run, keeping its history and last numbers. Found again later, the mark goes.
 - **Nexon unreachable, or answering in an unexpected shape:** that would hit everyone, so the run stops at once and records why. Nobody is marked missing. One character's EXP not fitting the table fails just that character; the rest carry on.
@@ -122,11 +124,11 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
 - **`server/src/calc/`:** pure calculations, with no database and no HTTP.
   - **`exp.ts`:** a character's progress is (level, EXP into the level), as the rankings report it. **Total EXP** is everything since level 1, so EXP gained across a level-up is just the difference of two totals. The most possible is 8,509,498,537,428,819, still exact as a JavaScript number. Impossible progress is refused: a level outside 1–300, EXP that isn't a whole number from 0 to one short of the next level, or any EXP at level 300.
   - **`utcDays.ts`:** MapleStory's days are UTC days (the daily reset is at 00:00 UTC), written "YYYY-MM-DD", whatever the computer's time zone.
-  - **`dailyGains.ts`:** EXP per finished UTC day from the snapshots: a day's total minus the total of the snapshot before it (so level-ups need nothing special). A day without a snapshot is "no data", and its EXP lands on the next day that has one, with how many days it `covers`. The first day tracked has nothing to compare with, so it's "no data" too.
-    - **7-day total:** from the end of the 8th day back (or the first snapshot, if later) to the end of yesterday.
-    - **Daily average:** the same over 14 days, divided by the days actually spanned. So a character tracked for 3 days isn't averaged over 14, and missed days in between are still counted.
-    - **Best day:** the largest single-day gain among the 14 bars; combined bars and 0-EXP days don't count, and a tie keeps the earlier day.
-    - With no snapshot in the window, there's no average (nothing is known about those days).
+  - **`dailyGains.ts`:** EXP per UTC day from the snapshots' `gained` (each check adds the change in total EXP since the check before, so level-ups need nothing special). Today is a bar too. A day without a snapshot is "no data"; the next day that has one carries their EXP, with how many days it `covers` (a character's first day covers 1).
+    - **Ranges (7, 14, 30, 90 days, today included):** the EXP from the total at the end of the day before the range (from the last snapshot on or before it, even if days just before weren't checked) to the latest snapshot. For a character first tracked within the range, from where its first day started (its total minus that day's `gained`).
+    - **Daily average:** that EXP divided by the days from that starting point to today, today counting as a day. So a character tracked for 3 days isn't averaged over 14, and days not checked are still counted.
+    - **Levels a day:** the same, as levels with progress through them (285 at 86.91% is 285.8691), so "+20.5% a day" works across level-ups.
+    - With no snapshot in the range, there's nothing to say (`null`).
   - **`levelGoals.ts`:** the next level and the next multiple of 5 (207 → 210, 285 → 290; at most 300), each with the EXP still needed and the days at a daily rate. There's one goal when they're the same level (209 → 210), none at 300, and the days are "unknown" (`null`) at 0 EXP a day.
 - **`client/src/lib/format.ts`:** how the app shows things.
   - EXP to 3 significant digits (5.12B, 137B, 20.7T); a value that rounds up to 1,000 moves to the next unit (999.6B → 1.00T).
@@ -155,7 +157,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT saves `{ theme }`, `{ worldId }` or both. An empty save, an unknown theme or world, or extra fields are refused with a 400.
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
-- **`/api/characters/:id/progress`:** `{ today, bars: [{ day, gained, covers }] (14), stats: { last7, average, best }, goals }`, the goals at the daily average (none at 300). 404 for an unknown character or another owner's.
+- **`/api/characters/:id/progress`:** `{ today, bars: [{ day, gained, covers }] (90, ending today), ranges: [{ days, stats: { total, average, levelPerDay } | null, goals }] (7, 14, 30, 90) }`, each range's goals at its own average (none at 300; a negative average counts as 0). A character not checked since it was added has no history yet. 404 for an unknown character or another owner's.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
   - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.
@@ -208,7 +210,7 @@ Moving to a server or Docker means setting these variables, not changing code. G
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | The development copy: API on 4751 with `dev.db` (migrated first, no backups or refresh), and the page on http://127.0.0.1:4752 with live reload. The page forwards `/api` and `/theme-art` to 4751. |
-| `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.9.0 the always-on app does this, with a backup first. |
+| `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.10.0 the always-on app does this, with a backup first. |
 | `npm run db:migrate -- --name <what>` | After changing `server/prisma/schema.prisma`: creates a migration, applies it to `dev.db`, and regenerates the database code. When Prisma wants to ask a question (e.g. before adding a uniqueness rule), write the migration with `prisma migrate diff` instead and apply it with `prisma migrate deploy` (see v0.7.0's `refresh` migration). |
 | `npm run refresh` | One refresh of every character now (`MIKU_DATABASE=dev npm run refresh` for the dev copy). |
 
@@ -221,7 +223,7 @@ SQLite through Prisma 7 (`server/prisma/schema.prisma`), in the data folder, nev
 Tables:
 - **`Settings`:** one row per owner: theme and world.
 - **`Character`:** owner, world, name (as Nexon spells it, plus a lowercase copy for spotting duplicates), job, the latest level, EXP, ranks and Legion, its tab position, added and last-checked times, when it went missing from the rankings (if it has), and Nexon's address for its current look. Unique per owner, world and name. **Tab positions in each world are always exactly 0, 1, 2, …**: adding goes at the end, deleting closes the gap, and reordering renumbers.
-- **`Snapshot`:** **one per character per UTC day**: the day's latest level, EXP, total EXP, ranks and Legion, with when they were last checked. Unique per character and day; each refresh that day updates it in place. A day whose numbers didn't change still has one (0 EXP gained), so a missing day means "not checked" (the Mac was off). The first is saved when a character is added. Kept forever.
+- **`Snapshot`:** **one per character per UTC day**: the day's latest level, EXP, total EXP, ranks and Legion, with when they were last checked, and **`gained`**, the EXP gained that day (each check adds the change since the check before; 0 for a character's first, when it's added). The `daily_gained` migration filled it in for days saved before v0.9.0 from the day before's total (0 for each character's first day). Unique per character and day; each refresh that day updates it in place. A day whose numbers didn't change still has one (0 EXP gained), so a missing day means "not checked" (the Mac was off). The first is saved when a character is added. Kept forever.
 - **`RefreshRun`:** each refresh: start and end, checked, updated, missing and failed counts, and the problem if any.
 - **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
 - **`Selection`:** the selected character on each world.

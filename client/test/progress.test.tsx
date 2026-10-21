@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { CharacterView, DayBar, ProgressView } from "../src/api/types";
 import { App } from "../src/App";
-import { barDetail, barLabel, dayLabel, niceMax, ticks } from "../src/lib/chart";
+import { amountStyle, barDetail, barLabel, dayLabel, fmtLevelPct, niceMax, showDate, ticks } from "../src/lib/chart";
 import { nextUtcMidnight, untilNextUtcDay, utcDay } from "../src/lib/countdown";
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
@@ -23,20 +24,24 @@ const MIKU: CharacterView = {
   missingSince: null,
 };
 
-const day = (n: number) => `2026-10-${String(n).padStart(2, "0")}`;
-// The 14 days before Oct 21: the 7th to the 20th.
+const T = 1_000_000_000_000;
+const TODAY = "2026-10-21";
+const dayBack = (back: number) => new Date(Date.UTC(2026, 9, 21 - back)).toISOString().slice(0, 10);
+// 90 days ending today (Oct 21), 1T a day, with some changes: `over` is keyed by days back from today.
 function bars(over: Record<number, Partial<DayBar>> = {}): DayBar[] {
-  return Array.from({ length: 14 }, (_, i) => ({ day: day(7 + i), gained: 1_000_000_000_000, covers: 1, ...over[7 + i] }));
+  return Array.from({ length: 90 }, (_, i) => ({ day: dayBack(89 - i), gained: T, covers: 1, ...over[89 - i] }));
 }
+const goals = (average: number) => [
+  { kind: "next-level" as const, target: 286, remaining: 13 * T, days: (13 * T) / average },
+  { kind: "next-multiple-of-5" as const, target: 290, remaining: 521 * T, days: (521 * T) / average },
+];
+const range = (days: number, total: number, levelPerDay: number) => ({ days, stats: { total, average: total / days, levelPerDay }, goals: goals(total / days) });
 
+// Today 1.4T so far; 5T the day before; 9 days back a 0; 6 back not checked, so 5 back covers 2 days.
 const PROGRESS: ProgressView = {
-  today: "2026-10-21",
-  bars: bars({ 7: { gained: null, covers: 0 }, 12: { gained: 0 }, 15: { gained: null, covers: 0 }, 16: { gained: 3_000_000_000_000, covers: 2 }, 20: { gained: 5_000_000_000_000 } }),
-  stats: { last7: 11_000_000_000_000, average: 1_500_000_000_000, best: { day: day(20), gained: 5_000_000_000_000 } },
-  goals: [
-    { kind: "next-level", target: 286, remaining: 13_000_000_000_000, days: 13_000_000_000_000 / 1_500_000_000_000 },
-    { kind: "next-multiple-of-5", target: 290, remaining: 521_000_000_000_000, days: 521_000_000_000_000 / 1_500_000_000_000 },
-  ],
+  today: TODAY,
+  bars: bars({ 0: { gained: 1.4 * T }, 1: { gained: 5 * T }, 5: { gained: 3 * T, covers: 2 }, 6: { gained: null, covers: 0 }, 9: { gained: 0 }, 11: { gained: null, covers: 0 } }),
+  ranges: [range(7, 14 * T, 0.0205), range(14, 21 * T, 0.0151), range(30, 45 * T, 0.0153), range(90, 270 * T, 0.0306)],
 };
 
 function show(progress: unknown = PROGRESS, character = MIKU) {
@@ -46,6 +51,7 @@ function show(progress: unknown = PROGRESS, character = MIKU) {
 }
 const section = (name: string) => screen.findByRole("region", { name });
 const barCols = (s: HTMLElement) => Array.from(s.querySelectorAll(".bar-col")) as HTMLElement[];
+const texts = (s: Element, selector: string) => Array.from(s.querySelectorAll(selector)).map((x) => x.textContent);
 
 describe("chart helpers", () => {
   it("niceMax rounds up to 1, 2, 2.5 or 5 times a power of ten", () => {
@@ -57,17 +63,33 @@ describe("chart helpers", () => {
   });
 
   it("bar labels: the amount, 0, or nothing without data", () => {
-    expect([barLabel({ day: day(1), gained: 16_500_000_000, covers: 1 }), barLabel({ day: day(1), gained: 0, covers: 1 }), barLabel({ day: day(1), gained: null, covers: 0 })]).toEqual(["16.5B", "0", ""]);
+    expect([barLabel({ day: TODAY, gained: 16_500_000_000, covers: 1 }), barLabel({ day: TODAY, gained: 0, covers: 1 }), barLabel({ day: TODAY, gained: null, covers: 0 })]).toEqual(["16.5B", "0", ""]);
   });
 
   it("days are UTC calendar days", () => {
     expect([dayLabel("2026-10-07"), dayLabel("2027-01-01")]).toEqual(["Oct 7", "Jan 1"]);
   });
 
-  it("the tooltip says the day, the exact EXP, how many days it covers, or that there's no data", () => {
-    expect(barDetail({ day: "2026-10-20", gained: 16_500_000_000, covers: 1 })).toBe("Tue, Oct 20: 16,500,000,000 EXP");
-    expect(barDetail({ day: "2026-10-20", gained: 3_000, covers: 3 })).toBe("Tue, Oct 20: 3,000 EXP over 3 days (some days weren't checked)");
-    expect(barDetail({ day: "2026-10-20", gained: null, covers: 0 })).toBe("Tue, Oct 20: no data (not checked that day)");
+  it("the tooltip says the day (and whether it's today), the exact EXP, how many days it covers, or that there's no data", () => {
+    expect(barDetail({ day: "2026-10-20", gained: 16_500_000_000, covers: 1 }, TODAY)).toBe("Tue, Oct 20: 16,500,000,000 EXP");
+    expect(barDetail({ day: "2026-10-21", gained: 3_000, covers: 1 }, TODAY)).toBe("Wed, Oct 21 (today): 3,000 EXP");
+    expect(barDetail({ day: "2026-10-20", gained: 3_000, covers: 3 }, TODAY)).toBe("Tue, Oct 20: 3,000 EXP over 3 days (some days weren't checked)");
+    expect(barDetail({ day: "2026-10-20", gained: null, covers: 0 }, TODAY)).toBe("Tue, Oct 20: no data (not checked that day)");
+  });
+
+  it("amounts above every bar up to 14 bars, smaller up to 30, then only in the tooltips", () => {
+    expect([7, 14, 15, 30, 31, 90].map(amountStyle)).toEqual(["full", "full", "small", "small", "none", "none"]);
+  });
+
+  it("dates under every bar up to 14, then every 3rd or 10th, counting back from today (always dated)", () => {
+    const dated = (count: number) => Array.from({ length: count }, (_, i) => i).filter((i) => showDate(i, count));
+    expect(dated(14)).toHaveLength(14);
+    expect(dated(30)).toEqual([2, 5, 8, 11, 14, 17, 20, 23, 26, 29]);
+    expect(dated(90)).toEqual([9, 19, 29, 39, 49, 59, 69, 79, 89]);
+  });
+
+  it("a share of a level a day, as a percent with its sign", () => {
+    expect([fmtLevelPct(0.2051), fmtLevelPct(0), fmtLevelPct(26.963), fmtLevelPct(-0.012)]).toEqual(["+20.5%", "+0.0%", "+2,696.3%", "-1.2%"]);
   });
 });
 
@@ -84,56 +106,119 @@ describe("countdown helpers", () => {
   });
 });
 
-describe("the EXP section", () => {
-  it("shows the 7-day total, daily average and best day", async () => {
+describe("the range boxes", () => {
+  it("one per range: the daily average, the share of a level a day, and the total; 14 days chosen at first", async () => {
     show();
     const s = await section("EXP");
-    expect(Array.from(s.querySelectorAll(".exp-stats .stat")).map((x) => x.textContent)).toEqual(["EXP last 7 days11.0T", "Daily average (14 days)1.50T", "Best day5.00TOct 20"]);
-    expect(Array.from(s.querySelectorAll(".exp-stats .stat")).map((x) => x.querySelectorAll(".small").length)).toEqual([0, 0, 1]); // only the best day has a note
-    expect(s.querySelector(".legend")!.textContent).toBe("14-day average 1.50T");
+    expect(texts(s, ".range-box")).toEqual([
+      "7 days2.00T a dayGained +2.1% a dayTotal 14.0T",
+      "14 days1.50T a dayGained +1.5% a dayTotal 21.0T",
+      "30 days1.50T a dayGained +1.5% a dayTotal 45.0T",
+      "90 days3.00T a dayGained +3.1% a dayTotal 270T",
+    ]);
+    expect(texts(s, ".range-box.on .range-name")).toEqual(["14 days"]);
+    expect(Array.from(s.querySelectorAll(".range-box")).map((b) => b.getAttribute("aria-pressed"))).toEqual(["false", "true", "false", "false"]);
+    expect(s.querySelectorAll(".range-box .gain")).toHaveLength(4); // gains are highlighted
   });
 
-  it("one bar per day, with its amount above it and its day below, scaled to a round top", async () => {
+  it("a range without history shows dashes; no gain, no highlight", async () => {
+    show({ ...PROGRESS, ranges: [{ days: 7, stats: null, goals: [] }, ...PROGRESS.ranges.slice(1, 3), { ...PROGRESS.ranges[3]!, stats: { total: 0, average: 0, levelPerDay: 0 } }] });
+    const s = await section("EXP");
+    expect(texts(s, ".range-box")[0]).toBe("7 days— a dayGained —Total —");
+    expect(texts(s, ".range-box")[3]).toBe("90 days0 a dayGained +0.0% a dayTotal 0");
+    expect(s.querySelectorAll(".range-box .gain")).toHaveLength(2);
+  });
+
+  it("clicking a button at the top right or a box picks that range, and they stay in step", async () => {
+    show();
+    const s = await section("EXP");
+    const user = userEvent.setup();
+    await user.click(within(s.querySelector<HTMLElement>(".segmented")!).getByRole("button", { name: "7 days" }));
+    expect(texts(s, ".range-box.on .range-name")).toEqual(["7 days"]);
+    expect(texts(s, ".segmented [aria-pressed=true]")).toEqual(["7 days"]);
+    expect(barCols(s)).toHaveLength(7);
+    await user.click(s.querySelectorAll<HTMLElement>(".range-box")[2]!);
+    expect(texts(s, ".segmented [aria-pressed=true]")).toEqual(["30 days"]);
+    expect(texts(s, ".range-box.on .range-name")).toEqual(["30 days"]);
+    expect(barCols(s)).toHaveLength(30);
+    expect(s.querySelector(".legend")!.textContent).toBe("30-day average 1.50T");
+  });
+});
+
+const pick = async (s: HTMLElement, days: number) => userEvent.setup().click(within(s.querySelector<HTMLElement>(".segmented")!).getByRole("button", { name: `${days} days` }));
+
+describe("the chart", () => {
+  it("14 bars ending today, with amounts above and dates below, scaled to a round top", async () => {
     show();
     const s = await section("EXP");
     const cols = barCols(s);
     expect(cols).toHaveLength(14);
-    expect(cols.map((c) => c.querySelector(".bar-label")!.textContent)).toEqual(["", "1.00T", "1.00T", "1.00T", "1.00T", "0", "1.00T", "1.00T", "", "3.00T2 days", "1.00T", "1.00T", "1.00T", "5.00T"]);
-    expect(Array.from(s.querySelectorAll(".xaxis span")).map((x) => x.textContent)).toEqual(Array.from({ length: 14 }, (_, i) => `Oct ${7 + i}`));
-    // the top of the scale is 5T (the best day), so a 1T bar is 20% tall and the label sits just above it
-    expect((cols[1]!.querySelector(".bar") as HTMLElement).style.height).toBe("20%");
-    expect((cols[1]!.querySelector(".bar-label") as HTMLElement).style.bottom).toBe("calc(20% + 4px)");
-    expect((cols[13]!.querySelector(".bar") as HTMLElement).style.height).toBe("100%");
-    expect(Array.from(s.querySelectorAll(".yaxis span")).map((x) => x.textContent)).toEqual(["0", "1.25T", "2.50T", "3.75T", "5.00T"]);
-    // dashed grid lines at each step above zero (the bottom edge is the axis itself)
-    expect(Array.from(s.querySelectorAll(".grid-line")).map((g) => (g as HTMLElement).style.bottom)).toEqual(["25%", "50%", "75%", "100%"]);
+    expect(cols.map((c) => c.querySelector(".bar-label")!.textContent)).toEqual(["1.00T", "1.00T", "", "1.00T", "0", "1.00T", "1.00T", "", "3.00T2 days", "1.00T", "1.00T", "1.00T", "5.00T", "1.40T"]);
+    expect(texts(s, ".xaxis span")).toEqual([...Array.from({ length: 13 }, (_, i) => dayLabel(dayBack(13 - i))), "Today"]);
+    // the top of the scale is 5T, so a 1T bar is 20% tall and its label sits just above it
+    expect(cols[0]!.querySelector<HTMLElement>(".bar")!.style.height).toBe("20%");
+    expect(cols[0]!.querySelector<HTMLElement>(".bar-label")!.style.bottom).toBe("calc(20% + 4px)");
+    expect(cols[12]!.querySelector<HTMLElement>(".bar")!.style.height).toBe("100%");
+    expect(texts(s, ".yaxis span")).toEqual(["0", "1.25T", "2.50T", "3.75T", "5.00T"]);
+    expect(Array.from(s.querySelectorAll<HTMLElement>(".grid-line")).map((g) => g.style.bottom)).toEqual(["25%", "50%", "75%", "100%"]);
+    expect(s.querySelector(".chart")!.classList.contains("amounts-full")).toBe(true);
   });
 
-  it("days without data look different and say so; a bar after them says how many days it covers", async () => {
+  it("days without data look different and say so; a bar after them says how many days it covers; today says so", async () => {
     show();
     const cols = barCols(await section("EXP"));
-    expect(cols.map((c) => c.classList.contains("no-data"))).toEqual([true, false, false, false, false, false, false, false, true, false, false, false, false, false]);
-    expect(cols[0]!.getAttribute("aria-label")).toBe("Wed, Oct 7: no data (not checked that day)");
-    expect(cols[9]!.getAttribute("aria-label")).toBe("Fri, Oct 16: 3,000,000,000,000 EXP over 2 days (some days weren't checked)");
-    expect(cols[5]!.getAttribute("title")).toBe("Mon, Oct 12: 0 EXP");
+    expect(cols.map((c) => c.classList.contains("no-data"))).toEqual([false, false, true, false, false, false, false, true, false, false, false, false, false, false]);
+    expect(cols[2]!.getAttribute("aria-label")).toBe("Sat, Oct 10: no data (not checked that day)");
+    expect(cols[8]!.getAttribute("aria-label")).toBe("Fri, Oct 16: 3,000,000,000,000 EXP over 2 days (some days weren't checked)");
+    expect(cols[13]!.getAttribute("title")).toBe("Wed, Oct 21 (today): 1,400,000,000,000 EXP");
     expect(cols.every((c) => c.tabIndex === 0)).toBe(true); // reachable from the keyboard, each with its details
   });
 
-  it("the dashed average line sits at the average", async () => {
+  it("30 bars: smaller amounts without '2 days', every 3rd day dated", async () => {
     show();
-    expect((within(await section("EXP")).getByTestId("average-line") as HTMLElement).style.bottom).toBe("30%"); // 1.5T of 5T
+    const s = await section("EXP");
+    await pick(s, 30);
+    expect(s.querySelector(".chart")!.classList.contains("amounts-small")).toBe(true);
+    expect(barCols(s)[24]!.querySelector(".bar-label")!.textContent).toBe("3.00T"); // 5 days back
+    expect(texts(s, ".xaxis span").filter(Boolean)).toEqual([27, 24, 21, 18, 15, 12, 9, 6, 3].map((b) => dayLabel(dayBack(b))).concat("Today"));
   });
 
-  it("without history yet: no stats, no average line, every day 'no data'", async () => {
-    show({ ...PROGRESS, bars: bars(Object.fromEntries(Array.from({ length: 14 }, (_, i) => [7 + i, { gained: null, covers: 0 }]))), stats: { last7: null, average: null, best: null } });
+  it("90 bars: amounts only in the tooltips, every 10th day dated", async () => {
+    show();
     const s = await section("EXP");
-    expect(Array.from(s.querySelectorAll(".exp-stats .value")).map((x) => x.textContent)).toEqual(["—", "—", "—"]);
+    await pick(s, 90);
+    expect(barCols(s)).toHaveLength(90);
+    expect(s.querySelector(".chart")!.classList.contains("amounts-none")).toBe(true);
+    expect(s.querySelectorAll(".bar-label")).toHaveLength(0);
+    expect(barCols(s)[89]!.getAttribute("title")).toBe("Wed, Oct 21 (today): 1,400,000,000,000 EXP");
+    expect(texts(s, ".xaxis span").filter(Boolean)).toHaveLength(9);
+    expect(texts(s, ".xaxis span").at(-1)).toBe("Today");
+  });
+
+  it("the dashed average line sits at the chosen range's average", async () => {
+    show();
+    const s = await section("EXP");
+    expect(within(s).getByTestId("average-line").style.bottom).toBe("30%"); // 1.5T of 5T
+    await pick(s, 7);
+    expect(within(s).getByTestId("average-line").style.bottom).toBe("40%"); // 2T of 5T
+  });
+
+  it("without history yet: no scale, no average line, every day 'no data', and a note", async () => {
+    show({ ...PROGRESS, bars: bars(Object.fromEntries(Array.from({ length: 90 }, (_, b) => [b, { gained: null, covers: 0 }]))), ranges: PROGRESS.ranges.map((r) => ({ ...r, stats: null })) });
+    const s = await section("EXP");
     expect(s.querySelector(".legend")).toBeNull();
     expect(within(s).queryByTestId("average-line")).toBeNull();
     expect(barCols(s).every((c) => c.classList.contains("no-data"))).toBe(true);
-    // no meaningless scale, but a note saying why it's empty
     expect(s.querySelectorAll(".yaxis span")).toHaveLength(0);
-    expect(s.querySelector(".chart-empty")!.textContent).toBe("No EXP history yet: the first bar appears once a full UTC day has been checked.");
+    expect(s.querySelector(".chart-empty")!.textContent).toBe("No EXP history yet: the first bar appears after the next check of Nexon (every 4 hours).");
+  });
+
+  it("with only 0s and days without data: no scale (it would read 0, 0, 0…), and no empty-chart note", async () => {
+    show({ ...PROGRESS, bars: bars(Object.fromEntries(Array.from({ length: 90 }, (_, b) => [b, b === 0 ? { gained: 0 } : { gained: null, covers: 0 }]))) });
+    const s = await section("EXP");
+    expect(s.querySelectorAll(".yaxis span")).toHaveLength(0);
+    expect(s.querySelector(".chart-empty")).toBeNull();
+    expect(barCols(s).at(-1)!.querySelector(".bar-label")!.textContent).toBe("0");
   });
 
   it("with some history, the scale shows and there's no empty-chart note", async () => {
@@ -141,6 +226,12 @@ describe("the EXP section", () => {
     const s = await section("EXP");
     expect(s.querySelectorAll(".yaxis span")).toHaveLength(5);
     expect(s.querySelector(".chart-empty")).toBeNull();
+  });
+
+  it("a day with less EXP than the day before stays on the axis", async () => {
+    show({ ...PROGRESS, bars: bars({ 0: { gained: -2 * T } }) });
+    const cols = barCols(await section("EXP"));
+    expect(cols[13]!.querySelector<HTMLElement>(".bar")!.style.height).toBe("0%");
   });
 
   it("while loading, and when it can't be loaded", async () => {
@@ -161,13 +252,13 @@ describe("the countdown to 00:00 UTC", () => {
     show();
     const s = await section("EXP");
     const midnight = new Date(Date.UTC(2026, 9, 21)).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    expect(s.querySelector(".countdown")!.textContent).toBe(`New day in 0h 00m 10s · 00:00 UTC is ${midnight} your time`);
+    expect(s.querySelector(".countdown")!.textContent).toBe(`New day in 0h 00m 10s · 00:00 UTC is ${midnight} your time.`);
     await vi.advanceTimersByTimeAsync(3_000);
     expect(s.querySelector(".countdown b")!.textContent).toBe("0h 00m 07s");
     vi.useRealTimers();
   });
 
-  it("at 00:00 UTC the chart is asked for again (yesterday's bar is finished), and only then", async () => {
+  it("at 00:00 UTC the chart is asked for again (a new day's bar), and only then", async () => {
     vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
     vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 23, 59, 58)));
     const server = show();
@@ -199,8 +290,33 @@ describe("the countdown to 00:00 UTC", () => {
   });
 });
 
+describe("after each check of Nexon", () => {
+  it("when a new check has finished, the characters and the chart are loaded again (and not before)", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 11, 59)));
+    let finishedAt: string | null = "2026-10-20T08:00:30.000Z";
+    const run = () => ({ last: { startedAt: "2026-10-20T08:00:00.000Z", finishedAt, checked: 1, updated: 1, missing: 0, failed: 0, problem: null } });
+    const server = fakeServer({ ...BASE_ROUTES, "GET /refresh": run, "GET /characters": { characters: [MIKU], selectedId: 1 }, "GET /characters/:id/progress": PROGRESS });
+    renderWithApp(<App />);
+    await section("EXP");
+    const count = (prefix: string) => server.calls.filter((c) => c.path.startsWith(prefix)).length;
+    await vi.waitFor(() => expect([count("/refresh"), count("/characters?"), count("/characters/1/progress")]).toEqual([1, 1, 1]));
+    await vi.advanceTimersByTimeAsync(60_000); // asked again: the same check
+    await vi.waitFor(() => expect(count("/refresh")).toBe(2));
+    expect([count("/characters?"), count("/characters/1/progress")]).toEqual([1, 1]);
+    finishedAt = null; // a new check started and hasn't finished
+    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.waitFor(() => expect(count("/refresh")).toBe(3));
+    await vi.waitFor(() => expect([count("/characters?"), count("/characters/1/progress")]).toEqual([2, 2]));
+    finishedAt = "2026-10-20T12:00:30.000Z"; // and now it has
+    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.waitFor(() => expect([count("/characters?"), count("/characters/1/progress")]).toEqual([3, 3]));
+    vi.useRealTimers();
+  });
+});
+
 describe("time to level", () => {
-  it("the next level and the next multiple of 5: how long, how much EXP, and around when", async () => {
+  it("at the chosen range's average: how long, how much EXP, and around when", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 19)));
     show();
@@ -216,34 +332,43 @@ describe("time to level", () => {
     vi.useRealTimers();
   });
 
-  it("with history but no EXP in the last 14 days: not at this pace", async () => {
-    show({ ...PROGRESS, stats: { last7: 0, average: 0, best: null }, goals: [{ kind: "next-level", target: 286, remaining: 13e12, days: null }] });
+  it("follows the chosen range", async () => {
+    show();
+    await pick(await section("EXP"), 7);
+    const s = await section("Time to level");
+    expect(s.querySelector(".chart-head .countdown")!.textContent).toBe("At the 7-day average of 2.00T a day");
+    expect(texts(s, ".eta-item .value")).toEqual(["≈ 6.5 days", "≈ 8.6 months"]); // 13T and 521T at 2T a day: 6.5 and 260.5 days
+  });
+
+  it("with history but no EXP in the range: not at this pace", async () => {
+    show({ ...PROGRESS, ranges: PROGRESS.ranges.map((r) => ({ ...r, stats: { total: 0, average: 0, levelPerDay: 0 }, goals: [{ kind: "next-level", target: 286, remaining: 13e12, days: null }] })) });
     const s = await section("Time to level");
     expect(s.querySelector(".eta-item .value")!.textContent).toBe("Not at this pace");
     expect(s.querySelector(".eta-item small")!.textContent).toBe("13.0T EXP to go · no EXP in the last 14 days");
     expect(s.querySelector(".chart-head .countdown")!.textContent).toBe("At the 14-day average of 0 a day");
   });
 
-  it("without enough history yet (a new character): says so, not 'not at this pace'", async () => {
-    show({ ...PROGRESS, stats: { last7: null, average: null, best: null }, goals: [{ kind: "next-level", target: 286, remaining: 13e12, days: null }] });
+  it("EXP that went down shows as an average of 0, not a negative", async () => {
+    show({ ...PROGRESS, ranges: PROGRESS.ranges.map((r) => ({ ...r, stats: { total: -5, average: -1, levelPerDay: 0 }, goals: [{ kind: "next-level", target: 286, remaining: 13e12, days: null }] })) });
+    expect((await section("Time to level")).querySelector(".chart-head .countdown")!.textContent).toBe("At the 14-day average of 0 a day");
+  });
+
+  it("without history in the range: says so, not 'not at this pace'", async () => {
+    show({ ...PROGRESS, ranges: PROGRESS.ranges.map((r) => ({ ...r, stats: null, goals: [{ kind: "next-level", target: 286, remaining: 13e12, days: null }] })) });
     const s = await section("Time to level");
     expect(s.querySelector(".eta-item .value")!.textContent).toBe("Not enough history yet");
-    expect(s.querySelector(".eta-item small")!.textContent).toBe("13.0T EXP to go · needs a full UTC day of history");
+    expect(s.querySelector(".eta-item small")!.textContent).toBe("13.0T EXP to go · no EXP history in the last 14 days");
     expect(s.querySelector(".chart-head .countdown")).toBeNull();
   });
 
   it("at level 300 there's nothing left to reach", async () => {
-    show({ ...PROGRESS, goals: [] }, { ...MIKU, level: 300, exp: 0, expToNext: null });
+    show({ ...PROGRESS, ranges: PROGRESS.ranges.map((r) => ({ ...r, goals: [] })) }, { ...MIKU, level: 300, exp: 0, expToNext: null });
     expect((await section("Time to level")).textContent).toContain("Level 300: nothing left to reach.");
   });
 
   it("follows the selected character", async () => {
     const leek = { ...MIKU, id: 2, name: "LeekSpin" };
-    const server = fakeServer({
-      ...BASE_ROUTES,
-      "GET /characters": { characters: [MIKU, leek], selectedId: 2 },
-      "GET /characters/:id/progress": PROGRESS,
-    });
+    const server = fakeServer({ ...BASE_ROUTES, "GET /characters": { characters: [MIKU, leek], selectedId: 2 }, "GET /characters/:id/progress": PROGRESS });
     renderWithApp(<App />);
     await section("EXP");
     await waitFor(() => expect(server.calls.map((c) => c.path)).toContain("/characters/2/progress"));

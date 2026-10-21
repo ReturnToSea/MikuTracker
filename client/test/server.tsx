@@ -63,9 +63,8 @@ export function fakeExpTable() {
 // A character's progress with no history yet.
 export const NO_PROGRESS = {
   today: "2026-10-20",
-  bars: Array.from({ length: 14 }, (_, i) => ({ day: `2026-10-${String(6 + i).padStart(2, "0")}`, gained: null, covers: 0 })),
-  stats: { last7: null, average: null, best: null },
-  goals: [],
+  bars: Array.from({ length: 90 }, (_, i) => ({ day: new Date(Date.UTC(2026, 9, 20 - 89 + i)).toISOString().slice(0, 10), gained: null, covers: 0 })),
+  ranges: [7, 14, 30, 90].map((days) => ({ days, stats: null, goals: [] })),
 };
 
 // The usual answers: Ren saved on Kronos, no theme art, no characters yet.

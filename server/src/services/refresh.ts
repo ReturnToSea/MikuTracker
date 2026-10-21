@@ -31,14 +31,19 @@ function numbers(found: CharacterLookup) {
   };
 }
 
-// Today's snapshot for a character, created or updated in place with these numbers.
+// Today's snapshot for a character, created or updated in place with these numbers. Its `gained`
+// adds up the change since each check before, so today's bar grows with every check. The first
+// check of a day counts from the last check before it (days that weren't checked included).
 export async function saveSnapshot(characterId: number, found: CharacterLookup, now: Date) {
-  const data = { capturedAt: now, totalExp: BigInt(totalExp(found.level, found.exp)), ...numbers(found) };
-  await db().snapshot.upsert({
-    where: { characterId_day: { characterId, day: utcDay(now) } },
-    create: { characterId, day: utcDay(now), ...data },
-    update: data,
-  });
+  const total = BigInt(totalExp(found.level, found.exp));
+  const day = utcDay(now);
+  const last = await db().snapshot.findFirst({ where: { characterId }, orderBy: { day: "desc" } });
+  const data = { capturedAt: now, totalExp: total, ...numbers(found) };
+  if (last?.day === day) {
+    await db().snapshot.update({ where: { id: last.id }, data: { ...data, gained: last.gained + total - last.totalExp } });
+  } else {
+    await db().snapshot.create({ data: { characterId, day, ...data, gained: last ? total - last.totalExp : 0n } });
+  }
 }
 
 type Outcome = "updated" | "missing";

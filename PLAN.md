@@ -121,7 +121,10 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 ### v0.8.0: the character view — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The daily average divides by the days actually tracked, up to 14, instead of always 14 as first planned, so a newly added character's average isn't too low.)
 
-### v0.9.0: backups and the always-on app
+### v0.9.0: EXP ranges, and today's bar — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. (From using v0.8.0: today's bar grows with each check, and 7, 14, 30 and 90-day ranges replaced the three stats. Layout B of the mockup.)
+
+### v0.10.0: backups and the always-on app
 1. Backups, adapted from Goal Tracker: daily, before database updates, and kept for 30 days plus 12 months.
 2. The launch agent and `app:*` commands on port 4750, from its own copy of `main`, with the real database; `npm run dev` on 4751/4752 with `dev.db`.
 3. The daily refresh runs only in the always-on app.
@@ -136,6 +139,21 @@ Use it for a few days, fix what comes up, re-check the EXP table against the lat
 - **Leveling progress line chart on Home:** level over time, in days, so you can see your leveling progress. The line includes progress through each level, so 285 at 86.91% plots as 285.87 and the line climbs steadily between level-ups instead of jumping in steps. It comes from the saved snapshots (one point per UTC day), so nothing new needs collecting.
 - **Docker check:** a Dockerfile and compose file, plus a check that the app runs in a container. Data lives on a volume (`MIKU_DATA_DIR=/data`), with `HOST=0.0.0.0` and `MIKU_IN_CONTAINER=1`, the port published only to `127.0.0.1`, and `restart: unless-stopped` doing the launch agent's job. This proves the move off the Mac works before it's needed. (Moving to Postgres is separate: it needs a fresh starting migration, and `pg_dump` for backups.)
 - **Look up any character, without adding it:** its own tab (for example "Lookup"), to search any GMS character on Kronos or Hyperion and see its details (avatar, level, EXP, ranks, Legion) without adding it to your characters. It uses the same server search as the + box.
+- **Gear tab:** save each piece of a character's gear by hand (Nexon's rankings don't include gear, and reading the game is off limits).
+  - Per piece: the slot and item, its **flame** (bonus stats) with a **flame score**, its **stars** (Star Force), and its **potential** and bonus potential (tier and each line).
+  - **To research first:**
+    - the flame score formula (it depends on the class's main stat, and guides weigh attack and all-stat % differently)
+    - GMS's current Star Force limits and the stats each star gives
+    - the potential lines and tiers available per slot
+
+    Like the EXP table, these get recorded with their source and patch.
+- **Maybe: an upgrade advisor tab**, using MapleScouter's information to work out the best next upgrade (which piece to flame, star or cube next).
+  - **To research first:**
+    - what MapleScouter offers for GMS, and whether it has an official way to use its data (an API) or terms that allow it
+    - otherwise, whether its methods are published well enough to calculate the same thing ourselves
+
+    No scraping a site that doesn't allow it. If neither works, the tab could link to MapleScouter instead.
+  - It builds on the gear tab's saved gear.
 - **Check the real data size:** after some real use, measure the database (snapshots), the avatar images and the backups folder, and compare them with the estimates (about 100 bytes per snapshot, so about 36 KB per character per year). Revisit the "keep forever" decision only if the real numbers are much bigger.
 
 ## Risks

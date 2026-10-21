@@ -262,8 +262,16 @@ p.block.error { padding: 12px 24px; }
 .notice-line { margin: 0 0 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--accent-soft); color: var(--text); font-size: 0.9em; }
 
 /* The EXP section: stats, the daily chart, and time to level (as in docs/theme-examples) */
-.exp-stats { grid-template-columns: repeat(3, 1fr); border-top: 0; margin-bottom: 18px; }
-.exp-stats .stat { padding-top: 0; }
+.range-boxes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.range-box { display: grid; gap: 2px; padding: 10px 14px; text-align: left; color: var(--text); background: var(--surface-2); border: var(--border-width) solid var(--border); border-radius: var(--radius); }
+.range-box:hover:not(.on) { border-color: var(--text-muted); }
+.range-box.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface-2); }
+.range-name { font-size: 0.8em; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+.range-avg { font-family: var(--font-display); font-size: 1.5em; font-weight: 700; line-height: 1.25; }
+.range-avg small { font-family: var(--font); font-size: 0.55em; font-weight: 400; color: var(--text-muted); }
+.range-sub { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85em; color: var(--text-muted); }
+.range-sub b { color: var(--text); font-weight: 600; }
+.range-sub b.gain { color: var(--accent); }
 .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .chart-head h3 { font-size: 1.1em; }
 .legend { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; font-size: 0.8em; font-family: var(--font); font-weight: 400; color: var(--text-muted); }
@@ -276,7 +284,10 @@ p.block.error { padding: 12px 24px; }
 .plot { position: relative; border-bottom: var(--border-width) solid var(--border); }
 .grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); opacity: 0.7; }
 .avg-line { position: absolute; left: 0; right: 0; z-index: 2; border-top: 2px dashed var(--line); pointer-events: none; }
-.bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 6px; padding: 0 4px; }
+.bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: var(--bar-gap, 6px); padding: 0 4px; }
+.chart.amounts-small { --bar-gap: 3px; }
+.chart.amounts-small .bar-label { font-size: 0.6em; padding: 0 1px; }
+.chart.amounts-none { --bar-gap: 1px; }
 .bar-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; }
 .bar-col:focus { outline: none; }
 .bar { width: 100%; min-height: 2px; background: var(--bar); border: var(--border-width) solid var(--bar-outline, transparent); border-bottom: 0; border-radius: calc(var(--radius) * 0.6) calc(var(--radius) * 0.6) 0 0; }
@@ -285,9 +296,9 @@ p.block.error { padding: 12px 24px; }
 .bar-label { position: absolute; left: 50%; transform: translateX(-50%); z-index: 3; padding: 0 3px; border-radius: 3px; background: var(--surface); font-size: 0.72em; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; text-align: center; line-height: 1.2; }
 .bar-label:empty { display: none; }
 .bar-label small { display: block; font-weight: 400; color: var(--text-muted); }
-.xaxis { grid-column: 2; display: flex; gap: 6px; padding: 6px 4px 0; font-size: 0.72em; color: var(--text-muted); }
+.xaxis { grid-column: 2; display: flex; gap: var(--bar-gap, 6px); padding: 6px 4px 0; font-size: 0.72em; color: var(--text-muted); }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; text-align: center; font-size: 0.9em; }
-.xaxis span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+.xaxis span { flex: 1; min-width: 0; display: flex; justify-content: center; white-space: nowrap; }
 .chart-foot { margin: 10px 0 0; }
 .eta { display: grid; grid-template-columns: repeat(2, 1fr); margin-top: 6px; }
 .eta-item { padding: 6px 18px 4px; }

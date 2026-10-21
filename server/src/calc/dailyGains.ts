@@ -1,8 +1,9 @@
+import { fromTotal, progress } from "./exp";
 import { addUtcDays, startOfUtcDay } from "./utcDays";
 
 // EXP gained per UTC day, from a character's snapshots (one per UTC day, holding that day's latest
-// total EXP). A day's gain is its total minus the total of the snapshot before it, so level-ups
-// need no special handling.
+// total EXP and `gained`, the EXP gained that day: each check adds the change since the check
+// before). Today counts too: its bar grows with each check.
 //
 // Days without a snapshot weren't checked (the Mac was off): they show as "no data", and the EXP
 // gained over them lands on the next day that has data, marked with how many days it covers.
@@ -10,62 +11,62 @@ import { addUtcDays, startOfUtcDay } from "./utcDays";
 export interface SnapshotPoint {
   day: string; // "YYYY-MM-DD" (UTC)
   totalExp: number;
+  gained: number;
 }
 
 export interface DayBar {
   day: string;
-  gained: number | null; // null: no data (not checked that day, or the first day tracked)
+  gained: number | null; // null: no data (not checked that day)
   covers: number; // how many days `gained` spans: 1 normally, more right after days without data; 0 with no data
 }
 
-export interface ExpStats {
-  last7: number | null; // EXP over the last 7 finished days (or since tracking began)
-  average: number | null; // EXP per day over the last 14 finished days (or the days tracked, if fewer)
-  best: { day: string; gained: number } | null; // the most in a single day, among the last 14
+export interface RangeStats {
+  total: number; // EXP gained over the range
+  average: number; // EXP per day
+  levelPerDay: number; // levels per day: 0.205 is 20.5% of a level a day
 }
 
-export const CHART_DAYS = 14;
+export const RANGES = [7, 14, 30, 90] as const;
+export const CHART_DAYS = 90; // the most bars the chart shows
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const daysBetween = (from: string, to: string) => Math.round((startOfUtcDay(to).getTime() - startOfUtcDay(from).getTime()) / DAY_MS);
 
-// The snapshot holding the total at the end of `day`: the latest one on or before it.
-function atEndOf(points: SnapshotPoint[], day: string): SnapshotPoint | undefined {
-  return points.filter((p) => p.day <= day).at(-1);
-}
-
 // The points in day order (whatever order they arrive in).
 const inDayOrder = (points: SnapshotPoint[]) => [...points].sort((a, b) => a.day.localeCompare(b.day));
 
-// One bar per finished UTC day, the `count` days before `today`, oldest first.
+// One bar per UTC day, the `count` days ending today, oldest first.
 export function dailyBars(unordered: SnapshotPoint[], today: string, count = CHART_DAYS): DayBar[] {
   const points = inDayOrder(unordered);
   const bars: DayBar[] = [];
-  for (let back = count; back >= 1; back--) {
+  for (let back = count - 1; back >= 0; back--) {
     const day = addUtcDays(today, -back);
-    const here = points.find((p) => p.day === day);
-    const before = atEndOf(points, addUtcDays(day, -1));
-    bars.push(here && before ? { day, gained: here.totalExp - before.totalExp, covers: daysBetween(before.day, day) } : { day, gained: null, covers: 0 });
+    const at = points.findIndex((p) => p.day === day);
+    if (at === -1) bars.push({ day, gained: null, covers: 0 });
+    else bars.push({ day, gained: points[at]!.gained, covers: at === 0 ? 1 : daysBetween(points[at - 1]!.day, day) });
   }
   return bars;
 }
 
-// EXP gained from the end of the day `days` before yesterday to the end of yesterday, or since
-// tracking began if that's later, with how many days that spans. Null without two snapshots to compare.
-function gainedOver(points: SnapshotPoint[], today: string, days: number): { gained: number; span: number } | null {
-  const end = atEndOf(points, addUtcDays(today, -1));
-  const start = atEndOf(points, addUtcDays(today, -1 - days)) ?? points[0];
-  if (!end || !start || start.day >= end.day) return null;
-  return { gained: end.totalExp - start.totalExp, span: daysBetween(start.day, end.day) };
+// Level with progress through it: 285 at 86.91% is 285.8691.
+function levelAt(total: number): number {
+  const { level, exp } = fromTotal(total);
+  return level + progress(level, exp);
 }
 
-export function expStats(unordered: SnapshotPoint[], today: string): ExpStats {
+// The last `days` days, today included. The range starts from the total at the end of the day
+// before it (from the last snapshot on or before then, even if earlier days weren't checked), or,
+// for a character first tracked within the range, from where its first day started. Null with no
+// snapshot in the range.
+export function rangeStats(unordered: SnapshotPoint[], today: string, days: number): RangeStats | null {
   const points = inDayOrder(unordered);
-  const week = gainedOver(points, today, 7);
-  const fortnight = gainedOver(points, today, CHART_DAYS);
-  let best: ExpStats["best"] = null;
-  for (const bar of dailyBars(points, today)) {
-    if (bar.covers === 1 && bar.gained! > (best?.gained ?? 0)) best = { day: bar.day, gained: bar.gained! };
-  }
-  return { last7: week?.gained ?? null, average: fortnight ? fortnight.gained / fortnight.span : null, best };
+  const first = addUtcDays(today, -(days - 1));
+  const end = points.filter((p) => p.day <= today).at(-1);
+  if (!end || end.day < first) return null;
+  const before = points.filter((p) => p.day < first).at(-1);
+  const start = before ?? points[0]!;
+  const startTotal = before ? before.totalExp : start.totalExp - start.gained;
+  const span = daysBetween(start.day, today) + (before ? 0 : 1);
+  const total = end.totalExp - startTotal;
+  return { total, average: total / span, levelPerDay: (levelAt(end.totalExp) - levelAt(startTotal)) / span };
 }

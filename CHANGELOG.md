@@ -2,6 +2,39 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.9.0 (2026-10-21): EXP ranges, and today's bar
+
+From using v0.8.0. Backups and the always-on app move to v0.10.0.
+
+- **Today's bar grows with each check of Nexon** (every 4 hours), instead of the chart showing only finished days.
+  - Each check now adds the EXP gained since the check before to the day's saved `gained`. The first check of a day counts from the last check before it.
+  - A character added this morning shows its EXP after the next check, instead of waiting for tomorrow.
+  - **When a check finishes,** the page loads the characters and the chart again by itself.
+  - **Existing saved days** were filled in by the `daily_gained` migration from the day before's total (0 for each character's first day). Tried on a throwaway database and on `dev.db`.
+- **7, 14, 30 and 90-day ranges** (layout B of the mockup) replace the three stats. Each range's box shows:
+  - the daily average
+  - the share of a level gained a day ("+20.5% a day", across level-ups)
+  - the total EXP
+
+  Today counts in every range. Clicking a box, or the buttons at the top right of the chart, picks a range: the chart shows that many bars, the average line is that range's, and **Time to level uses its average**.
+  - At 30 bars the amounts are smaller; at 90 they're only in the tooltips. The dates thin out and always include "Today".
+  - The best-day stat is gone (it isn't in the chosen layout).
+- **No meaningless scale** when every day is 0 or "no data".
+- **Noted for after v1.0.0:** a gear tab (each piece with its flame and flame score, stars and potential) and, maybe, an upgrade advisor using MapleScouter's information, depending on what it allows.
+- **Tests:** 337 server and 159 app tests, in California time and UTC. Server coverage is 100%. Mutation testing: server 1105/1105 (plus 8 that looped forever and were stopped), app 902/902. The real data folder was unchanged by the full runs.
+  - 12 deliberate bugs in the checks, the ranges, the page and the reloading were all caught.
+  - **Gaps the full runs found, now covered:**
+    - another character's checks on the same days
+    - three days of checks in a row
+    - a character added and not checked again until the next day
+    - a snapshot for a character with none yet
+  - **Removed as unnecessary:** two conditions in the reloading and the history check, which could never change what happens.
+  - **My mistakes along the way:**
+    - a test expectation that put a check inside the 7 days when I meant just before them
+    - a time-to-level figure worked out wrong by hand (8.7 months instead of 8.6)
+    - a made-up level curve in the mockup that ran forever at 90 days
+    - a test file that didn't save on the first try
+
 ## v0.8.0 (2026-10-21): the character view
 
 - **The EXP section, below the selected character:** EXP over the last 7 days, the daily average (14 days) and the best single day, with its date.

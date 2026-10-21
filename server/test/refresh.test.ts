@@ -3,7 +3,7 @@ import { totalExp } from "../src/calc/exp";
 import { db } from "../src/db";
 import { SOLE_OWNER } from "../src/owner";
 import { addCharacter } from "../src/services/characters";
-import { CHECK_EVERY_MS, REFRESH_EVERY_MS, refreshAll, refreshDue, scheduleRefresh } from "../src/services/refresh";
+import { CHECK_EVERY_MS, REFRESH_EVERY_MS, refreshAll, refreshDue, saveSnapshot, scheduleRefresh } from "../src/services/refresh";
 import { api, ok } from "./api";
 import { answer, avatarOf, type FakeCharacter, fakeNexon, LEEKSPIN, MIKUBEAM, SAKURARIN } from "./fixtures/nexon";
 import { NOW, useDbTestSetup } from "./helpers";
@@ -85,6 +85,67 @@ describe("a refresh", () => {
     ]);
   });
 
+  it("each check adds the EXP gained since the check before to the day's total gained", async () => {
+    at("2026-10-20T08:00:00Z");
+    const w = world();
+    const [miku] = await added(w, ["MikuBeam", 45]); // MikuBeam starts at 285 with 86.5T
+    const start = totalExp(285, 86_500_000_000_000);
+    const gainedToday = async () => (await snapshots(miku!)).map((s) => [s.day, s.gained]);
+    expect(await gainedToday()).toEqual([["2026-10-20", 0n]]); // just added: nothing gained yet
+    at("2026-10-20T12:00:00Z");
+    w.set("MikuBeam", { exp: 90_000_000_000_000 });
+    await refreshAll(w.nexon.client);
+    expect(await gainedToday()).toEqual([["2026-10-20", 3_500_000_000_000n]]);
+    at("2026-10-20T16:00:00Z");
+    w.set("MikuBeam", { level: 286, exp: 1_000 }); // a level-up between checks
+    await refreshAll(w.nexon.client);
+    expect(await gainedToday()).toEqual([["2026-10-20", BigInt(totalExp(286, 1_000) - start)]]);
+    at("2026-10-21T00:30:00Z"); // a new UTC day: its first check counts from the last check of the 20th
+    w.set("MikuBeam", { level: 286, exp: 501_000 });
+    await refreshAll(w.nexon.client);
+    expect(await gainedToday()).toEqual([
+      ["2026-10-20", BigInt(totalExp(286, 1_000) - start)],
+      ["2026-10-21", 500_000n],
+    ]);
+  });
+
+  it("each character's checks count only against its own, newest first, over several days", async () => {
+    at("2026-10-20T08:00:00Z");
+    const w = world();
+    const [miku, leek] = await added(w, ["MikuBeam", 45], ["LeekSpin", 45]);
+    const mikuStart = 86_500_000_000_000;
+    const leekStart = w.characters.find((c) => c.characterName === "LeekSpin")!.exp;
+    for (const [i, day] of ["21", "22", "23"].entries()) {
+      at(`2026-10-${day}T08:00:00Z`);
+      w.set("MikuBeam", { exp: mikuStart + (i + 1) * 1_000 });
+      w.set("LeekSpin", { exp: leekStart + (i + 1) * 7 });
+      await refreshAll(w.nexon.client);
+    }
+    expect((await snapshots(miku!)).map((s) => s.gained)).toEqual([0n, 1_000n, 1_000n, 1_000n]);
+    expect((await snapshots(leek!)).map((s) => s.gained)).toEqual([0n, 7n, 7n, 7n]);
+  });
+
+  it("a character's very first snapshot starts at 0 gained", async () => {
+    const w = world();
+    const [miku] = await added(w, ["MikuBeam", 45]);
+    await db().snapshot.deleteMany({ where: { characterId: miku } });
+    const { lookUp } = w.nexon.client;
+    await saveSnapshot(miku!, await lookUp("MikuBeam", 45), new Date());
+    expect((await snapshots(miku!)).map((s) => [s.day, s.gained])).toEqual([["2026-10-20", 0n]]);
+  });
+
+  it("after days that weren't checked, the first check counts from the last one before them", async () => {
+    const w = world();
+    const [miku] = await added(w, ["MikuBeam", 45]);
+    later(3 * 24 * 60 * 60 * 1000);
+    w.set("MikuBeam", { exp: 86_500_000_007_000 });
+    await refreshAll(w.nexon.client);
+    expect((await snapshots(miku!)).map((s) => [s.day, s.gained])).toEqual([
+      ["2026-10-20", 0n],
+      ["2026-10-23", 7_000n],
+    ]);
+  });
+
   it("a day whose numbers didn't change still gets its snapshot (0 EXP gained, not 'not checked')", async () => {
     const w = world();
     const [miku] = await added(w, ["MikuBeam", 45]);
@@ -93,6 +154,7 @@ describe("a refresh", () => {
     const days = await snapshots(miku!);
     expect(days.map((s) => s.day)).toEqual(["2026-10-20", "2026-10-21"]);
     expect(days[1]!.totalExp).toBe(days[0]!.totalExp);
+    expect(days[1]!.gained).toBe(0n);
   });
 
   it("checks every character on both worlds, in tab order", async () => {
