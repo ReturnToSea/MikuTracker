@@ -36,8 +36,10 @@ model Character {
   legionLevel Int? // null: not the account's listed Legion character
   raidPower   BigInt?
   sortOrder   Int // position in the character tabs (0 first)
-  addedAt     DateTime   @default(now())
-  checkedAt   DateTime // last successful lookup
+  addedAt      DateTime   @default(now())
+  checkedAt    DateTime // last successful lookup
+  missingSince DateTime? // when it stopped being found in the rankings (renamed, or dropped out); null while found
+  avatarUrl    String? // Nexon's address of its current look, so the picture is only downloaded again when it changes
   snapshots   Snapshot[]
   avatars     Avatar[]
   selection   Selection?
@@ -46,12 +48,13 @@ model Character {
   @@index([ownerId, worldId, sortOrder])
 }
 
-// What a character looked like at one moment (the daily refresh adds one per UTC day from v0.6.0).
+// A character on one UTC day: the day's latest numbers (each refresh that day updates it in place).
+// A day without one wasn't checked; a day whose numbers didn't change still has one (0 EXP gained).
 model Snapshot {
   id          Int       @id @default(autoincrement())
   characterId Int
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  capturedAt  DateTime
+  capturedAt  DateTime // when these numbers were last checked
   day         String // the UTC day, "YYYY-MM-DD"
   level       Int
   exp         BigInt
@@ -61,7 +64,19 @@ model Snapshot {
   legionLevel Int?
   raidPower   BigInt?
 
-  @@index([characterId, capturedAt])
+  @@unique([characterId, day])
+}
+
+// Each run of the refresh (every 4 hours): looking every character up in Nexon's rankings again.
+model RefreshRun {
+  id         Int       @id @default(autoincrement())
+  startedAt  DateTime
+  finishedAt DateTime? // null while running, or if the server stopped part way
+  checked    Int       @default(0) // characters asked about
+  updated    Int       @default(0) // found, and their details and today's snapshot saved
+  missing    Int       @default(0) // not found in the rankings any more
+  failed     Int       @default(0) // couldn't be checked (Nexon unreachable, odd answers, EXP not fitting the table)
+  problem    String? // why the run stopped early, or the last failure
 }
 
 // Every avatar image a character has had (the file is named after its contents, in the data

@@ -2,6 +2,30 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.7.0 (2026-10-21): the refresh (every 4 hours)
+
+- **Every 4 hours, every character is looked up in Nexon's rankings again** (decided instead of once a day: a watch saw no ranking changes for hours, so when Nexon updates is unclear).
+  - Checked when the server starts and every 15 minutes, so a sleeping Mac catches up. Runs never overlap.
+  - Each check updates the character and today's snapshot, and downloads the avatar only when its look changed.
+  - Only where `MIKU_REFRESH` is on (the always-on app from v0.9.0); `npm run refresh` does one by hand.
+- **One snapshot per character per UTC day,** updated in place with the day's latest numbers. A day with no change still keeps its snapshot (0 EXP gained), so "didn't play" and "not checked" stay different.
+- **Characters no longer found** (renamed, dropped out, or on the other world) are marked "not found since …", keep their history, and say so on Home. Found again, the mark goes.
+- **When Nexon can't be reached or answers strangely,** the run stops at once, records why, and marks nobody missing. One character's EXP not fitting the table fails only that one.
+- **Each run is recorded** (`RefreshRun`, `GET /api/refresh`). Home shows "Checked Nexon today at 08:03 UTC (1:03 AM your time)", or the problem.
+- **Ranks have their own tiles:** world rank ("Kronos rank") and overall rank (all NA worlds), next to Legion and raid power.
+- **Tried for real:** a refresh of the dev copy's two real characters updated both, keeping one snapshot each for the day.
+- **Housekeeping:**
+  - the `/mutation-audit` skill now describes the app's mutation testing, jsdom's limits and the data-safety rules
+  - `npm run db:migrate -- --name …` now passes the name to the right command (it used to land on `prisma generate`)
+  - the brief moved to `tempdata/`
+  - the site isn't being made for phones for now (desktop only)
+- **Tests:** 306 server and 125 app tests, in California time and UTC. Server coverage is 100%. Mutation testing: server 992/992 (plus 7 that looped forever and were stopped), app 638/638. The real data folder was unchanged by the full runs.
+  - 9 deliberate bugs in the refresh and its display were all caught (the two local-day ones only in the California-time run, which is why every suite runs in both).
+  - Gaps the full runs found and now covered: the refresh's tab order (my test added characters in an order that matched it), and recording a failure that isn't an error object.
+  - **My mistakes along the way:**
+    - an edit wrote a stray `\n` into `server/package.json`, which crashed the running dev copy until restarted
+    - a test's fake served the same picture for a "new look"
+
 ## v0.6.0 (2026-10-21): the add-a-character box, improved
 
 From using v0.5.0. The plan's later versions moved up by one: the daily refresh is now v0.7.0, the character view v0.8.0, and backups and the always-on app v0.9.0.

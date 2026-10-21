@@ -23,6 +23,7 @@ function character(id: number, name: string, extra: Partial<CharacterView> = {})
     avatar: `/avatars/${name.toLowerCase()}.png`,
     addedAt: new Date(Date.UTC(2026, 9, 20)),
     checkedAt: new Date(Date.UTC(2026, 9, 20)),
+    missingSince: null,
     ...extra,
   };
 }
@@ -227,12 +228,15 @@ describe("the selected character", () => {
     renderWithApp(<App />);
     const s = await waitFor(() => summary());
     expect(within(s).getByRole("heading", { level: 2 }).textContent).toBe("MikuBeam");
-    expect(s.querySelector(".meta")!.textContent).toBe("Kanna · Kronos · #6,390 in Kronos · #19,172 overall");
+    expect(s.querySelector(".meta")!.textContent).toBe("Kanna · Kronos");
     expect(s.querySelector(".level")!.textContent).toBe("285");
     expect(s.querySelector("small")!.textContent).toBe("86.92% to level 286 · 86.5T / 99.5T EXP");
     expect(within(s).getByRole("progressbar", { name: "EXP into level 285" }).getAttribute("aria-valuenow")).toBe("86.92");
     expect((s.querySelector(".expbar > div") as HTMLElement).style.width).toMatch(/^86\.92/);
-    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["5,804", "297,290,139"]);
+    // the world rank and the overall rank in two places of their own, then Legion
+    expect(Array.from(s.querySelectorAll(".stat .label")).map((v) => v.textContent)).toEqual(["Kronos rank", "Overall rank", "Kronos Legion", "Raid power"]);
+    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["#6,390", "#19,172", "5,804", "297,290,139"]);
+    expect(s.querySelectorAll(".stat")[1]!.textContent).toContain("all NA worlds");
     expect(s.querySelector("img")!.getAttribute("alt")).toBe("MikuBeam's avatar");
   });
 
@@ -240,11 +244,11 @@ describe("the selected character", () => {
     home({ 45: [character(1, "TwinTails", { level: 300, exp: 0, expToNext: null, overallRank: null, legion: null })] });
     renderWithApp(<App />);
     const s = await waitFor(() => summary());
-    expect(s.querySelector(".meta")!.textContent).toBe("Kanna · Kronos · #6,390 in Kronos");
+    expect(s.querySelector(".meta")!.textContent).toBe("Kanna · Kronos");
     expect(s.querySelector("small")!.textContent).toBe("Level 300: the highest level.");
     expect(within(s).queryByRole("progressbar")).toBeNull();
-    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["N/A", "N/A"]);
-    expect(s.querySelector(".stat .small")!.textContent).toBe("Add the character Nexon lists your Legion under to see it.");
+    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["#6,390", "—", "N/A", "N/A"]);
+    expect(s.querySelectorAll(".stat")[2]!.querySelector(".small")!.textContent).toBe("Add the character Nexon lists your Legion under to see it.");
   });
 
   it("shows the world's Legion with the character it's listed under (none when it's this one)", async () => {
@@ -252,11 +256,26 @@ describe("the selected character", () => {
     home({ 45: [character(1, "MikuBeam", { legion }), character(2, "LeekSpin", { legion })] });
     renderWithApp(<App />);
     const own = await waitFor(() => summary());
-    expect(own.querySelector(".stat .small")).toBeNull();
+    expect(own.querySelectorAll(".stat")[2]!.querySelector(".small")).toBeNull();
     await userEvent.click(tab("LeekSpin"));
     await waitFor(() => expect(within(summary()).getByRole("heading", { level: 2 }).textContent).toBe("LeekSpin"));
-    expect(Array.from(summary().querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["5,804", "297,290,139"]);
-    expect(summary().querySelector(".stat .small")!.textContent).toBe("listed under MikuBeam");
+    expect(Array.from(summary().querySelectorAll(".stat .value")).slice(2).map((v) => v.textContent)).toEqual(["5,804", "297,290,139"]);
+    expect(summary().querySelectorAll(".stat")[2]!.querySelector(".small")!.textContent).toBe("listed under MikuBeam");
+  });
+
+  it("a character no longer found in the rankings says so, and still shows its last saved numbers", async () => {
+    home({ 45: [character(1, "MikuBeam", { missingSince: new Date(Date.UTC(2026, 9, 21, 8)) })] });
+    renderWithApp(<App />);
+    const s = await waitFor(() => summary());
+    expect(within(s).getByRole("status").textContent).toBe("Not found in Nexon's rankings since Oct 21 (renamed, or no longer ranked). Showing its last saved numbers.");
+    expect(s.querySelector(".level")!.textContent).toBe("285");
+  });
+
+  it("a character still found has no such note", async () => {
+    home({ 45: [character(1, "MikuBeam")] });
+    renderWithApp(<App />);
+    const s = await waitFor(() => summary());
+    expect(within(s).queryByRole("status")).toBeNull();
   });
 
   it("deleting asks first; saying no keeps it", async () => {

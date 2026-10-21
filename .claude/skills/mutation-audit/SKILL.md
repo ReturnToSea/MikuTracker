@@ -26,7 +26,23 @@ Target: `$ARGUMENTS` (a glob relative to the repo root, e.g. `server/src/calc/*.
 - `server/vitest.config.ts` finds the server folder from the **working folder** (`serverFolder()`). Inside Stryker's sandbox both `import.meta.dirname` and `import.meta.url` still point at the original repo, so anything located through them (the shared-rules alias, the root) is loaded unmutated.
 - To reproduce the sandbox by hand: copy the repo without `node_modules`, symlink `node_modules` to the original, and run `node node_modules/vitest/vitest.mjs run --config <copy>/server/vitest.config.ts` — **not `npx`**, which jumps back to the original repo.
 
-**The React app** (`client/`) gets its own Stryker config (`stryker.client.config.mjs`) when the app is added (v0.2.0 step 6); this section will describe it then.
+**The React app** (`client/`) has its own config: `npx stryker run stryker.client.config.mjs [--mutate "client/src/..."]` (`npm run test:mutate:client`), also with `--concurrency 2` on this Mac. It uses its own temp folder (`.stryker-tmp-client`), so it can run alongside a server run. List what survived with `node scripts/survivors.mjs reports/mutation-client/mutation.json`.
+- **Skipped on purpose:**
+  - mutants inside `className` and `style` (`scripts/stryker-ignore-looks.mjs`); add chart components' drawing settings to its `CHART_PARTS` when charts arrive
+  - everything in `client/src/looks/` (canvas drawing)
+
+  Looks are checked on screenshots instead.
+- **jsdom can't lay out or draw a page.** Where behavior depends on sizes (the + box sliding to fit), tests stub `getBoundingClientRect` with made-up sizes. Make the stub follow the element's current `transform` if the code measures after moving something.
+- **jsdom has no `scrollIntoView`** (the test setup records calls instead) and can't draw on a canvas (`getContext` returns null).
+
+**Safety while mutating:** mutants of `server/src/config.ts` can point folders at the real data folder. Three things stop that, and none of them may be weakened:
+- test runs get a fake `HOME`, read by the config from `HOME`, because worker threads, which Stryker uses, ignore a changed `HOME` in `os.homedir()`
+- the config refuses any test folder inside the real data folder
+- tests that create or delete files use `process.env.MIKU_DATA_DIR` paths, never `getConfig()`
+
+After a full run, it's worth checking that the real data folder is unchanged.
+
+**Incremental results go stale when only a helper or fixture changes** (Stryker sees the test files as unchanged). If a result looks impossible, rerun that file with `--force`.
 
 **A mutant that throws while a file loads is reported as Survived** (the Vitest runner sees "no failed tests" when a test file can't even import). If a survivor would obviously crash, reproduce it by hand before writing a test — and prefer moving that code out of the file's top level (e.g. read settings on first use, as `getConfig()` in `server/src/config.ts` does) so the crash happens inside a test.
 

@@ -3,6 +3,7 @@ import { useCharacters, useDeleteCharacter, useReorderCharacters, useSelectChara
 import { AddCharacter } from "../components/AddCharacter";
 import { CharacterSummary } from "../components/CharacterSummary";
 import { CharacterTabs } from "../components/CharacterTabs";
+import { RefreshNote } from "../components/RefreshNote";
 import { WorldSwitcher } from "../components/WorldSwitcher";
 
 // Home: the world switcher and that world's characters as tabs, with the selected one below.
@@ -25,6 +26,7 @@ export function HomePage() {
       <section className="block top">
         <div className="page-head">
           <WorldSwitcher world={world} onChange={(w) => saveSettings.mutate({ worldId: w })} />
+          <RefreshNote />
         </div>
         <div className="strip-wrap">
           <CharacterTabs characters={characters} selectedId={selected?.id ?? null} onSelect={(id) => select.mutate(id)} onReorder={(ids) => reorder.mutate(ids)} />

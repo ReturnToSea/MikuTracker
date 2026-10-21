@@ -37,9 +37,10 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 - `npm run test:mutate` / `test:mutate:client`: Stryker mutation testing of server + shared / the app. Both are **incremental** (only changed code and tests are retested). `npm run test:mutate:full` retests everything and is **required before each version is committed**.
 - **Running them on this Mac (8 GB of memory):** the server and app runs may go at the same time, both with `nice -n 19` and `--concurrency 2`, but **nothing else heavy alongside**: no test suite, no build. One test suite at a time otherwise.
 - Pushing a version branch runs `.github/workflows/tests.yml` on GitHub: the typecheck and every test. Mutation testing runs only on the Mac.
-- `npm run db:migrate`: after changing `server/prisma/schema.prisma`, applied to `dev.db`, then regenerates the database code (Prisma 7's `migrate dev` no longer does that itself). A test fails if a schema change has no migration.
+- `npm run db:migrate -- --name <what>`: after changing `server/prisma/schema.prisma`, applied to `dev.db`, then regenerates the database code (Prisma 7's `migrate dev` no longer does that itself). If Prisma wants to ask a yes/no question (it can't here), write the migration with `prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script` into a new `prisma/migrations/<timestamp>_<name>/migration.sql`, then `MIKU_DATABASE=dev prisma migrate deploy` and `prisma generate`. A test fails if a schema change has no migration.
 - `npm run dev`: the development copy. The page is on http://127.0.0.1:4752 and its API on 4751, using `dev.db`, with no backups and no refresh.
 - `npm start`: build, migrate the real database, and serve on http://localhost:4750 (until the always-on app exists in v0.9.0).
+- `npm run refresh`: one refresh of every character now (`MIKU_DATABASE=dev npm run refresh` for the dev copy). The always-on app refreshes every 4 hours by itself.
 - `npm run nexon:check -- <name> [45|70]`: looks one character up in Nexon's **real** rankings, by hand (never in tests), to check their data still has the shape we expect.
 
 ## Conventions

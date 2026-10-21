@@ -49,6 +49,7 @@ describe("adding a character", () => {
       avatar: expect.stringMatching(/^\/avatars\/[0-9a-f]{32}\.png$/),
       addedAt: NOW.toISOString(),
       checkedAt: NOW.toISOString(),
+      missingSince: null,
     });
     expect(await list(call)).toEqual({ characters: [res.body], selectedId: id });
 

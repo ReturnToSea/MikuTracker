@@ -115,12 +115,8 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The `Snapshot` table an
 ### v0.6.0: the add-a-character box, improved — done
 Not in the original plan: came from using v0.5.0. Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The later versions moved up by one.)
 
-### v0.7.0: snapshots and the daily refresh
-1. `Snapshot` and `RefreshRun` models; saving only when the data changed.
-2. The refresh service: when it's due (after the refresh time on each UTC day, catching up if missed), one character at a time, partial failures, and recording the run.
-   - Tests: fake clock across UTC midnight, in both time zones; a missed day; Nexon down; one bad character among good ones; no duplicate runs.
-3. Scheduling: check on start, then hourly (a timer that doesn't keep the process alive), turned off for `npm run dev` like backups.
-4. "Updated today at 00:05 UTC", or the error, shown on Home.
+### v0.7.0: the refresh (every 4 hours) — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
 ### v0.8.0: the character view
 1. `calc/`: EXP gained per UTC day from snapshots (across level-ups, using total EXP), the 7-day total, the 14-day average, the best day, and missing days: UTC days with no snapshot show as empty "no data" bars, and the combined EXP goes on the next day that has data, labeled with how many days it covers (e.g. "3 days"). The average still divides by 14 calendar days.
@@ -176,6 +172,9 @@ None right now.
 - **Missing days in the chart:** empty "no data" bars, with the combined EXP on the next day that has data, labeled with how many days it covers.
 - **Avatars:** saved locally by the server; the page never contacts Nexon. Old images are kept for the avatar history planned after v1.0.0.
 - **TBD tabs:** shown as placeholders in v1.0.0.
+- **Refresh every 4 hours** (decided 2026-10-21), not once a day: the watch saw no ranking changes for hours, so when Nexon updates is unclear. One snapshot per character per UTC day, updated in place.
+- **Ranks:** world rank and overall rank (all NA worlds), shown in two separate places.
+- **Not for phones for now:** desktop browsers only. Narrow windows still work, but phones aren't checked.
 - **Saved data is kept forever** (decided 2026-10-20): one snapshot per character per UTC day, saved only when something changed, and never trimmed, because the charts are redrawn from it each time. Estimated at about 100 bytes per snapshot, about 36 KB per character per year. Avatar images: a new file only for a new outfit, all kept. Deleting a character still deletes its history. The real size gets checked after v1.0.0.
 - **Rankings update often enough:** you expect EXP to update more than once a day. The watch only decides the refresh time.
 - **Legion:** each character's own Legion lookup, since Legion belongs to the account.

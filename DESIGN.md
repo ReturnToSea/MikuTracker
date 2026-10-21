@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.6.0)
+## The app (as of v0.7.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -31,7 +31,9 @@ Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`)
   - A character already on this world shows as **Added**.
   - The box has a solid background. On a narrow window the avatar goes above the details.
   - Escape, a click outside, or + again closes the box, and closing forgets what was in it.
-- **The selected character:** avatar, name, job, world rank and overall rank, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), and the world's Legion level and raid power (see below). The daily EXP chart and time to level arrive in v0.8.0.
+- **The selected character:** avatar, name, job and world, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), then four tiles: **world rank** ("Kronos rank"), **overall rank** (all NA worlds), and the world's **Legion level** and **raid power** (see below). The daily EXP chart and time to level arrive in v0.8.0.
+  - A character no longer found in the rankings says so ("Not found in Nexon's rankings since Oct 21 (renamed, or no longer ranked). Showing its last saved numbers.").
+- **The last check of Nexon** shows at the top right: "Checked Nexon today at 08:03 UTC (1:03 AM your time)" (today and yesterday go by the UTC day), or "Last check (…) had a problem: …", or, before any check, that the always-on app checks every 4 hours. It's asked for again every minute.
 - **Legion is shared by a world's characters.** Nexon lists Legion under one character per account per world (for an account, apparently its highest-level character there; RemyRabbit for one real account). Once that character is added, every character on the world shows its Legion, with "listed under RemyRabbit" on the others. Until then it's **N/A**, with a hint to add that character. With two listed characters on one world (two accounts), the most recently checked one is used. The search preview shows the character's own Legion entry, or else the world's.
 - **Delete** asks first ("This also deletes all of its saved history").
 - While loading, Home says "Loading…". An empty world says how to add a character. Failures are shown.
@@ -85,6 +87,19 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
 - The client gets `fetch`, the clock and the pause passed in. Tests use a fake Nexon (`server/test/fixtures/nexon.ts`) with made-up characters, answering the way the real one was seen to.
 - Any real network request in a server test fails loudly (`server/test/setup.ts`).
 - `npm run nexon:check -- <name> [45|70]` looks one character up in the real rankings, as a check by hand that their data still has the expected shape.
+
+## The refresh (every 4 hours)
+
+`server/src/services/refresh.ts`. Every character is looked up in Nexon's rankings again **every 4 hours**. Nobody knows when Nexon updates its rankings (a watch saw no change for hours), so checking a few times a day catches it whenever it happens.
+- **When:** due when the last run *started* at least 4 hours ago, or there's been none. Checked when the server starts, then every 15 minutes, so a sleeping or switched-off Mac catches up when it's back. Runs never overlap. The timer doesn't keep the server alive, and a failed check is reported, never fatal.
+- **Only where `MIKU_REFRESH` is on:** off in the dev copy and in tests; the always-on app (v0.9.0) does it. `npm run refresh` runs one by hand (e.g. `MIKU_DATABASE=dev npm run refresh`).
+- **Each character, in world then tab order,** through the polite Nexon queue:
+  - its details are updated (Nexon's current spelling of the name, job, level, EXP, ranks, Legion; `checkedAt`)
+  - today's snapshot is created or **updated in place**
+  - the avatar is downloaded only if Nexon's address for its look changed; if that download fails, it's tried again next time
+- **Not found** (renamed, dropped out of the rankings, or now on the other world): marked missing since that run, keeping its history and last numbers. Found again later, the mark goes.
+- **Nexon unreachable, or answering in an unexpected shape:** that would hit everyone, so the run stops at once and records why. Nobody is marked missing. One character's EXP not fitting the table fails just that character; the rest carry on.
+- **Every run is recorded** (`RefreshRun`): start, end, how many were checked, updated, missing and failed, and the problem if any. `GET /api/refresh` gives the latest.
 
 ## Game figures and EXP math
 
@@ -176,7 +191,8 @@ Moving to a server or Docker means setting these variables, not changing code. G
 | --- | --- |
 | `npm run dev` | The development copy: API on 4751 with `dev.db` (migrated first, no backups or refresh), and the page on http://127.0.0.1:4752 with live reload. The page forwards `/api` and `/theme-art` to 4751. |
 | `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.9.0 the always-on app does this, with a backup first. |
-| `npm run db:migrate` | After changing `server/prisma/schema.prisma`: creates a migration and applies it to `dev.db`. |
+| `npm run db:migrate -- --name <what>` | After changing `server/prisma/schema.prisma`: creates a migration, applies it to `dev.db`, and regenerates the database code. When Prisma wants to ask a question (e.g. before adding a uniqueness rule), write the migration with `prisma migrate diff` instead and apply it with `prisma migrate deploy` (see v0.7.0's `refresh` migration). |
+| `npm run refresh` | One refresh of every character now (`MIKU_DATABASE=dev npm run refresh` for the dev copy). |
 
 ## Database
 
@@ -186,8 +202,9 @@ SQLite through Prisma 7 (`server/prisma/schema.prisma`), in the data folder, nev
 
 Tables:
 - **`Settings`:** one row per owner: theme and world.
-- **`Character`:** owner, world, name (as Nexon spells it, plus a lowercase copy for spotting duplicates), job, the latest level, EXP, ranks and Legion, its tab position, added and last-checked times. Unique per owner, world and name. **Tab positions in each world are always exactly 0, 1, 2, …**: adding goes at the end, deleting closes the gap, and reordering renumbers.
-- **`Snapshot`:** a character at one moment: captured time, UTC day, level, EXP, total EXP, ranks and Legion. The first is saved when a character is added; the daily refresh adds one per UTC day from v0.7.0. Kept forever.
+- **`Character`:** owner, world, name (as Nexon spells it, plus a lowercase copy for spotting duplicates), job, the latest level, EXP, ranks and Legion, its tab position, added and last-checked times, when it went missing from the rankings (if it has), and Nexon's address for its current look. Unique per owner, world and name. **Tab positions in each world are always exactly 0, 1, 2, …**: adding goes at the end, deleting closes the gap, and reordering renumbers.
+- **`Snapshot`:** **one per character per UTC day**: the day's latest level, EXP, total EXP, ranks and Legion, with when they were last checked. Unique per character and day; each refresh that day updates it in place. A day whose numbers didn't change still has one (0 EXP gained), so a missing day means "not checked" (the Mac was off). The first is saved when a character is added. Kept forever.
+- **`RefreshRun`:** each refresh: start and end, checked, updated, missing and failed counts, and the problem if any.
 - **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
 - **`Selection`:** the selected character on each world.
 

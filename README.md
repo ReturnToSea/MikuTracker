@@ -2,7 +2,7 @@
 
 A personal website for tracking MapleStory (GMS) progress. It runs on one Mac, and it's built so it can move to a server later by changing settings, not code.
 
-**Status:** v0.6.0: add your Kronos and Hyperion characters on Home (search with a full preview, add instantly, reorder, select, delete; Legion shared across a world), plus the GMS EXP table tab and the Ren and Pochacco themes. The daily refresh and EXP charts arrive in v0.7.0–v0.8.0. See `PLAN.md` for the plan to v1.0.0.
+**Status:** v0.7.0: add your Kronos and Hyperion characters on Home (search with a full preview, add instantly, reorder, select, delete; Legion shared across a world); every 4 hours their level, EXP, ranks and Legion are refreshed from Nexon's rankings (`npm run refresh` by hand until the always-on app arrives in v0.9.0). Also the GMS EXP table tab and the Ren and Pochacco themes. The daily EXP chart arrives in v0.8.0. See `PLAN.md` for the plan to v1.0.0.
 
 ## Docs
 

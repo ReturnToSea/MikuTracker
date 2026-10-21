@@ -257,3 +257,6 @@ p.block.error { padding: 12px 24px; }
 
 /* Read by screen readers, not shown */
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.updated { text-align: right; }
+.notice-line { margin: 0 0 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--accent-soft); color: var(--text); font-size: 0.9em; }

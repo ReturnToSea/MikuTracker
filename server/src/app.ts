@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errors";
 import { type NexonClient, nexon as realNexon } from "./nexon";
 import { charactersRouter } from "./routes/characters";
 import { expTableRouter } from "./routes/expTable";
+import { refreshRouter } from "./routes/refresh";
 import { searchRouter } from "./routes/search";
 import { settingsRouter } from "./routes/settings";
 import { themeArtRouter } from "./routes/themeArt";
@@ -48,6 +49,7 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/exp-table", expTableRouter);
   app.use("/api/search", searchRouter(nexon));
   app.use("/api/characters", charactersRouter(nexon));
+  app.use("/api/refresh", refreshRouter);
   app.use("/api/theme-art", themeArtRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {

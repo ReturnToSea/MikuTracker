@@ -1,19 +1,22 @@
 import type { AddCharacterInput, SettingsInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { CharacterList, CharacterView, ExpTableView, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { CharacterList, CharacterView, ExpTableView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
   themeArt: ["theme-art"],
   expTable: ["exp-table"],
   characters: (world: number) => ["characters", world],
+  refresh: ["refresh"],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
 export const useThemeArt = () => useQuery({ queryKey: keys.themeArt, queryFn: () => api<ThemeArt>("/theme-art") });
 // The table only changes with a new version of the app, so it's loaded once per visit.
 export const useExpTable = () => useQuery({ queryKey: keys.expTable, queryFn: () => api<ExpTableView>("/exp-table"), staleTime: Infinity });
+// How the last check of Nexon went; asked again every minute so "Checked …" stays current.
+export const useRefreshStatus = () => useQuery({ queryKey: keys.refresh, queryFn: () => api<RefreshStatus>("/refresh"), refetchInterval: 60_000 });
 export const useCharacters = (world: number) => useQuery({ queryKey: keys.characters(world), queryFn: () => api<CharacterList>(`/characters?world=${world}`) });
 
 // Saving settings: the saved settings come back from the server and replace the cached ones.

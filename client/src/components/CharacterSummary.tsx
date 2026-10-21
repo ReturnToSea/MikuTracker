@@ -11,13 +11,17 @@ export function CharacterSummary({ c, onDelete }: { c: CharacterView; onDelete: 
   const progress = levelProgress(c);
   return (
     <section className="block" aria-label={c.name}>
+      {c.missingSince && (
+        <p className="notice-line" role="status">
+          Not found in Nexon's rankings since {new Date(c.missingSince).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} (renamed, or no longer ranked). Showing its last saved numbers.
+        </p>
+      )}
       <div className="hero">
         <Avatar src={c.avatar} size={104} name={c.name} />
         <div className="who">
           <h2>{c.name}</h2>
           <div className="meta">
-            {c.job} · {world} · #{fmtInt(c.worldRank)} in {world}
-            {c.overallRank !== null && <> · #{fmtInt(c.overallRank)} overall</>}
+            {c.job} · {world}
           </div>
           {progress ? (
             <>
@@ -41,6 +45,15 @@ export function CharacterSummary({ c, onDelete }: { c: CharacterView; onDelete: 
         </div>
       </div>
       <div className="stats">
+        <div className="stat">
+          <div className="label">{world} rank</div>
+          <div className="value">#{fmtInt(c.worldRank)}</div>
+        </div>
+        <div className="stat">
+          <div className="label">Overall rank</div>
+          <div className="value">{c.overallRank === null ? "—" : `#${fmtInt(c.overallRank)}`}</div>
+          <div className="muted small">all NA worlds</div>
+        </div>
         <div className="stat">
           <div className="label">{world} Legion</div>
           <div className="value">{c.legion ? fmtInt(c.legion.level) : "N/A"}</div>

@@ -26,6 +26,7 @@ export interface CharacterView {
   avatar: string | null; // its address, or null before the first download works
   addedAt: Date;
   checkedAt: Date; // last successful lookup
+  missingSince: Date | null; // not found in the rankings since then (renamed, or dropped out); its history stays
 }
 
 export interface CharacterList {
@@ -58,6 +59,7 @@ async function view(c: Character, legion: WorldLegion): Promise<CharacterView> {
     avatar: avatar ? avatarAddress(avatar) : null,
     addedAt: c.addedAt,
     checkedAt: c.checkedAt,
+    missingSince: c.missingSince,
   };
 }
 
@@ -98,7 +100,7 @@ export async function addCharacter(ownerId: string, worldId: number, name: strin
     .$transaction(async (tx) => {
       const sortOrder = await tx.character.count({ where: { ownerId, worldId } });
       const created = await tx.character.create({
-        data: { ownerId, worldId, name: found.name, nameKey: found.name.toLowerCase(), job: found.job, sortOrder, addedAt: now, checkedAt: now, ...details(found) },
+        data: { ownerId, worldId, name: found.name, nameKey: found.name.toLowerCase(), job: found.job, sortOrder, addedAt: now, checkedAt: now, avatarUrl: found.avatarUrl, ...details(found) },
       });
       await tx.snapshot.create({
         data: { characterId: created.id, capturedAt: now, day: utcDay(now), totalExp: BigInt(totalExp(found.level, found.exp)), ...details(found) },

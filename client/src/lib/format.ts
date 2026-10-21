@@ -49,3 +49,14 @@ export function fmtFutureDate(days: number, now: Date): string {
   const sameYear = when.getFullYear() === now.getFullYear();
   return when.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
+
+// When something happened, by the UTC day (the game's day) and in local time:
+// "today at 08:05 UTC (1:05 AM your time)", "yesterday at …", "Oct 19 at …".
+export function fmtWhen(moment: Date, now: Date): string {
+  const day = (d: Date) => d.toISOString().slice(0, 10);
+  const yesterday = new Date(now.getTime() - 86_400_000);
+  const when = day(moment) === day(now) ? "today" : day(moment) === day(yesterday) ? "yesterday" : moment.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const utc = moment.toISOString().slice(11, 16);
+  const local = moment.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${when} at ${utc} UTC (${local} your time)`;
+}

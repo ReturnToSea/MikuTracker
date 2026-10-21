@@ -65,4 +65,5 @@ export const BASE_ROUTES = {
   "GET /theme-art": { ren: null, pochacco: null },
   "GET /exp-table": fakeExpTable(),
   "GET /characters": { characters: [], selectedId: null },
+  "GET /refresh": { last: null },
 };
