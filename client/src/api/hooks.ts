@@ -1,7 +1,7 @@
 import type { AddCharacterInput, SettingsInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { CharacterList, CharacterLookup, CharacterView, ExpTableView, SettingsView, ThemeArt } from "./types";
+import type { CharacterList, CharacterView, ExpTableView, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -25,9 +25,9 @@ export function useUpdateSettings() {
   });
 }
 
-// Looking a character up in Nexon's rankings (through our server).
+// Looking a character up in Nexon's rankings (through our server, which sends the avatar along).
 export const useSearch = () =>
-  useMutation({ mutationFn: ({ world, name }: AddCharacterInput) => api<CharacterLookup>(`/search?world=${world}&name=${encodeURIComponent(name)}`) });
+  useMutation({ mutationFn: ({ world, name }: AddCharacterInput) => api<SearchResult>(`/search?world=${world}&name=${encodeURIComponent(name)}`) });
 
 // Changes to a world's characters reload that world's list.
 function useCharacterChange<I, O>(world: number, send: (input: I) => Promise<O>) {

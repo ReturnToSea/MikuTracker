@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, vi } from "vitest";
 import { db } from "../src/db";
 import { Prisma } from "../src/generated/prisma/client";
+import { forgetSearches } from "../src/services/search";
 
 export { db };
 
@@ -28,6 +29,7 @@ export function useDbTestSetup() {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
     await resetDb();
+    forgetSearches();
   });
   afterAll(async () => {
     vi.useRealTimers();

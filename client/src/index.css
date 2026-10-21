@@ -170,7 +170,9 @@ button { cursor: pointer; }
 
 /* Home: the world switcher and the character tabs */
 .page-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-.block.top { padding-bottom: 0; }
+/* The top section holds the + box, which hangs below it: it's drawn above the sections after it
+   (each section is its own layer because of its see-through blur). */
+.block.top { padding-bottom: 0; position: relative; z-index: 5; }
 .strip-wrap { position: relative; display: flex; align-items: flex-end; gap: 4px; }
 .strip { display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; scrollbar-width: thin; min-width: 0; }
 .ctab {
@@ -189,7 +191,8 @@ button { cursor: pointer; }
 .ctab.dragging { opacity: 0.35; }
 .ctab b { display: block; white-space: nowrap; }
 .ctab small { display: block; font-size: 0.8em; color: var(--text-muted); white-space: nowrap; }
-.avatar { flex: none; border-radius: var(--radius); background: var(--accent-soft); color: var(--text-muted); object-fit: contain; }
+/* Nexon's avatars are 96 × 96 pixel art: shown with sharp pixels so bigger sizes stay crisp. */
+.avatar { flex: none; border-radius: var(--radius); background: var(--accent-soft); color: var(--text-muted); object-fit: contain; image-rendering: pixelated; }
 .add { position: relative; flex: none; }
 .add-tab {
   width: 40px; height: 40px; margin: 0 6px 10px;
@@ -200,22 +203,35 @@ button { cursor: pointer; }
   font-size: 1.3em; line-height: 1;
 }
 .add-tab:hover, .add-tab[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+/* The box opens below the +, its left edge lined up with the +'s (the + has a 6px left margin). */
 .popover {
-  position: absolute; z-index: 10; top: calc(100% + 8px); right: 0;
+  position: absolute; z-index: 10; top: calc(100% - 2px); left: 6px;
   width: min(340px, calc(100vw - 32px));
   padding: 14px;
   border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface-2);
+  background: linear-gradient(var(--surface-2), var(--surface-2)), var(--bg); /* solid: nothing behind shows through */
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 .popover h3 { font-size: 0.95em; margin-bottom: 8px; }
 .popover .search { width: auto; }
-.result { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-.result .grow { flex: 1; min-width: 0; }
-.result small { display: block; color: var(--text-muted); }
+/* The character found (layout C in docs/add-character-mockup.html): its avatar at 2× beside a
+   preview the way Home will show it. */
+.popover:has(.found) { width: min(580px, calc(100vw - 32px)); }
+.found { display: flex; align-items: stretch; gap: 18px; margin-top: 14px; }
+.found .avatar { background: radial-gradient(circle at 50% 70%, var(--accent-soft), transparent 65%), var(--surface); }
+.found-details { flex: 1; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.found-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.found-name { font-family: var(--font-display); font-size: 1.6em; font-weight: 700; line-height: 1.1; }
+.found-level { font-family: var(--font-display); font-size: 2.2em; font-weight: 700; line-height: 1; }
+.found .expbar { margin: 2px 0 4px; }
+.found-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 0; }
+.found-stats dt { font-size: 0.75em; color: var(--text-muted); }
+.found-stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.found-add { justify-self: end; }
+@media (max-width: 560px) { .found { flex-direction: column; align-items: center; } }
 .btn:disabled { opacity: 0.55; cursor: default; }
 
 /* The selected character */

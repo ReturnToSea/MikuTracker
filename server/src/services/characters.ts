@@ -6,7 +6,8 @@ import { type Character, Prisma } from "../generated/prisma/client";
 import { MAX_LEVEL } from "../gameFigures/expTable";
 import { HttpError } from "../http";
 import type { CharacterLookup, NexonClient } from "../nexon";
-import { avatarAddress, currentAvatar, removeUnusedAvatarFiles, saveAvatar } from "./avatars";
+import { avatarAddress, currentAvatar, removeUnusedAvatarFiles, saveAvatar, storeAvatar } from "./avatars";
+import { takeRemembered } from "./search";
 
 // A character as the app shows it.
 export interface CharacterView {
@@ -19,7 +20,9 @@ export interface CharacterView {
   expToNext: number | null; // EXP the current level needs; null at 300
   worldRank: number;
   overallRank: number | null;
-  legion: { level: number; raidPower: number } | null;
+  // The world's Legion: Nexon lists it under one character per account, so every character on a
+  // world shows the Legion of whichever added character is listed (`from`); null until one is.
+  legion: { level: number; raidPower: number; from: string } | null;
   avatar: string | null; // its address, or null before the first download works
   addedAt: Date;
   checkedAt: Date; // last successful lookup
@@ -30,7 +33,16 @@ export interface CharacterList {
   selectedId: number | null; // the selected one, or the first; null when there are none
 }
 
-async function view(c: Character): Promise<CharacterView> {
+type WorldLegion = CharacterView["legion"];
+
+// The Legion shown on a world: from the added character Nexon lists for it (if two are listed,
+// e.g. two accounts on one world, the most recently checked one).
+function worldLegion(rows: Character[]): WorldLegion {
+  const listed = rows.filter((c) => c.legionLevel !== null).sort((a, b) => b.checkedAt.getTime() - a.checkedAt.getTime())[0];
+  return listed ? { level: listed.legionLevel!, raidPower: Number(listed.raidPower), from: listed.name } : null;
+}
+
+async function view(c: Character, legion: WorldLegion): Promise<CharacterView> {
   const avatar = await currentAvatar(c.id);
   return {
     id: c.id,
@@ -42,7 +54,7 @@ async function view(c: Character): Promise<CharacterView> {
     expToNext: c.level < MAX_LEVEL ? expToNext(c.level) : null,
     worldRank: c.worldRank,
     overallRank: c.overallRank,
-    legion: c.legionLevel === null ? null : { level: c.legionLevel, raidPower: Number(c.raidPower) },
+    legion,
     avatar: avatar ? avatarAddress(avatar) : null,
     addedAt: c.addedAt,
     checkedAt: c.checkedAt,
@@ -52,7 +64,8 @@ async function view(c: Character): Promise<CharacterView> {
 export async function listCharacters(ownerId: string, worldId: number): Promise<CharacterList> {
   const rows = await db().character.findMany({ where: { ownerId, worldId }, orderBy: { sortOrder: "asc" } });
   const selection = await db().selection.findUnique({ where: { ownerId_worldId: { ownerId, worldId } } });
-  return { characters: await Promise.all(rows.map(view)), selectedId: selection?.characterId ?? rows[0]?.id ?? null };
+  const legion = worldLegion(rows);
+  return { characters: await Promise.all(rows.map((c) => view(c, legion))), selectedId: selection?.characterId ?? rows[0]?.id ?? null };
 }
 
 // The latest looked-up details, as stored on the character and in its snapshots.
@@ -70,14 +83,16 @@ function details(found: CharacterLookup) {
 // Tab positions in each world are always exactly 0, 1, 2, … (adding goes at the end; deleting
 // closes the gap; reordering renumbers).
 
-// Adds a character to a world: looked up in Nexon's rankings (never taken from the page as is),
-// with its first snapshot, made the selected one, and its avatar downloaded.
+// Adds a character to a world: from the owner's search a moment ago when it was this character
+// (instant), otherwise looked up in Nexon's rankings (never taken from the page as is). Saved with
+// its first snapshot, made the selected one, and its avatar stored.
 export async function addCharacter(ownerId: string, worldId: number, name: string, nexon: NexonClient): Promise<CharacterView> {
   const already = (key: string) => db().character.findUnique({ where: { ownerId_worldId_nameKey: { ownerId, worldId, nameKey: key } } });
   const duplicate = (shown: string) => new HttpError(409, `${shown} is already added on ${worldName(worldId)}.`);
   const existing = await already(name.toLowerCase());
   if (existing) throw duplicate(existing.name); // before asking Nexon at all
-  const found = await nexon.lookUp(name, worldId);
+  const recent = takeRemembered(ownerId, worldId, name);
+  const found = recent?.found ?? (await nexon.lookUp(name, worldId));
   const now = new Date();
   const character = await db()
     .$transaction(async (tx) => {
@@ -96,8 +111,9 @@ export async function addCharacter(ownerId: string, worldId: number, name: strin
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw duplicate(found.name);
       throw error;
     });
-  await saveAvatar(character.id, found.avatarUrl, nexon);
-  return view(character);
+  if (recent?.image) await storeAvatar(character.id, recent.image);
+  else await saveAvatar(character.id, found.avatarUrl, nexon);
+  return (await listCharacters(ownerId, worldId)).characters.find((c) => c.id === character.id)!;
 }
 
 // One of the owner's characters, or a 404 (another owner's characters don't exist for them).

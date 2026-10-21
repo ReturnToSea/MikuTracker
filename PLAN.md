@@ -101,7 +101,7 @@ Rules carried over from Goal Tracker:
 `README.md`, `PLAN.md`, `CHANGELOG.md`, `.gitignore`, `.claude/settings.json`, and the approved mockup in `docs/theme-examples/`. No app code.
 
 ### v0.2.0: the skeleton — done
-Built and described in `DESIGN.md`; see `CHANGELOG.md`. Still running: the **Nexon update watch** (`scripts/nexon-watch.mjs`, research only), started 2026-10-21 03:35 UTC on the top 5 of that week's EXP ranking. Check it with `node scripts/nexon-watch.mjs --summary`; its result picks the daily refresh time in v0.6.0. As of 04:06 UTC: no changes in about 1.5 hours.
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. Still running: the **Nexon update watch** (`scripts/nexon-watch.mjs`, research only), started 2026-10-21 03:35 UTC on the top 5 of that week's EXP ranking. Check it with `node scripts/nexon-watch.mjs --summary`; its result picks the daily refresh time in v0.7.0. As of 04:06 UTC: no changes in about 1.5 hours.
 
 ### v0.3.0: game figures, EXP math, and the EXP table tab — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`.
@@ -110,16 +110,19 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
 ### v0.5.0: characters on Home — done
-Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The `Snapshot` table and the first snapshot on adding came in this version; v0.6.0 adds the daily ones and `RefreshRun`.)
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The `Snapshot` table and the first snapshot on adding came in this version; v0.7.0 adds the daily ones and `RefreshRun`.)
 
-### v0.6.0: snapshots and the daily refresh
+### v0.6.0: the add-a-character box, improved — done
+Not in the original plan: came from using v0.5.0. Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The later versions moved up by one.)
+
+### v0.7.0: snapshots and the daily refresh
 1. `Snapshot` and `RefreshRun` models; saving only when the data changed.
 2. The refresh service: when it's due (after the refresh time on each UTC day, catching up if missed), one character at a time, partial failures, and recording the run.
    - Tests: fake clock across UTC midnight, in both time zones; a missed day; Nexon down; one bad character among good ones; no duplicate runs.
 3. Scheduling: check on start, then hourly (a timer that doesn't keep the process alive), turned off for `npm run dev` like backups.
 4. "Updated today at 00:05 UTC", or the error, shown on Home.
 
-### v0.7.0: the character view
+### v0.8.0: the character view
 1. `calc/`: EXP gained per UTC day from snapshots (across level-ups, using total EXP), the 7-day total, the 14-day average, the best day, and missing days: UTC days with no snapshot show as empty "no data" bars, and the combined EXP goes on the next day that has data, labeled with how many days it covers (e.g. "3 days"). The average still divides by 14 calendar days.
    - Tests: step-by-step simulations; a fact that must hold: the daily gains add up to the change in total EXP.
 2. `/api/characters/:id`: everything the view needs in one response.
@@ -128,7 +131,7 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The `Snapshot` table an
    - App tests with the fake clock.
 5. The time-to-level section.
 
-### v0.8.0: backups and the always-on app
+### v0.9.0: backups and the always-on app
 1. Backups, adapted from Goal Tracker: daily, before database updates, and kept for 30 days plus 12 months.
 2. The launch agent and `app:*` commands on port 4750, from its own copy of `main`, with the real database; `npm run dev` on 4751/4752 with `dev.db`.
 3. The daily refresh runs only in the always-on app.
@@ -142,6 +145,7 @@ Use it for a few days, fix what comes up, re-check the EXP table against the lat
 - **Avatar history:** every avatar a character has had is kept, so you can look back at its old looks, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
 - **Leveling progress line chart on Home:** level over time, in days, so you can see your leveling progress. The line includes progress through each level, so 285 at 86.91% plots as 285.87 and the line climbs steadily between level-ups instead of jumping in steps. It comes from the saved snapshots (one point per UTC day), so nothing new needs collecting.
 - **Docker check:** a Dockerfile and compose file, plus a check that the app runs in a container. Data lives on a volume (`MIKU_DATA_DIR=/data`), with `HOST=0.0.0.0` and `MIKU_IN_CONTAINER=1`, the port published only to `127.0.0.1`, and `restart: unless-stopped` doing the launch agent's job. This proves the move off the Mac works before it's needed. (Moving to Postgres is separate: it needs a fresh starting migration, and `pg_dump` for backups.)
+- **Look up any character, without adding it:** its own tab (for example "Lookup"), to search any GMS character on Kronos or Hyperion and see its details (avatar, level, EXP, ranks, Legion) without adding it to your characters. It uses the same server search as the + box.
 - **Check the real data size:** after some real use, measure the database (snapshots), the avatar images and the backups folder, and compare them with the estimates (about 100 bytes per snapshot, so about 36 KB per character per year). Revisit the "keep forever" decision only if the real numbers are much bigger.
 
 ## Risks

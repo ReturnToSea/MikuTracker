@@ -45,7 +45,7 @@ describe("adding a character", () => {
       expToNext: EXP_TO_NEXT[284],
       worldRank: 6_390,
       overallRank: 19_172,
-      legion: { level: 5_804, raidPower: 297_290_139 },
+      legion: { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" },
       avatar: expect.stringMatching(/^\/avatars\/[0-9a-f]{32}\.png$/),
       addedAt: NOW.toISOString(),
       checkedAt: NOW.toISOString(),
@@ -163,6 +163,136 @@ describe("adding a character", () => {
     const { call, nexon } = setup();
     expect((await call().post("/api/characters").send(body)).status).toBe(400);
     expect(nexon.requests).toHaveLength(0);
+  });
+});
+
+describe("adding right after searching", () => {
+  const search = (call: ReturnType<typeof setup>["call"], name: string, world = 45) => ok(call().get(`/api/search?world=${world}&name=${name}`));
+  const boards = (n: ReturnType<typeof setup>["nexon"]) => n.requests.map((r) => (r.url.includes("msavatar") ? "avatar" : new URL(r.url).searchParams.get("type")));
+
+  it("uses the search: no new requests to Nexon, the same details and picture", async () => {
+    const { call, nexon } = setup();
+    const found = (await search(call, "mikubeam")).body;
+    const asked = nexon.requests.length;
+    const added = (await ok(add(call, "MikuBeam"))).body;
+    expect(nexon.requests).toHaveLength(asked); // instant: nothing asked again
+    expect([added.name, added.level, added.exp, added.worldRank]).toEqual([found.name, found.level, found.exp, found.worldRank]);
+    expect(readFileSync(avatarFile(added.avatar))).toEqual(Buffer.from(found.avatar.replace(/^data:image\/png;base64,/, ""), "base64"));
+  });
+
+  it("without a search first, or after searching someone else, it looks the character up", async () => {
+    const { call, nexon } = setup();
+    await ok(add(call, "MikuBeam"));
+    expect(boards(nexon)).toEqual(["world", "overall", "legion", "avatar"]);
+    await search(call, "TwinTails");
+    const before = nexon.requests.length;
+    await ok(add(call, "LeekSpin"));
+    expect(boards(nexon).slice(before)).toEqual(["world", "overall", "legion", "avatar"]);
+  });
+
+  it("a search on the other world doesn't count", async () => {
+    const characters: FakeCharacter[] = [...CHARACTERS, { ...MIKUBEAM, worldID: 70 }];
+    const { call, nexon } = setup(characters);
+    await search(call, "MikuBeam", 70);
+    const before = nexon.requests.length;
+    await ok(add(call, "MikuBeam", 45));
+    expect(nexon.requests.length).toBeGreaterThan(before);
+  });
+
+  it("only the latest search is remembered, and adding uses it up", async () => {
+    const { call, nexon } = setup();
+    await search(call, "MikuBeam");
+    await search(call, "LeekSpin");
+    let before = nexon.requests.length;
+    await ok(add(call, "MikuBeam")); // replaced by the later search: looked up again
+    expect(nexon.requests.length).toBeGreaterThan(before);
+    before = nexon.requests.length;
+    const leek = (await ok(add(call, "LeekSpin"))).body; // the latest: used
+    expect(nexon.requests).toHaveLength(before);
+    await ok(call().delete(`/api/characters/${leek.id}`));
+    await ok(add(call, "LeekSpin")); // used up: looked up again
+    expect(nexon.requests.length).toBeGreaterThan(before);
+  });
+
+  it("forgetSearches (used between tests) forgets the remembered search", async () => {
+    const { searchCharacter, takeRemembered, forgetSearches } = await import("../src/services/search");
+    await searchCharacter(SOLE_OWNER, "MikuBeam", 45, fakeNexon().client);
+    forgetSearches();
+    expect(takeRemembered(SOLE_OWNER, 45, "MikuBeam")).toBeUndefined();
+  });
+
+  it("a search over an hour old is looked up again (its numbers are too old to save as now)", async () => {
+    const { call, nexon } = setup();
+    await search(call, "MikuBeam");
+    vi.setSystemTime(new Date(NOW.getTime() + 60 * 60 * 1000)); // exactly an hour: still fine
+    let before = nexon.requests.length;
+    const miku = (await ok(add(call, "MikuBeam"))).body;
+    expect(nexon.requests).toHaveLength(before);
+    await ok(call().delete(`/api/characters/${miku.id}`));
+    await search(call, "MikuBeam");
+    vi.setSystemTime(new Date(NOW.getTime() + 2 * 60 * 60 * 1000 + 1)); // over an hour after that search
+    before = nexon.requests.length;
+    await ok(add(call, "MikuBeam"));
+    expect(nexon.requests.length).toBeGreaterThan(before);
+  });
+
+  it("a search whose picture couldn't be downloaded: added without asking again, then the picture is fetched", async () => {
+    let pictures = false;
+    const { call, nexon } = setup(undefined, (url) => (url.startsWith("https://msavatar1") ? (pictures ? new Response(png("later"), { status: 200 }) : new Response("", { status: 404 })) : answer(url, CHARACTERS)));
+    expect((await search(call, "MikuBeam")).body.avatar).toBeNull();
+    pictures = true;
+    const before = nexon.requests.length;
+    const added = (await ok(add(call, "MikuBeam"))).body;
+    expect(boards(nexon).slice(before)).toEqual(["avatar"]); // only the picture was asked for
+    expect(added.avatar).not.toBeNull();
+  });
+});
+
+describe("Legion, shared by a world's characters", () => {
+  it("is N/A on a world until the character Nexon lists for it is added", async () => {
+    const { call } = setup();
+    await ok(add(call, "LeekSpin")); // not the listed one
+    expect((await list(call)).characters[0].legion).toBeNull();
+  });
+
+  it("once the listed character is added, every character on that world shows its Legion", async () => {
+    const { call } = setup();
+    await ok(add(call, "LeekSpin"));
+    await ok(add(call, "TwinTails"));
+    await ok(add(call, "MikuBeam")); // the listed one
+    const legion = { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" };
+    expect((await list(call)).characters.map((c: { legion: unknown }) => c.legion)).toEqual([legion, legion, legion]);
+  });
+
+  it("is also on the character just added (the answer to adding)", async () => {
+    const { call } = setup();
+    await ok(add(call, "MikuBeam"));
+    expect((await ok(add(call, "LeekSpin"))).body.legion).toEqual({ level: 5_804, raidPower: 297_290_139, from: "MikuBeam" });
+  });
+
+  it("stays on its own world", async () => {
+    const { call } = setup();
+    await ok(add(call, "MikuBeam"));
+    await ok(add(call, "SakuraRin", 70));
+    expect((await list(call, 70)).characters[0].legion).toEqual({ level: 4_200, raidPower: 88_000_000, from: "SakuraRin" });
+    expect((await list(call, 45)).characters[0].legion.from).toBe("MikuBeam");
+  });
+
+  it("goes back to N/A when the listed character is deleted", async () => {
+    const { call } = setup();
+    const miku = (await ok(add(call, "MikuBeam"))).body.id;
+    await ok(add(call, "LeekSpin"));
+    await ok(call().delete(`/api/characters/${miku}`));
+    expect((await list(call)).characters[0].legion).toBeNull();
+  });
+
+  it("two listed characters on one world (two accounts): the most recently checked one", async () => {
+    const characters: FakeCharacter[] = [...CHARACTERS, { ...LEEKSPIN, legion: { level: 1_000, raidPower: 5 } }];
+    const { call } = setup(characters);
+    await ok(add(call, "MikuBeam"));
+    vi.setSystemTime(new Date(NOW.getTime() + 60_000));
+    await ok(add(call, "LeekSpin"));
+    expect((await list(call)).characters.map((c: { legion: { from: string } }) => c.legion.from)).toEqual(["LeekSpin", "LeekSpin"]);
   });
 });
 

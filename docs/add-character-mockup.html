@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a Character Layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Shippori+Mincho:wght@600;700&display=swap">
+<style>
+  /* One look on purpose: these mock up the app's Ren theme (client/src/styles/themes.css). The
+     avatar is batterboi's real one (tempdata/mockup/, not in git); everything else is made up. */
+  :root {
+    color-scheme: dark;
+    --bg: #26253a; --surface: rgba(30, 29, 46, 0.92); --surface-2: rgba(50, 48, 72, 0.95); --border: #4a4766;
+    --text: #f3eee6; --muted: #b6afc4; --faint: #8a84a0;
+    --accent: #e5484d; --accent-soft: rgba(229, 72, 77, 0.16); --on-accent: #fff;
+    --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
+    --gold: #d4b46e;
+    --radius: 4px;
+    --sans: "Inter", system-ui, sans-serif;
+    --display: "Shippori Mincho", Georgia, serif;
+  }
+  body { margin: 0; background: linear-gradient(180deg, #3d3c58 0%, #2a2940 55%, #1c1b2b 100%) fixed; color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+  .page { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 40px 64px; display: grid; gap: 56px; }
+  header.intro { display: grid; gap: 12px; max-width: 76ch; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  h1 { font-family: var(--display); font-size: 32px; line-height: 1.2; margin: 0; }
+  .intro p { margin: 0; color: var(--muted); }
+  .intro ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
+  .intro ul b { color: var(--text); font-weight: 600; }
+
+  section.option { display: grid; gap: 16px; }
+  .option-head { display: grid; gap: 6px; max-width: 82ch; }
+  .option-head h2 { margin: 0; font-family: var(--display); font-size: 22px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .option-head h2 .tag { font-family: var(--sans); font-size: 12px; color: var(--accent); font-weight: 600; }
+  .option-head p { margin: 0; color: var(--muted); }
+  .tradeoffs { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13px; color: var(--muted); }
+  .tradeoffs b { color: var(--text); font-weight: 600; }
+
+  /* The app, as in the real page: the tab rail on the left and the sections beside it. */
+  .frame-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .app { width: 1120px; min-height: 560px; display: grid; grid-template-columns: 76px 1fr; background: linear-gradient(180deg, #3d3c58, #22213a); position: relative; }
+  .rail { border-right: 1px solid var(--border); padding: 14px 8px; display: flex; flex-direction: column; gap: 4px; background: var(--surface); }
+  .rail .brand { width: 30px; height: 30px; margin: 0 auto 12px; border-radius: 3px; background: var(--exp); }
+  .rail .tab { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 2px; border-radius: 3px; }
+  .rail .tab.on { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .rail .spacer { flex: 1; }
+  .main { padding: 20px 28px; display: grid; gap: 14px; align-content: start; position: relative; }
+  .block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; }
+  .block.top { padding-bottom: 0; position: relative; z-index: 5; }
+  .seg { display: inline-flex; padding: 3px; border-radius: var(--radius); background: var(--surface-2); }
+  .seg span { padding: 4px 14px; border-radius: var(--radius); color: var(--muted); }
+  .seg span.on { background: var(--accent); color: var(--on-accent); }
+  .tabs { display: flex; align-items: flex-end; gap: 4px; margin-top: 10px; }
+  .ctab { display: flex; align-items: center; gap: 10px; padding: 8px 14px 9px 8px; border-bottom: 3px solid transparent; color: var(--muted); }
+  .ctab.on { border-bottom-color: var(--accent); color: var(--text); }
+  .ctab b { display: block; color: var(--text); } .ctab small { display: block; font-size: 11px; color: var(--muted); }
+  .plus { width: 38px; height: 38px; margin: 0 6px 10px; border: 1px dashed var(--accent); border-radius: var(--radius); display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); font-size: 18px; }
+  .plus-wrap { position: relative; }
+
+  /* Avatars: Nexon's are 96 × 96 pixel art, so they're shown at exact multiples with sharp pixels. */
+  .av { display: block; image-rendering: pixelated; border-radius: var(--radius); background: var(--accent-soft); flex: none; }
+  .av.s38 { width: 38px; height: 38px; }
+  .av.x1 { width: 96px; height: 96px; } .av.x15 { width: 144px; height: 144px; } .av.x2 { width: 192px; height: 192px; }
+  .av.stage { background: radial-gradient(circle at 50% 70%, rgba(229,72,77,.22), transparent 65%), var(--surface-2); }
+
+  .pop { position: absolute; top: calc(100% - 2px); left: 6px; z-index: 10; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: 0 14px 36px rgba(0,0,0,.45); display: grid; gap: 12px; }
+  .pop h3, .panel-title { margin: 0; font-size: 13px; font-family: var(--display); }
+  .search { display: flex; gap: 8px; }
+  .search .in { flex: 1; padding: 7px 12px; border: 1px solid var(--accent); border-radius: 3px; background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .btn { padding: 7px 14px; border-radius: 3px; background: var(--accent); color: var(--on-accent); font-weight: 600; text-align: center; white-space: nowrap; }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.wide { display: block; }
+  .name { font-family: var(--display); font-weight: 700; }
+  .muted { color: var(--muted); } .small { font-size: 12.5px; } .faint { color: var(--faint); }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .k { font-size: 11px; color: var(--muted); } .v { font-weight: 700; }
+  .lvl { font-family: var(--display); font-size: 34px; line-height: 1; font-weight: 700; }
+  .bar { height: 7px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; } .bar i { display: block; height: 100%; width: 52.6%; background: var(--exp); }
+  .ghost-view { opacity: .35; filter: blur(1px); }
+  .dim { position: absolute; inset: 0; background: rgba(10, 8, 25, .55); z-index: 20; }
+  .dialog { position: absolute; z-index: 21; left: 50%; top: 70px; transform: translateX(-50%); width: 460px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: 0 20px 50px rgba(0,0,0,.5); display: grid; gap: 14px; }
+  .note { font-size: 11.5px; color: var(--faint); }
+  .questions { display: grid; gap: 8px; max-width: 82ch; }
+  .questions h2 { margin: 0; font-family: var(--display); font-size: 22px; }
+  .questions ol { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 6px; } .questions b { color: var(--text); }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <span class="eyebrow">MikuTracker · v0.5.1</span>
+    <h1>Add a character</h1>
+    <p>Five ways the search box could look, each with the character's real icon, bigger. Shown with batterboi on Kronos (his real avatar; the other numbers match what Nexon reports).</p>
+    <ul>
+      <li><b>The icon in the search result:</b> the server downloads it with the search and sends it along, so the page still never contacts Nexon (that's why it's a stand-in today).</li>
+      <li><b>Nexon's avatars are 96 × 96 pixel art:</b> shown at exactly 1.5× (144 px) or 2× (192 px) with sharp pixels, so they stay crisp.</li>
+      <li><b>Same everywhere:</b> + opens it, Search / Enter looks up the name, Add saves the character and selects it; Escape or a click outside closes it.</li>
+    </ul>
+  </header>
+
+  <!-- A -->
+  <section class="option">
+    <div class="option-head">
+      <h2>A · Bigger result card <span class="tag">today's box, bigger icon</span></h2>
+      <p>The box you have now, under the +, with the icon at 1.5× beside the name, and the ranks added. Add stays on the right.</p>
+      <div class="tradeoffs"><span><b>Good for</b> the smallest change; the page underneath stays visible.</span><span><b>Less good</b> 144 px is big, but not the biggest.</span></div>
+    </div>
+    <div class="frame-wrap"><div class="app">
+      <nav class="rail"><div class="brand"></div><div class="tab on">Home</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="spacer"></div><div class="tab">EXP table</div><div class="tab">Themes</div></nav>
+      <div class="main">
+        <div class="block top">
+          <div class="seg"><span class="on">Kronos</span><span>Hyperion</span></div>
+          <div class="tabs"><div class="ctab on"><img class="av s38" src="../tempdata/mockup/batterboi.png" alt=""><span><b>MikuBeam</b><small>Lv. 285 · Kanna</small></span></div>
+            <div class="plus-wrap"><div class="plus">+</div>
+              <div class="pop" style="width:420px">
+                <h3>Add a character on Kronos</h3>
+                <div class="search"><div class="in">batterboi</div><div class="btn">Search</div></div>
+                <div class="row" style="align-items:flex-start">
+                  <img class="av x15 stage" src="../tempdata/mockup/batterboi.png" alt="">
+                  <div style="display:grid;gap:4px;flex:1">
+                    <span class="name" style="font-size:20px">batterboi</span>
+                    <span class="muted">Lv. 291 · Night Walker · Kronos</span>
+                    <span class="small muted">#11,607 in Kronos · #16,070 overall</span>
+                    <span class="small muted">Legion 5,804</span>
+                    <div class="btn" style="justify-self:start;margin-top:8px">Add</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="block ghost-view" style="height:220px"></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- B -->
+  <section class="option">
+    <div class="option-head">
+      <h2>B · Portrait card <span class="tag">icon on top, 2×</span></h2>
+      <p>A narrower box with the icon large and centered at the top, like a character select screen; the name and details under it, and a full-width Add.</p>
+      <div class="tradeoffs"><span><b>Good for</b> the icon is the star; looks like the game.</span><span><b>Less good</b> a tall box that covers more of the page.</span></div>
+    </div>
+    <div class="frame-wrap"><div class="app">
+      <nav class="rail"><div class="brand"></div><div class="tab on">Home</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="spacer"></div><div class="tab">EXP table</div><div class="tab">Themes</div></nav>
+      <div class="main">
+        <div class="block top">
+          <div class="seg"><span class="on">Kronos</span><span>Hyperion</span></div>
+          <div class="tabs"><div class="ctab on"><img class="av s38" src="../tempdata/mockup/batterboi.png" alt=""><span><b>MikuBeam</b><small>Lv. 285 · Kanna</small></span></div>
+            <div class="plus-wrap"><div class="plus">+</div>
+              <div class="pop" style="width:300px;justify-items:center;text-align:center">
+                <h3 style="justify-self:start">Add a character on Kronos</h3>
+                <div class="search" style="width:100%"><div class="in" style="text-align:left">batterboi</div><div class="btn">Search</div></div>
+                <img class="av x2 stage" src="../tempdata/mockup/batterboi.png" alt="">
+                <div style="display:grid;gap:2px">
+                  <span class="name" style="font-size:22px">batterboi</span>
+                  <span class="muted">Lv. 291 · Night Walker</span>
+                  <span class="small faint">Kronos · #11,607 in Kronos</span>
+                </div>
+                <div class="btn wide" style="width:100%">Add batterboi</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="block ghost-view" style="height:220px"></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- C -->
+  <section class="option">
+    <div class="option-head">
+      <h2>C · Full preview <span class="tag">see it like Home before adding</span></h2>
+      <p>A wide box showing the character the way Home will: icon at 2×, level, the EXP bar, ranks and Legion. You know exactly what you're adding.</p>
+      <div class="tradeoffs"><span><b>Good for</b> checking it's the right character (level, EXP) before adding.</span><span><b>Less good</b> the widest box; repeats what Home shows right after.</span></div>
+    </div>
+    <div class="frame-wrap"><div class="app">
+      <nav class="rail"><div class="brand"></div><div class="tab on">Home</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="spacer"></div><div class="tab">EXP table</div><div class="tab">Themes</div></nav>
+      <div class="main">
+        <div class="block top">
+          <div class="seg"><span class="on">Kronos</span><span>Hyperion</span></div>
+          <div class="tabs"><div class="ctab on"><img class="av s38" src="../tempdata/mockup/batterboi.png" alt=""><span><b>MikuBeam</b><small>Lv. 285 · Kanna</small></span></div>
+            <div class="plus-wrap"><div class="plus">+</div>
+              <div class="pop" style="width:560px">
+                <h3>Add a character on Kronos</h3>
+                <div class="search"><div class="in">batterboi</div><div class="btn">Search</div></div>
+                <div class="row" style="align-items:stretch;gap:18px">
+                  <img class="av x2 stage" src="../tempdata/mockup/batterboi.png" alt="">
+                  <div style="display:grid;gap:10px;flex:1;align-content:start">
+                    <div class="row" style="justify-content:space-between;align-items:flex-start">
+                      <div><div class="name" style="font-size:24px">batterboi</div><div class="muted small">Night Walker · Kronos</div></div>
+                      <div style="text-align:right"><div class="k">Level</div><div class="lvl">291</div></div>
+                    </div>
+                    <div><div class="bar"><i></i></div><div class="small muted" style="margin-top:4px">52.60% to level 292 · <b style="color:var(--text)">170T / 324T EXP</b></div></div>
+                    <div class="grid2"><div><div class="k">In Kronos</div><div class="v">#11,607</div></div><div><div class="k">Overall</div><div class="v">#16,070</div></div><div><div class="k">Legion</div><div class="v">5,804</div></div><div><div class="k">Raid power</div><div class="v">297,290,139</div></div></div>
+                    <div class="btn" style="justify-self:end">Add batterboi</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="block ghost-view" style="height:220px"></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- D -->
+  <section class="option">
+    <div class="option-head">
+      <h2>D · Search section <span class="tag">opens in the page, not over it</span></h2>
+      <p>+ opens a section of its own between the tabs and the character, pushing the page down instead of covering it. Search on the left, the result (icon at 2×) on the right.</p>
+      <div class="tradeoffs"><span><b>Good for</b> never hidden or cut off; plenty of room; nothing covers anything.</span><span><b>Less good</b> the page jumps down while it's open.</span></div>
+    </div>
+    <div class="frame-wrap"><div class="app">
+      <nav class="rail"><div class="brand"></div><div class="tab on">Home</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="spacer"></div><div class="tab">EXP table</div><div class="tab">Themes</div></nav>
+      <div class="main">
+        <div class="block top">
+          <div class="seg"><span class="on">Kronos</span><span>Hyperion</span></div>
+          <div class="tabs"><div class="ctab on"><img class="av s38" src="../tempdata/mockup/batterboi.png" alt=""><span><b>MikuBeam</b><small>Lv. 285 · Kanna</small></span></div><div class="plus">+</div></div>
+        </div>
+        <div class="block" style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:center">
+          <div style="display:grid;gap:10px">
+            <div class="row" style="justify-content:space-between"><span class="panel-title">Add a character on Kronos</span><span class="faint">✕</span></div>
+            <div class="search"><div class="in">batterboi</div><div class="btn">Search</div></div>
+            <span class="note">Names are 1–12 letters and numbers. Characters too low to be ranked can't be found.</span>
+          </div>
+          <div class="row" style="gap:20px">
+            <img class="av x2 stage" src="../tempdata/mockup/batterboi.png" alt="">
+            <div style="display:grid;gap:6px;flex:1">
+              <span class="name" style="font-size:26px">batterboi</span>
+              <span class="muted">Lv. 291 · Night Walker · Kronos</span>
+              <span class="small muted">#11,607 in Kronos · #16,070 overall · Legion 5,804</span>
+              <div class="btn" style="justify-self:start;margin-top:6px">Add batterboi</div>
+            </div>
+          </div>
+        </div>
+        <div class="block ghost-view" style="height:150px"></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- E -->
+  <section class="option">
+    <div class="option-head">
+      <h2>E · Centered dialog <span class="tag">the page dims behind it</span></h2>
+      <p>+ opens a dialog in the middle of the screen over a dimmed page: search at the top, the result with the icon at 2× and its details, then Cancel / Add.</p>
+      <div class="tradeoffs"><span><b>Good for</b> full attention on adding; the same place however many tabs there are.</span><span><b>Less good</b> covers everything; feels heavier than a small box.</span></div>
+    </div>
+    <div class="frame-wrap"><div class="app">
+      <nav class="rail"><div class="brand"></div><div class="tab on">Home</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="tab">TBD</div><div class="spacer"></div><div class="tab">EXP table</div><div class="tab">Themes</div></nav>
+      <div class="main">
+        <div class="block top" style="z-index:1">
+          <div class="seg"><span class="on">Kronos</span><span>Hyperion</span></div>
+          <div class="tabs"><div class="ctab on"><img class="av s38" src="../tempdata/mockup/batterboi.png" alt=""><span><b>MikuBeam</b><small>Lv. 285 · Kanna</small></span></div><div class="plus">+</div></div>
+        </div>
+        <div class="block" style="height:220px"></div>
+        <div class="dim"></div>
+        <div class="dialog">
+          <div class="row" style="justify-content:space-between"><span class="panel-title" style="font-size:16px">Add a character on Kronos</span><span class="faint">✕</span></div>
+          <div class="search"><div class="in">batterboi</div><div class="btn">Search</div></div>
+          <div class="row" style="gap:18px">
+            <img class="av x2 stage" src="../tempdata/mockup/batterboi.png" alt="">
+            <div style="display:grid;gap:6px">
+              <span class="name" style="font-size:24px">batterboi</span>
+              <span class="muted">Lv. 291 · Night Walker</span>
+              <span class="small muted">Kronos · #11,607 in Kronos</span>
+              <span class="small muted">#16,070 overall · Legion 5,804</span>
+            </div>
+          </div>
+          <div class="row" style="justify-content:flex-end"><div class="btn ghost">Cancel</div><div class="btn">Add batterboi</div></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <div class="questions">
+    <h2>To decide</h2>
+    <ol>
+      <li><b>Which layout:</b> A, B, C, D or E (or parts of several).</li>
+      <li><b>Icon size:</b> 1.5× (144 px) or 2× (192 px)? Bigger than 2× starts to look blocky.</li>
+      <li><b>How much to show before adding:</b> just name, level and job, or also the EXP bar, ranks and Legion?</li>
+      <li><b>The tabs' icons</b> (38 px today): keep small, or make them bigger too?</li>
+    </ol>
+  </div>
+</div>
+</html>

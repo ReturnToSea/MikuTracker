@@ -43,11 +43,12 @@ export function CharacterSummary({ c, onDelete }: { c: CharacterView; onDelete: 
       <div className="stats">
         <div className="stat">
           <div className="label">{world} Legion</div>
-          <div className="value">{c.legion ? fmtInt(c.legion.level) : "Not listed"}</div>
+          <div className="value">{c.legion ? fmtInt(c.legion.level) : "N/A"}</div>
+          <LegionSource legion={c.legion} name={c.name} />
         </div>
         <div className="stat">
           <div className="label">Raid power</div>
-          <div className="value">{c.legion ? fmtInt(c.legion.raidPower) : "—"}</div>
+          <div className="value">{c.legion ? fmtInt(c.legion.raidPower) : "N/A"}</div>
         </div>
       </div>
       <div className="page-foot">
@@ -57,4 +58,12 @@ export function CharacterSummary({ c, onDelete }: { c: CharacterView; onDelete: 
       </div>
     </section>
   );
+}
+
+// Nexon lists a world's Legion under one character per account: say which, when it's another one,
+// and why it's N/A before that character is added.
+export function LegionSource({ legion, name }: { legion: { from: string } | null; name: string }) {
+  if (!legion) return <div className="muted small">Add the character Nexon lists your Legion under to see it.</div>;
+  if (legion.from === name) return null;
+  return <div className="muted small">listed under {legion.from}</div>;
 }

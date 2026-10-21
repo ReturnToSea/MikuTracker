@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.5.0)
+## The app (as of v0.6.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -17,13 +17,22 @@ Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`)
   - Click a tab to select it.
   - **Drag left or right** to reorder: the tabs move as you drag, and the order is saved when you let go. **Alt + ←/→** does the same from the keyboard, without triggering the browser's own Back/Forward.
   - A move shows at once, before the server confirms it. The server's order takes over as soon as it changes.
-- **The + at the end** opens a box: type a name and Search, see the result (name, level, job, world), then **Add**.
+- **The + at the end** opens a box directly below it (left edges lined up), drawn above the sections under it. Near the right edge it slides left just enough to stay inside its section; it measures again when a result makes it wider.
+  - Type a name and Search. The result is a preview the way Home will show it (layout C in `docs/add-character-mockup.html`):
+    - its **avatar at 2× (192 px, sharp pixels)**, downloaded by the server during the search and sent along as image data, so the page still never contacts Nexon
+    - name, job and world, and the level
+    - the EXP bar and its text
+    - world rank and overall rank, Legion and raid power
+
+    Then **Add <name>**.
+  - **Adding right after searching is instant:** the server uses its own search result instead of asking Nexon again.
   - Names are checked first (1–12 letters and numbers).
   - Nexon's answer is shown as is ("SakuraRin is on Hyperion, not Kronos.").
   - A character already on this world shows as **Added**.
-  - The result shows a stand-in picture: the page never loads Nexon's images, and the server saves the avatar once the character is added.
+  - The box has a solid background. On a narrow window the avatar goes above the details.
   - Escape, a click outside, or + again closes the box, and closing forgets what was in it.
-- **The selected character:** avatar, name, job, world rank and overall rank, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), Legion level and raid power ("Not listed" when the character isn't the account's Legion character). The daily EXP chart and time to level arrive in v0.7.0.
+- **The selected character:** avatar, name, job, world rank and overall rank, level, the EXP bar ("86.92% to level 286 · 86.5T / 99.5T EXP"; "Level 300: the highest level." at 300), and the world's Legion level and raid power (see below). The daily EXP chart and time to level arrive in v0.8.0.
+- **Legion is shared by a world's characters.** Nexon lists Legion under one character per account per world (for an account, apparently its highest-level character there; RemyRabbit for one real account). Once that character is added, every character on the world shows its Legion, with "listed under RemyRabbit" on the others. Until then it's **N/A**, with a hint to add that character. With two listed characters on one world (two accounts), the most recently checked one is used. The search preview shows the character's own Legion entry, or else the world's.
 - **Delete** asks first ("This also deletes all of its saved history").
 - While loading, Home says "Loading…". An empty world says how to add a character. Failures are shown.
 
@@ -116,13 +125,16 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
-  - **Looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, downloads its avatar, and answers 201.
+  - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.
   - **A character already added** is refused with "MikuBeam is already added on Kronos." before Nexon is asked, named as it's spelled. Two adds at the same moment are caught by the database's uniqueness check, with the same message.
   - **Nexon's problems** come back as with `/api/search`.
   - **A failed avatar download** doesn't stop the add; the character just has no picture yet.
 - **`PUT /api/characters/order`** `{ world, ids }`: every one of the world's characters exactly once, or 400.
 - **`POST /api/characters/:id/select`** and **`DELETE /api/characters/:id`:** 204, or 404 for an unknown character or another owner's. Deleting removes the snapshots, avatars and selection too.
-- **`/api/search?world=45&name=MikuBeam`:** looks a character up in Nexon's rankings (see below). The name must be 1–12 letters and numbers (spaces around it are ignored), and the world 45 or 70. Anything else is a 400, without asking Nexon. Nexon's problems come back with `{ error, kind }`.
+- **`/api/search?world=45&name=MikuBeam`:** looks a character up in Nexon's rankings (see below) and downloads its avatar.
+  - The answer: `{ name, worldId, level, exp, expToNext, job, worldRank, overallRank, legion, avatar }`, where `avatar` is the picture as image data (`data:image/png;base64,…`, or null if it couldn't be downloaded). Nexon's image address is never sent to the page.
+  - **The server remembers each owner's latest search** (a new one replaces it; adding uses it up), so adding it right after needs no new Nexon requests.
+  - The name must be 1–12 letters and numbers (spaces around it are ignored), and the world 45 or 70. Anything else is a 400, without asking Nexon. Nexon's problems come back with `{ error, kind }`.
 - **Errors** always come back as JSON:
   - invalid input → 400, listing each problem by its path
   - malformed JSON → 400
@@ -163,7 +175,7 @@ Moving to a server or Docker means setting these variables, not changing code. G
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | The development copy: API on 4751 with `dev.db` (migrated first, no backups or refresh), and the page on http://127.0.0.1:4752 with live reload. The page forwards `/api` and `/theme-art` to 4751. |
-| `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.8.0 the always-on app does this, with a backup first. |
+| `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.9.0 the always-on app does this, with a backup first. |
 | `npm run db:migrate` | After changing `server/prisma/schema.prisma`: creates a migration and applies it to `dev.db`. |
 
 ## Database
@@ -175,7 +187,7 @@ SQLite through Prisma 7 (`server/prisma/schema.prisma`), in the data folder, nev
 Tables:
 - **`Settings`:** one row per owner: theme and world.
 - **`Character`:** owner, world, name (as Nexon spells it, plus a lowercase copy for spotting duplicates), job, the latest level, EXP, ranks and Legion, its tab position, added and last-checked times. Unique per owner, world and name. **Tab positions in each world are always exactly 0, 1, 2, …**: adding goes at the end, deleting closes the gap, and reordering renumbers.
-- **`Snapshot`:** a character at one moment: captured time, UTC day, level, EXP, total EXP, ranks and Legion. The first is saved when a character is added; the daily refresh adds one per UTC day from v0.6.0. Kept forever.
+- **`Snapshot`:** a character at one moment: captured time, UTC day, level, EXP, total EXP, ranks and Legion. The first is saved when a character is added; the daily refresh adds one per UTC day from v0.7.0. Kept forever.
 - **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
 - **`Selection`:** the selected character on each world.
 

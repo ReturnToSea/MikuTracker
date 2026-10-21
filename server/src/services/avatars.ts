@@ -4,6 +4,7 @@ import path from "node:path";
 import { getConfig } from "../config";
 import { db } from "../db";
 import type { NexonClient } from "../nexon";
+import type { NexonImage } from "../nexon/client";
 
 // Avatars are kept in the data folder's avatars/, each file named after its contents (so the same
 // picture is stored once, a new look is a new file, and no file is ever overwritten). Every
@@ -20,6 +21,11 @@ export async function saveAvatar(characterId: number, url: string, nexon: NexonC
   } catch {
     return null;
   }
+  return storeAvatar(characterId, image);
+}
+
+// Records a picture already downloaded (by a search) as the character's avatar. Returns the file name.
+export async function storeAvatar(characterId: number, image: NexonImage): Promise<string> {
   const file = `${createHash("sha256").update(image.bytes).digest("hex").slice(0, 32)}.${image.type}`;
   const folder = getConfig().avatarDir;
   const target = path.join(folder, file);

@@ -19,13 +19,27 @@ function character(id: number, name: string, extra: Partial<CharacterView> = {})
     expToNext: 99_512_176_519_276,
     worldRank: 6_390,
     overallRank: 19_172,
-    legion: { level: 5_804, raidPower: 297_290_139 },
+    legion: { level: 5_804, raidPower: 297_290_139, from: name },
     avatar: `/avatars/${name.toLowerCase()}.png`,
     addedAt: new Date(Date.UTC(2026, 9, 20)),
     checkedAt: new Date(Date.UTC(2026, 9, 20)),
     ...extra,
   };
 }
+
+// A search result as the server sends it: the avatar arrives as image data.
+const FOUND = {
+  name: "NewOne",
+  worldId: 45,
+  level: 250,
+  exp: 93_289_912_904,
+  expToNext: 186_579_825_808,
+  job: "Hero",
+  worldRank: 1_234,
+  overallRank: 56_789,
+  legion: { level: 3_210, raidPower: 45_000_000 },
+  avatar: "data:image/png;base64,iVBORw0KGgo=",
+};
 
 // A fake server that remembers: worlds with characters, selection, order, adding and deleting.
 function home(worlds: Record<number, CharacterView[]> = {}, worldId = 45) {
@@ -43,7 +57,7 @@ function home(worlds: Record<number, CharacterView[]> = {}, worldId = 45) {
     "GET /search": (_: unknown, path: string) => {
       const name = new URLSearchParams(path.split("?")[1]).get("name")!;
       if (name.toLowerCase() === "sakurarin") return new Response(JSON.stringify({ error: "SakuraRin is on Hyperion, not Kronos.", kind: "other-world" }), { status: 409 });
-      return { name: name === "newone" ? "NewOne" : name, worldId: worldOf(path), level: 250, exp: 5, job: "Hero", avatarUrl: "https://msavatar1.nexon.net/x.png", worldRank: 1, overallRank: 2, legion: null };
+      return { ...FOUND, name: name === "newone" ? "NewOne" : name, worldId: worldOf(path) };
     },
     "POST /characters": (body: { world: number; name: string }) => {
       const added = character(100 + state.worlds[body.world]!.length, body.name, { worldId: body.world, level: 250 });
@@ -154,7 +168,7 @@ describe("the character tabs", () => {
     await waitFor(() => expect(tabNames()).toEqual(["B", "A"]));
     await userEvent.click(screen.getByRole("button", { name: "Add a character" }));
     await userEvent.type(screen.getByRole("textbox", { name: "Character name" }), "newone{Enter}");
-    await userEvent.click(await screen.findByRole("button", { name: "Add" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add NewOne" }));
     await waitFor(() => expect(tabNames()).toEqual(["B", "A", "NewOne"]));
   });
 
@@ -229,7 +243,20 @@ describe("the selected character", () => {
     expect(s.querySelector(".meta")!.textContent).toBe("Kanna · Kronos · #6,390 in Kronos");
     expect(s.querySelector("small")!.textContent).toBe("Level 300: the highest level.");
     expect(within(s).queryByRole("progressbar")).toBeNull();
-    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["Not listed", "—"]);
+    expect(Array.from(s.querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["N/A", "N/A"]);
+    expect(s.querySelector(".stat .small")!.textContent).toBe("Add the character Nexon lists your Legion under to see it.");
+  });
+
+  it("shows the world's Legion with the character it's listed under (none when it's this one)", async () => {
+    const legion = { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" };
+    home({ 45: [character(1, "MikuBeam", { legion }), character(2, "LeekSpin", { legion })] });
+    renderWithApp(<App />);
+    const own = await waitFor(() => summary());
+    expect(own.querySelector(".stat .small")).toBeNull();
+    await userEvent.click(tab("LeekSpin"));
+    await waitFor(() => expect(within(summary()).getByRole("heading", { level: 2 }).textContent).toBe("LeekSpin"));
+    expect(Array.from(summary().querySelectorAll(".stat .value")).map((v) => v.textContent)).toEqual(["5,804", "297,290,139"]);
+    expect(summary().querySelector(".stat .small")!.textContent).toBe("listed under MikuBeam");
   });
 
   it("deleting asks first; saying no keeps it", async () => {
@@ -342,13 +369,13 @@ describe("adding a character", () => {
     home();
     fakeServer({
       ...BASE_ROUTES,
-      "GET /search": { name: "NewOne", worldId: 45, level: 250, exp: 5, job: "Hero", avatarUrl: "", worldRank: 1, overallRank: 2, legion: null },
+      "GET /search": FOUND,
       "POST /characters": new Response(JSON.stringify({ error: "Nexon's rankings can't be reached right now. Try again later." }), { status: 503 }),
     });
     renderWithApp(<App />);
     await userEvent.click(plus());
     await userEvent.type(nameBox(), "NewOne{Enter}");
-    await userEvent.click(await screen.findByRole("button", { name: "Add" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add NewOne" }));
     expect((await screen.findByRole("alert")).textContent).toContain("can't be reached");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
@@ -370,10 +397,15 @@ describe("adding a character", () => {
     await userEvent.click(plus());
     await userEvent.type(nameBox(), " newone {Enter}");
     expect(server.calls.filter((c) => c.method === "GET" && c.path.startsWith("/search")).map((c) => c.path)).toEqual(["/search?world=45&name=newone"]);
-    const result = await screen.findByText("NewOne");
-    expect(result.closest(".result")!.textContent).toContain("Lv. 250 · Hero · Kronos");
-    expect(within(result.closest(".result") as HTMLElement).getByRole("img").getAttribute("aria-label")).toBe("NewOne (no avatar yet)"); // the page never loads Nexon's images
-    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+    // A preview the way Home will show it, with the avatar the server sent (2×, 192 px).
+    const found = (await screen.findByText("NewOne")).closest(".found") as HTMLElement;
+    const avatar = within(found).getByRole("img", { name: "NewOne's avatar" });
+    expect([avatar.getAttribute("src"), avatar.getAttribute("width")]).toEqual(["data:image/png;base64,iVBORw0KGgo=", "192"]);
+    expect(found.querySelector(".found-head")!.textContent).toBe("NewOneHero · KronosLevel250");
+    expect(within(found).getByRole("progressbar", { name: "NewOne's EXP into level 250" }).getAttribute("aria-valuenow")).toBe("50");
+    expect(found.querySelector(".found-details > div:nth-child(2) .small")!.textContent).toBe("50.00% to level 251 · 93.3B / 187B EXP");
+    expect(Array.from(found.querySelectorAll(".found-stats > div")).map((d) => d.textContent)).toEqual(["In Kronos#1,234", "Overall#56,789", "Legion3,210", "Raid power45,000,000"]);
+    await userEvent.click(screen.getByRole("button", { name: "Add NewOne" }));
     expect(server.sent("POST", "/characters")).toEqual([{ world: 45, name: "NewOne" }]);
     await waitFor(() => expect(tabNames()).toEqual(["MikuBeam", "NewOne"]));
     expect(tab("NewOne").getAttribute("aria-selected")).toBe("true");
@@ -398,7 +430,42 @@ describe("adding a character", () => {
     await userEvent.click(plus());
     await userEvent.type(nameBox(), "SakuraRin{Enter}");
     expect((await screen.findByRole("alert")).textContent).toBe("SakuraRin is on Hyperion, not Kronos.");
-    expect(screen.queryByRole("button", { name: "Add" })).toBeNull();
+    expect(within(screen.getByRole("dialog")).queryByRole("button", { name: /^Add/ })).toBeNull(); // no result, so nothing to add
+  });
+
+  it("without a picture, an overall rank or Legion, and at level 300", async () => {
+    home();
+    fakeServer({ ...BASE_ROUTES, "GET /search": { ...FOUND, level: 300, exp: 0, expToNext: null, overallRank: null, legion: null, avatar: null } });
+    renderWithApp(<App />);
+    await userEvent.click(plus());
+    await userEvent.type(nameBox(), "NewOne{Enter}");
+    const found = (await screen.findByText("NewOne")).closest(".found") as HTMLElement;
+    expect(within(found).getByRole("img").getAttribute("aria-label")).toBe("NewOne (no avatar yet)");
+    expect(within(found).queryByRole("progressbar")).toBeNull();
+    expect(found.textContent).toContain("Level 300: the highest level.");
+    expect(Array.from(found.querySelectorAll(".found-stats dd")).map((d) => d.textContent)).toEqual(["#1,234", "—", "N/A", "N/A"]);
+  });
+
+  it("a found character not listed for Legion shows the Legion already on this world", async () => {
+    home({ 45: [character(1, "LeekSpin", { legion: null }), character(2, "MikuBeam", { legion: { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" } })] });
+    fakeServer({ ...BASE_ROUTES, "GET /characters": { characters: [character(1, "LeekSpin", { legion: null }), character(2, "MikuBeam", { legion: { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" } })], selectedId: 1 }, "GET /search": { ...FOUND, legion: null } });
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toHaveLength(2));
+    await userEvent.click(plus());
+    await userEvent.type(nameBox(), "NewOne{Enter}");
+    const found = (await screen.findByText("NewOne")).closest(".found") as HTMLElement;
+    expect(Array.from(found.querySelectorAll(".found-stats dd")).map((d) => d.textContent)).toEqual(["#1,234", "#56,789", "5,804", "297,290,139"]);
+    expect(found.querySelector(".found-stats .small")!.textContent).toBe("listed under MikuBeam");
+  });
+
+  it("a found character with its own Legion entry shows that one", async () => {
+    home();
+    renderWithApp(<App />);
+    await userEvent.click(plus());
+    await userEvent.type(nameBox(), "NewOne{Enter}");
+    const found = (await screen.findByText("NewOne")).closest(".found") as HTMLElement;
+    expect(found.querySelector(".found-stats > div:nth-child(3) dd")!.textContent).toBe("3,210");
+    expect(found.querySelector(".found-stats .small")).toBeNull(); // its own: no "listed under"
   });
 
   it("a character already on this world shows as Added", async () => {
@@ -425,13 +492,13 @@ describe("adding a character", () => {
     home();
     const server = fakeServer({
       ...BASE_ROUTES,
-      "GET /search": { name: "NewOne", worldId: 45, level: 250, exp: 5, job: "Hero", avatarUrl: "", worldRank: 1, overallRank: 2, legion: null },
+      "GET /search": FOUND,
       "POST /characters": () => new Promise<Response>((resolve) => (finish = resolve)),
     });
     renderWithApp(<App />);
     await userEvent.click(plus());
     await userEvent.type(nameBox(), "NewOne{Enter}");
-    await userEvent.click(await screen.findByRole("button", { name: "Add" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add NewOne" }));
     expect(((await screen.findByRole("button", { name: "Adding…" })) as HTMLButtonElement).disabled).toBe(true);
     finish(new Response(JSON.stringify({ error: "NewOne is already added on Kronos." }), { status: 409 }));
     expect((await screen.findByRole("alert")).textContent).toBe("NewOne is already added on Kronos.");

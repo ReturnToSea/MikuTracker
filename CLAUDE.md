@@ -39,7 +39,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 - Pushing a version branch runs `.github/workflows/tests.yml` on GitHub: the typecheck and every test. Mutation testing runs only on the Mac.
 - `npm run db:migrate`: after changing `server/prisma/schema.prisma`, applied to `dev.db`, then regenerates the database code (Prisma 7's `migrate dev` no longer does that itself). A test fails if a schema change has no migration.
 - `npm run dev`: the development copy. The page is on http://127.0.0.1:4752 and its API on 4751, using `dev.db`, with no backups and no refresh.
-- `npm start`: build, migrate the real database, and serve on http://localhost:4750 (until the always-on app exists in v0.8.0).
+- `npm start`: build, migrate the real database, and serve on http://localhost:4750 (until the always-on app exists in v0.9.0).
 - `npm run nexon:check -- <name> [45|70]`: looks one character up in Nexon's **real** rankings, by hand (never in tests), to check their data still has the shape we expect.
 
 ## Conventions

@@ -2,6 +2,27 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.6.0 (2026-10-21): the add-a-character box, improved
+
+From using v0.5.0. The plan's later versions moved up by one: the daily refresh is now v0.7.0, the character view v0.8.0, and backups and the always-on app v0.9.0.
+
+- **The + box opens directly below the +,** with matching left edges, above the sections under it. Before, it was hidden behind the next section and opened off the left of the page. Near the right edge it slides left to stay inside its section, and measures again when a result makes it wider.
+- **The search result is a full preview** (layout C, chosen from five in `docs/add-character-mockup.html`, which is kept):
+  - the character's **real avatar at 2×** (192 px, sharp pixels)
+  - level, the EXP bar, world and overall rank, Legion and raid power
+  - **Add <name>**
+
+  The server downloads the avatar during the search and sends it as image data, so the page still never contacts Nexon.
+- **Adding right after a search is instant:** the server remembers each owner's latest search (picture included) and uses it, with no new Nexon requests. A new search replaces it, adding uses it up, and after an hour it looks the character up again.
+- **Legion is shared by a world's characters:** Nexon lists it under one character per account per world. Once that character is added, every character there shows its Legion ("listed under RemyRabbit"); until then it's **N/A**, with a hint.
+- **Noted for after v1.0.0:** a separate tab to look up any character without adding it.
+- **The box has a solid background** (in Ren, the text behind it showed through).
+- **Tests:** 282 server and 116 app tests, in California time and UTC. Server coverage is 100%. Mutation testing: server 876/876 (plus 7 mutants that looped forever and were stopped), app 593/593. The real data folder was unchanged by the full runs.
+  - **New tests:** the remembered search (used, replaced, used up, the other world, the hour), the shared Legion, the box's position and sliding (with made-up sizes, since the test browser can't lay out pages), and the preview.
+  - **Fixed along the way:**
+    - I accidentally deleted the box's Escape / click-outside code while changing it; the existing tests caught it.
+    - Two survivors from the full runs: `forgetSearches` was untested, and the re-measure wasn't checked from an already-slid position.
+
 ## v0.5.0 (2026-10-21): characters on Home
 
 - **Home has characters:**
