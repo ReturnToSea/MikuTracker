@@ -16,6 +16,7 @@ export interface Config {
   port: number;
   backups: boolean; // daily backups (off for the development copy)
   refresh: boolean; // the daily rankings refresh (off for the development copy)
+  nexonRankingsUrl: string; // Nexon's public rankings data (NA); tests never reach it
 }
 
 type Env = Record<string, string | undefined>;
@@ -89,6 +90,7 @@ export function loadConfig(env: Env = process.env, home: string = os.homedir()):
     port: port(env.PORT ?? "4750"),
     backups: onOff(env, "MIKU_BACKUPS"),
     refresh: onOff(env, "MIKU_REFRESH"),
+    nexonRankingsUrl: env.NEXON_RANKINGS_URL || "https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na",
   };
 }
 

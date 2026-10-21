@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,8 @@
     "db:generate": "CHECKPOINT_DISABLE=1 prisma generate",
     "postinstall": "CHECKPOINT_DISABLE=1 prisma generate",
     "start": "CHECKPOINT_DISABLE=1 prisma migrate deploy && tsx src/index.ts",
-    "dev": "export MIKU_DATABASE=dev PORT=4751 MIKU_BACKUPS=off MIKU_REFRESH=off CHECKPOINT_DISABLE=1; prisma migrate deploy && tsx watch src/index.ts"
+    "dev": "export MIKU_DATABASE=dev PORT=4751 MIKU_BACKUPS=off MIKU_REFRESH=off CHECKPOINT_DISABLE=1; prisma migrate deploy && tsx watch src/index.ts",
+    "nexon:check": "tsx scripts/nexonCheck.ts"
   },
   "dependencies": {
     "@miku/shared": "*",

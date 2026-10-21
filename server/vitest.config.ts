@@ -34,6 +34,7 @@ export default defineConfig({
       MIKU_REFRESH: "off",
     },
     globalSetup: path.join(here, "test/globalSetup.ts"),
+    setupFiles: [path.join(here, "test/setup.ts")],
     fileParallelism: false, // test files share the database
     coverage: {
       provider: "v8",

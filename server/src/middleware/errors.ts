@@ -2,6 +2,11 @@ import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import { HttpError } from "../http";
+import { NexonError, type NexonErrorKind } from "../nexon/errors";
+
+// Nexon's problems, as HTTP: not found → 404, on another world → 409, can't be reached → 503,
+// answered strangely (or the EXP table needs updating) → 502.
+const NEXON_STATUS: Record<NexonErrorKind, number> = { "not-found": 404, "other-world": 409, unreachable: 503, changed: 502, "exp-table": 502 };
 
 const PRISMA_ERRORS: Record<string, [number, string]> = {
   P2025: [404, "Not found"],
@@ -18,6 +23,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     });
   }
   if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+  if (err instanceof NexonError) return res.status(NEXON_STATUS[err.kind]).json({ error: err.message, kind: err.kind });
   if (err instanceof Prisma.PrismaClientKnownRequestError && PRISMA_ERRORS[err.code]) {
     const [status, error] = PRISMA_ERRORS[err.code]!;
     return res.status(status).json({ error });

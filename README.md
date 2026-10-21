@@ -2,7 +2,7 @@
 
 A personal website for tracking MapleStory (GMS) progress. It runs on one Mac, and it's built so it can move to a server later by changing settings, not code.
 
-**Status:** v0.3.0: the feature tabs, the Ren and Pochacco themes, and the GMS EXP table tab work; characters arrive in v0.5.0. See `PLAN.md` for the plan to v1.0.0.
+**Status:** v0.4.0: the feature tabs, the Ren and Pochacco themes, and the GMS EXP table tab work, and the server can look characters up in Nexon's rankings; adding characters arrives in v0.5.0. See `PLAN.md` for the plan to v1.0.0.
 
 ## Docs
 

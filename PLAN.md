@@ -106,15 +106,8 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`. Still running: the **Nex
 ### v0.3.0: game figures, EXP math, and the EXP table tab — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
-### v0.4.0: the Nexon rankings client
-1. A request builder for the rankings types we use (overall, world, Legion), the `na` region, and names in the right form.
-2. zod checks of the response shape, and turning it into our shape (BigInt EXP, world ID, avatar link).
-3. Error kinds: not found, other world, Nexon unreachable, timeout, changed shape. Retries with backoff, and a pause between requests.
-4. Saved sample responses as test fixtures, with made-up names, and a fake `fetch`.
-   - Tests for every error kind, and for retries using the fake clock.
-5. `/api/search?world=&name=`.
-   - Tests through the API with the fake Nexon.
-6. `npm run nexon:check <name>`: a manual live check, never run by the tests, to confirm that the real data still has the shape we expect.
+### v0.4.0: the Nexon rankings client — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
 ### v0.5.0: characters on Home
 1. `Character` model and migration; services: add (from a search result, saving its first snapshot), list by world, reorder, delete (with snapshots).

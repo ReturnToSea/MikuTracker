@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { afterAll } from "vitest";
-import { createApp } from "../src/app";
+import { type AppOptions, createApp } from "../src/app";
 
 // A fresh app and server for each request, bound explicitly to 127.0.0.1. (In Goal Tracker,
 // letting supertest start its own server per request bound every address on a random port, and
@@ -14,8 +14,8 @@ import { createApp } from "../src/app";
 // client/dist happens to be built; static.test.ts covers serving the app.
 export const NO_CLIENT = path.join(os.tmpdir(), "miku-tracker-no-client");
 const servers: Server[] = [];
-export function api() {
-  const server = createApp({ clientDist: NO_CLIENT }).listen(0, "127.0.0.1");
+export function api(options: AppOptions = {}) {
+  const server = createApp({ clientDist: NO_CLIENT, ...options }).listen(0, "127.0.0.1");
   servers.push(server);
   return request(server);
 }

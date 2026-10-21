@@ -40,6 +40,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 - `npm run db:migrate`: after changing `server/prisma/schema.prisma`, applied to `dev.db`. A test fails if a schema change has no migration.
 - `npm run dev`: the development copy. The page is on http://127.0.0.1:4752 and its API on 4751, using `dev.db`, with no backups and no refresh.
 - `npm start`: build, migrate the real database, and serve on http://localhost:4750 (until the always-on app exists in v0.8.0).
+- `npm run nexon:check -- <name> [45|70]`: looks one character up in Nexon's **real** rankings, by hand (never in tests), to check their data still has the shape we expect.
 
 ## Conventions
 
@@ -69,7 +70,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 - **Every behavior gets a test.** Prefer checks that don't reuse the code under test: hand-computed values, step-by-step simulations, or facts that must always hold.
 - **A new test must fail on the old code.** Temporarily break the code (or revert the fix) and confirm the test catches it before trusting it.
 - **Tests never touch the real database.** `server/vitest.config.ts` gives every run a throwaway database and data folder. `config.ts` throws if a test run has none, or if its database is inside the real data folder. The root `vitest.config.ts` runs each part through its own config and skips `.stryker-tmp*/`.
-- **No test reaches the network.** The Nexon client takes `fetch` as an argument, and tests use saved sample responses with made-up names.
+- **No test reaches the network.** The Nexon client takes `fetch`, the clock and the pause as arguments. Tests use a fake Nexon (`server/test/fixtures/nexon.ts`) with made-up characters, answering the way the real one was seen to. Any real `fetch` in a server test throws (`server/test/setup.ts`).
 - **Test setup requests** go through `ok(...)` in `server/test/api.ts`, so a failed setup fails loudly. `api()` gives each request a fresh app bound to `127.0.0.1`. Tables are cleared automatically between tests (`server/test/helpers.ts`).
 - **Fake time:** tests fake only `Date` (`vi.useFakeTimers({ toFake: ["Date"] })`), starting at Tue 20 Oct 2026, 19:00 UTC. Time-dependent tests run in both time zones.
 - **App tests** (`client/test/`) run against a fake server (`test/server.tsx`).

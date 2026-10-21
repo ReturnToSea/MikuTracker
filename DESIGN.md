@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.3.0)
+## The app (as of v0.4.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -28,9 +28,43 @@ The GMS EXP needed to go from each level to the next, for levels 1–299. It's r
 - **The header row** stays visible while scrolling.
 - **It says which patch** the table is current as of (v.271, September 2026) and where the figures come from.
 
+## Nexon's rankings data
+
+GMS has no official API, so character data comes from the public JSON behind nexon.com's rankings page: undocumented, no key needed, and able to change without notice (`server/src/nexon/`).
+
+**What it's like** (found by asking it, 2026-10-21):
+- A name matches the whole name exactly, ignoring capitals. "batter" finds a character called Batter, not batterboi. An unknown name gives 0 results, not an error.
+- A world lookup only finds that world's characters.
+- `reboot_index` picks the world group: 0 = all NA worlds, 1 = Heroic only.
+- The Legion board lists one character per account.
+
+**Looking a character up on a world takes 3 requests:**
+1. **The world board:** level, EXP into the level, job, avatar and world rank.
+2. **The overall board:** overall rank, among all NA worlds (`reboot_index=0`).
+3. **The Legion board:** Legion level and raid power, or "not listed" when the character isn't the account's Legion character.
+
+The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank | null, legion | null }`, with the name as Nexon spells it.
+
+**Checks and errors.** Every reply is checked with zod: a level from 1 to 300, whole EXP that's exact as a number, positive ranks, and an avatar only on Nexon's own https servers. Each problem is reported with a message that can be shown as is:
+
+| Problem | Kind | API status |
+| --- | --- | --- |
+| Not on this world, but ranked elsewhere: "SakuraRin is on Hyperion, not Kronos." | `other-world` | 409 |
+| Not in the rankings at all (a typo, or too low to be ranked) | `not-found` | 404 |
+| No answer, a timeout (15 s), or Nexon busy (429 or 5xx), after 2 retries waiting 2 s, then 6 s | `unreachable` | 503 |
+| Any other status, or a reply of an unexpected shape: not retried | `changed` | 502 |
+| The EXP doesn't fit the EXP table, probably after a GMS patch | `exp-table` | 502 |
+
+**Politeness:** requests go one at a time, at least 1.5 seconds apart, even when two lookups happen at once. A failed request doesn't hold up the next.
+
+**Tests never reach Nexon:**
+- The client gets `fetch`, the clock and the pause passed in. Tests use a fake Nexon (`server/test/fixtures/nexon.ts`) with made-up characters, answering the way the real one was seen to.
+- Any real network request in a server test fails loudly (`server/test/setup.ts`).
+- `npm run nexon:check -- <name> [45|70]` looks one character up in the real rankings, as a check by hand that their data still has the expected shape.
+
 ## Game figures and EXP math
 
-- **`server/src/gameFigures/`:** the worlds (Kronos 45, Hyperion 70, the IDs Nexon's rankings use) and the GMS EXP table. Each is written down with its source and patch. The EXP table is current as of **v.271**, which cut levels 210–259 by about 8% (210–214) up to 58% (250–259).
+- **`server/src/gameFigures/`:** the GMS EXP table, and the worlds (Kronos 45, Hyperion 70, the IDs Nexon's rankings use). The worlds now live in `shared/` so the app can show their names. Each is written down with its source and patch. The EXP table is current as of **v.271**, which cut levels 210–259 by about 8% (210–214) up to 58% (250–259).
   - Its source is whackybeanz.com's MapleSEA / KMS / TMS table. The site's "GMS" option is out of date.
   - A test checks that every level in 210–259 is the old GMS value with exactly the announced cut, and that every other level is unchanged.
   - Re-check it after each GMS patch.
@@ -65,6 +99,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT `{ theme }` saves the theme. Anything else (an unknown theme, extra fields) is refused with a 400.
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
+- **`/api/search?world=45&name=MikuBeam`:** looks a character up in Nexon's rankings (see below). The name must be 1–12 letters and numbers (spaces around it are ignored), and the world 45 or 70. Anything else is a 400, without asking Nexon. Nexon's problems come back with `{ error, kind }`.
 - **Errors** always come back as JSON:
   - invalid input → 400, listing each problem by its path
   - malformed JSON → 400
@@ -87,6 +122,7 @@ Every setting is in `server/src/config.ts`, read from environment variables (or 
 | Backups / theme art | `BACKUP_DIR`, `THEME_ART_DIR` | `<data folder>/backups`, `/theme-art` |
 | Address and port | `HOST`, `PORT` | `127.0.0.1`, `4750` |
 | Backups, daily refresh | `MIKU_BACKUPS`, `MIKU_REFRESH` | `on` (`off` for the dev copy) |
+| Nexon's rankings data | `NEXON_RANKINGS_URL` | `https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na` |
 
 The config refuses to load when:
 - **`HOST` isn't this machine.** There's no login yet. The one exception is `HOST=0.0.0.0` with `MIKU_IN_CONTAINER=1`, for Docker, where the container's port must be published to `127.0.0.1` only.

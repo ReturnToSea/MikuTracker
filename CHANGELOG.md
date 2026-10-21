@@ -2,6 +2,26 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.4.0 (2026-10-21): the Nexon rankings client
+
+- **Looking a character up** in Nexon's public rankings on Kronos or Hyperion (`server/src/nexon/`).
+  - Three requests: the world board (level, EXP, job, avatar, world rank), the overall board (overall rank among all NA worlds) and the Legion board (Legion level and raid power, or "not listed").
+  - The result uses Nexon's spelling of the name.
+- **Every reply is checked:** sensible levels, EXP and ranks, and avatars only from Nexon's own https servers. EXP that doesn't fit the EXP table is reported, because a GMS patch may have changed the table.
+- **Clear errors:** on the other world ("SakuraRin is on Hyperion, not Kronos."), not in the rankings, unreachable (retried twice, waiting 2 s then 6 s), changed shape, and EXP table mismatch.
+- **Polite:** one request at a time, at least 1.5 s apart, even when two lookups happen at once, with a 15 s timeout.
+- **`/api/search?world=…&name=…`.** Names must be 1–12 letters and numbers, and worlds 45 or 70; bad input is refused without asking Nexon.
+- **`npm run nexon:check -- <name> [world]`:** a live check by hand. It was run against the real rankings: found on Kronos, "on Kronos, not Hyperion", and "not found" all behaved as expected.
+- **The worlds moved to `shared/`** (the app will show their names), and `NEXON_RANKINGS_URL` was added to the config.
+- **Tests:** 203 server and 69 app tests, in California time and UTC. Server tests can't reach the network: any real request fails loudly. Mutation testing: server 594/594 (plus 6 mutants that looped forever and were stopped, which counts as caught), app 300/300.
+  - Deliberate bugs and mutation runs exposed gaps, now covered:
+    - the "one request at a time" test's fake Nexon answered too fast to ever overlap
+    - the real client's parts were untested
+    - an error status with a normal-looking body
+    - a pause of exactly zero
+    - the default location of the built app
+  - One test of mine waited through real retry pauses (about 10 s), and was removed because a quicker test already covered it.
+
 ## v0.3.0 (2026-10-21): game figures, EXP math, and the EXP table tab
 
 - **The EXP table tab:** the GMS EXP needed for every level from 1 to 299.

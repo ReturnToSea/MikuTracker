@@ -1,6 +1,6 @@
 {
   "name": "mikutracker",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -22,7 +22,8 @@
     "test:utc": "npm run test:utc -w server",
     "test:mutate": "stryker run",
     "test:mutate:client": "stryker run stryker.client.config.mjs",
-    "test:mutate:full": "stryker run --force && stryker run stryker.client.config.mjs --force"
+    "test:mutate:full": "stryker run --force && stryker run stryker.client.config.mjs --force",
+    "nexon:check": "npm run nexon:check -w server --"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^10.0.0",

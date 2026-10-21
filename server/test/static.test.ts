@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
-import { createApp } from "../src/app";
+import { CLIENT_DIST, createApp } from "../src/app";
 import { getConfig } from "../src/config";
 import { themeArt } from "../src/routes/themeArt";
 import { api } from "./api";
@@ -55,6 +55,10 @@ describe("theme art", () => {
 });
 
 describe("the built app", () => {
+  it("is looked for in client/dist by default", () => {
+    expect(CLIENT_DIST).toBe(path.resolve(import.meta.dirname, "../../client/dist"));
+  });
+
   it("is served, and any other address gets its page (the app shows the right tab)", async () => {
     const dist = mkdtempSync(path.join(os.tmpdir(), "miku-dist-"));
     try {

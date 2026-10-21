@@ -20,6 +20,7 @@ describe("defaults", () => {
       port: 4750,
       backups: true,
       refresh: true,
+      nexonRankingsUrl: "https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na",
     });
   });
 });
@@ -56,13 +57,17 @@ describe("overrides", () => {
   });
 
   it("empty values count as not set", () => {
-    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", HOST: "" })).toEqual(load());
+    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", HOST: "", NEXON_RANKINGS_URL: "" })).toEqual(load());
   });
 
   it("the port, and the other addresses that only reach this Mac", () => {
     expect(load({ PORT: "4751" }).port).toBe(4751);
     expect(load({ HOST: "localhost" }).host).toBe("localhost");
     expect(load({ HOST: "::1" }).host).toBe("::1");
+  });
+
+  it("the address of Nexon's rankings data can be changed", () => {
+    expect(load({ NEXON_RANKINGS_URL: "http://127.0.0.1:9/fake" }).nexonRankingsUrl).toBe("http://127.0.0.1:9/fake");
   });
 
   it("backups and the daily refresh can be turned off (and explicitly on)", () => {

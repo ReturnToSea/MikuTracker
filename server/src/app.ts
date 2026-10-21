@@ -4,7 +4,9 @@ import express, { type Express } from "express";
 import { getConfig } from "./config";
 import { requireAuth } from "./middleware/auth";
 import { errorHandler } from "./middleware/errors";
+import { type NexonClient, nexon as realNexon } from "./nexon";
 import { expTableRouter } from "./routes/expTable";
+import { searchRouter } from "./routes/search";
 import { settingsRouter } from "./routes/settings";
 import { themeArtRouter } from "./routes/themeArt";
 
@@ -22,10 +24,16 @@ export function jsonValue(_key: string, value: unknown): unknown {
   return Number(value);
 }
 
-// `clientDist`: where the built React app is. `extraRoutes`: more routes, mounted after the
-// app's own and before the 404 and the error handler; only tests use it, to check how every kind
-// of error is answered.
-export function createApp({ clientDist = CLIENT_DIST, extraRoutes }: { clientDist?: string; extraRoutes?: (app: Express) => void } = {}) {
+// `clientDist`: where the built React app is. `nexon`: Nexon's rankings (tests pass a fake that
+// never reaches the network). `extraRoutes`: more routes, mounted after the app's own and before
+// the 404 and the error handler; only tests use it, to check how every kind of error is answered.
+export interface AppOptions {
+  clientDist?: string;
+  nexon?: () => NexonClient;
+  extraRoutes?: (app: Express) => void;
+}
+
+export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRoutes }: AppOptions = {}) {
   const app = express();
   app.use(express.json()); // bodies over 100 KB (Express's default limit) are refused with a 413
   app.set("json replacer", jsonValue);
@@ -37,6 +45,7 @@ export function createApp({ clientDist = CLIENT_DIST, extraRoutes }: { clientDis
   });
   app.use("/api/settings", settingsRouter);
   app.use("/api/exp-table", expTableRouter);
+  app.use("/api/search", searchRouter(nexon));
   app.use("/api/theme-art", themeArtRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {
