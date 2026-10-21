@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { NexonClient } from "../nexon";
 import { currentOwner } from "../owner";
 import { addCharacter, deleteCharacter, listCharacters, reorderCharacters, selectCharacter } from "../services/characters";
+import { characterProgress } from "../services/progress";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -29,6 +30,10 @@ export function charactersRouter(nexon: () => NexonClient) {
   router.post("/:id/select", async (req, res) => {
     await selectCharacter(currentOwner(res), idParam.parse(req.params.id));
     res.status(204).end();
+  });
+
+  router.get("/:id/progress", async (req, res) => {
+    res.json(await characterProgress(currentOwner(res), idParam.parse(req.params.id)));
   });
 
   router.delete("/:id", async (req, res) => {

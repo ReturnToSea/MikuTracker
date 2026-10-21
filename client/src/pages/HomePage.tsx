@@ -1,6 +1,7 @@
 import { worldName } from "@miku/shared";
 import { useCharacters, useDeleteCharacter, useReorderCharacters, useSelectCharacter, useSettings, useUpdateSettings } from "../api/hooks";
 import { AddCharacter } from "../components/AddCharacter";
+import { CharacterProgress } from "../components/CharacterProgress";
 import { CharacterSummary } from "../components/CharacterSummary";
 import { CharacterTabs } from "../components/CharacterTabs";
 import { RefreshNote } from "../components/RefreshNote";
@@ -50,12 +51,15 @@ export function HomePage() {
         </section>
       )}
       {selected && (
+        <>
         <CharacterSummary
           c={selected}
           onDelete={() => {
             if (window.confirm(`Delete ${selected.name}? This also deletes all of its saved history.`)) remove.mutate(selected.id);
           }}
         />
+        <CharacterProgress key={selected.id} id={selected.id} />
+        </>
       )}
     </>
   );

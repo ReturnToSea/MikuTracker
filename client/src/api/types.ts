@@ -5,5 +5,8 @@ export type { ExpTableRow, ExpTableView } from "../../../server/src/routes/expTa
 export type { CharacterList, CharacterView } from "../../../server/src/services/characters";
 export type { SearchResult } from "../../../server/src/services/search";
 export type { RefreshStatus } from "../../../server/src/services/refresh";
+export type { ProgressView } from "../../../server/src/services/progress";
+export type { DayBar } from "../../../server/src/calc/dailyGains";
+export type { LevelGoal } from "../../../server/src/calc/levelGoals";
 
 export type ThemeArt = Record<ThemeId, string | null>;

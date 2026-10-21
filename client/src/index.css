@@ -260,3 +260,38 @@ p.block.error { padding: 12px 24px; }
 
 .updated { text-align: right; }
 .notice-line { margin: 0 0 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--accent-soft); color: var(--text); font-size: 0.9em; }
+
+/* The EXP section: stats, the daily chart, and time to level (as in docs/theme-examples) */
+.exp-stats { grid-template-columns: repeat(3, 1fr); border-top: 0; margin-bottom: 18px; }
+.exp-stats .stat { padding-top: 0; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.chart-head h3 { font-size: 1.1em; }
+.legend { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; font-size: 0.8em; font-family: var(--font); font-weight: 400; color: var(--text-muted); }
+.legend i { width: 18px; border-top: 2px dashed var(--line); }
+.legend b { color: var(--line); }
+.countdown b { color: var(--text); font-variant-numeric: tabular-nums; }
+.chart { display: grid; grid-template-columns: 52px 1fr; grid-template-rows: 230px auto; padding-top: 28px; }
+.yaxis { position: relative; font-size: 0.75em; color: var(--text-muted); }
+.yaxis span { position: absolute; right: 8px; transform: translateY(50%); }
+.plot { position: relative; border-bottom: var(--border-width) solid var(--border); }
+.grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); opacity: 0.7; }
+.avg-line { position: absolute; left: 0; right: 0; z-index: 2; border-top: 2px dashed var(--line); pointer-events: none; }
+.bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 6px; padding: 0 4px; }
+.bar-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.bar-col:focus { outline: none; }
+.bar { width: 100%; min-height: 2px; background: var(--bar); border: var(--border-width) solid var(--bar-outline, transparent); border-bottom: 0; border-radius: calc(var(--radius) * 0.6) calc(var(--radius) * 0.6) 0 0; }
+.bar-col:hover .bar, .bar-col:focus .bar { background: var(--bar-hover); }
+.bar-col.no-data .bar { background: repeating-linear-gradient(135deg, var(--border) 0 3px, transparent 3px 6px); min-height: 10px; opacity: 0.6; }
+.bar-label { position: absolute; left: 50%; transform: translateX(-50%); z-index: 3; padding: 0 3px; border-radius: 3px; background: var(--surface); font-size: 0.72em; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; text-align: center; line-height: 1.2; }
+.bar-label:empty { display: none; }
+.bar-label small { display: block; font-weight: 400; color: var(--text-muted); }
+.xaxis { grid-column: 2; display: flex; gap: 6px; padding: 6px 4px 0; font-size: 0.72em; color: var(--text-muted); }
+.chart-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; text-align: center; font-size: 0.9em; }
+.xaxis span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+.chart-foot { margin: 10px 0 0; }
+.eta { display: grid; grid-template-columns: repeat(2, 1fr); margin-top: 6px; }
+.eta-item { padding: 6px 18px 4px; }
+.eta-item:first-child { padding-left: 0; }
+.eta-item + .eta-item { border-left: var(--border-width) solid var(--border); }
+.eta-level { font-weight: 700; }
+.eta-item .value { font-family: var(--font-display); font-size: 1.5em; font-weight: 700; }

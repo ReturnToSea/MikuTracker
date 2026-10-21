@@ -22,8 +22,9 @@ export function fakeServer(routes: Record<string, unknown>) {
       const path = url.replace(/^\/api/, "");
       const body = init.body ? JSON.parse(init.body as string) : undefined;
       calls.push({ method, path, body });
-      const key = `${method} ${path.split("?")[0]}`;
-      if (!(key in routes)) return new Response(JSON.stringify({ error: `No fake for ${key}` }), { status: 404 });
+      const exact = `${method} ${path.split("?")[0]}`;
+      const key = exact in routes ? exact : exact.replace(/\/\d+/g, "/:id"); // "GET /characters/7/progress" → "GET /characters/:id/progress"
+      if (!(key in routes)) return new Response(JSON.stringify({ error: `No fake for ${exact}` }), { status: 404 });
       const route = routes[key];
       const out = typeof route === "function" ? await route(body, path) : route; // a never-settling promise keeps it pending
       if (out instanceof Response) return out;
@@ -59,6 +60,14 @@ export function fakeExpTable() {
   return { patch: "v.271", date: "2026-09", rows };
 }
 
+// A character's progress with no history yet.
+export const NO_PROGRESS = {
+  today: "2026-10-20",
+  bars: Array.from({ length: 14 }, (_, i) => ({ day: `2026-10-${String(6 + i).padStart(2, "0")}`, gained: null, covers: 0 })),
+  stats: { last7: null, average: null, best: null },
+  goals: [],
+};
+
 // The usual answers: Ren saved on Kronos, no theme art, no characters yet.
 export const BASE_ROUTES = {
   "GET /settings": { theme: "ren", worldId: 45 },
@@ -66,4 +75,5 @@ export const BASE_ROUTES = {
   "GET /exp-table": fakeExpTable(),
   "GET /characters": { characters: [], selectedId: null },
   "GET /refresh": { last: null },
+  "GET /characters/:id/progress": NO_PROGRESS,
 };

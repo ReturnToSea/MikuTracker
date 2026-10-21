@@ -2,6 +2,25 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.8.0 (2026-10-21): the character view
+
+- **The EXP section, below the selected character:** EXP over the last 7 days, the daily average (14 days) and the best single day, with its date.
+- **The daily EXP chart:** one bar per finished UTC day for the last 14 (today isn't finished, so it isn't a bar).
+  - Each bar has its amount above it ("5.60T", or "0" for a checked day without EXP), its day below, and its exact EXP in a tooltip (mouse or keyboard).
+  - A day that wasn't checked is a hatched "no data" stub. Its EXP lands on the next checked day, marked "2 days", and such a combined bar is never the best day.
+  - A round-numbered scale, and a dashed line at the daily average with its legend.
+  - "New day in 20h 49m 05s · 00:00 UTC is 5:00 PM your time", counting down each second. At 00:00 UTC the chart is fetched again, so yesterday's bar appears.
+  - With no history yet: no scale, and a note saying the first bar appears once a full UTC day has been checked.
+- **Time to level:** at the daily average, the time to the next level and the next multiple of 5, the EXP to go, and roughly when (in local time). A new character says "Not enough history yet"; one with no EXP in 14 days says "Not at this pace"; level 300 says there's nothing left.
+- **Decided while building:** the daily average divides by the days actually tracked (up to 14), not always 14, so a newly added character's average isn't too low. With no snapshot in the last 14 days, there's no average.
+- **The API:** `GET /api/characters/:id/progress` (bars, stats and goals; 404 for another owner's character).
+- **Tests:** 328 server and 147 app tests, in California time and UTC. Server coverage is 100%. Mutation testing: server 1081/1081 (plus 8 that looped forever and were stopped), app 809/809. The real data folder was unchanged by the full runs.
+  - 8 deliberate bugs in the EXP math, the API and the chart were all caught.
+  - Gaps the full runs found and now covered: the countdown's timer being stopped, the chart's grid lines, the best day's date note, and that only the chart is fetched again at 00:00 UTC. The snapshots' order now doesn't matter to the EXP math (it sorts them itself), with a test.
+  - The countdown's effect is marked as not needing its list of inputs tested: the whole section is rebuilt for each character, so they never change.
+  - **Fixed after looking at screenshots:** a squashed chart with missing dates, a meaningless "1, 1, 1, 0, 0" scale with no history, and "Not at this pace" shown for new characters.
+  - **My mistakes along the way:** two hand-calculated dates in tests were wrong (the page was right, and one date depends on the time zone, so the test now expects each zone's own date); a test expected an average from month-old data; and a test counted the new progress requests as character-list requests.
+
 ## v0.7.0 (2026-10-21): the refresh (every 4 hours)
 
 - **Every 4 hours, every character is looked up in Nexon's rankings again** (decided instead of once a day: a watch saw no ranking changes for hours, so when Nexon updates is unclear).

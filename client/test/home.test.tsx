@@ -322,7 +322,7 @@ describe("the selected character", () => {
     await settle();
     expect(server.calls.filter((c) => c.method === "GET" && c.path === "/settings")).toHaveLength(1);
     expect(server.calls.filter((c) => c.method === "GET" && c.path === "/theme-art")).toHaveLength(1);
-    expect(server.calls.filter((c) => c.method === "GET" && c.path.startsWith("/characters"))).toHaveLength(2);
+    expect(server.calls.filter((c) => c.method === "GET" && c.path.startsWith("/characters?"))).toHaveLength(2); // the list, before and after (not each character's progress)
   });
 
   it("a list that can't be loaded says so", async () => {

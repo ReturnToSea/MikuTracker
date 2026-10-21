@@ -118,14 +118,8 @@ Not in the original plan: came from using v0.5.0. Built and described in `DESIGN
 ### v0.7.0: the refresh (every 4 hours) — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`.
 
-### v0.8.0: the character view
-1. `calc/`: EXP gained per UTC day from snapshots (across level-ups, using total EXP), the 7-day total, the 14-day average, the best day, and missing days: UTC days with no snapshot show as empty "no data" bars, and the combined EXP goes on the next day that has data, labeled with how many days it covers (e.g. "3 days"). The average still divides by 14 calendar days.
-   - Tests: step-by-step simulations; a fact that must hold: the daily gains add up to the change in total EXP.
-2. `/api/characters/:id`: everything the view needs in one response.
-3. The hero section (EXP bar with have / needed), the stats, ranks and Legion.
-4. The daily EXP chart: amounts above the bars, the average line and legend, the tooltip, the countdown, and moving on a day at 00:00 UTC.
-   - App tests with the fake clock.
-5. The time-to-level section.
+### v0.8.0: the character view — done
+Built and described in `DESIGN.md`; see `CHANGELOG.md`. (The daily average divides by the days actually tracked, up to 14, instead of always 14 as first planned, so a newly added character's average isn't too low.)
 
 ### v0.9.0: backups and the always-on app
 1. Backups, adapted from Goal Tracker: daily, before database updates, and kept for 30 days plus 12 months.
