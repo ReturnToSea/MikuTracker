@@ -141,38 +141,35 @@ The always-on app in real use: the README rewritten for using it, the EXP table 
 
 **Every version here is an early plan: each one gets discussed in detail before it's built.** Version numbers go by importance (the first number for major changes), not strict semver.
 
-### v1.1.0: Lookup tab
-Search any GMS player on Kronos or Hyperion and see the same stats as Home (avatar, level, EXP, ranks, Legion), **without adding them to the roster**: for looking at other people's characters. Uses the same server search as the + box.
+### v1.1.0: Leveling line chart — done
+Built as layout B of the mockup (a "Level" switch on the EXP chart); described in `DESIGN.md`, see `CHANGELOG.md`.
 
-### v1.2.0: Leveling line chart
-Level over time, in days. The line includes progress through each level, so 285 at 86.91% plots as 285.87 and climbs steadily between level-ups instead of jumping in steps. From the saved snapshots, so nothing new needs collecting.
-
-### v1.3.0: Avatar history
+### v1.2.0: Avatar history
 Every avatar a character has had, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
 
-### v1.4.0: Docker check
+### v1.3.0: Docker check
 a Dockerfile and compose file, plus a check that the app runs in a container. Data lives on a volume (`MIKU_DATA_DIR=/data`), with `HOST=0.0.0.0` and `MIKU_IN_CONTAINER=1`, the port published only to `127.0.0.1`, and `restart: unless-stopped` doing the launch agent's job. This proves the move off the Mac works before it's needed. (Moving to Postgres is separate: it needs a fresh starting migration, and `pg_dump` for backups.)
 
-### v1.4.1: Check the real data size
+### v1.3.1: Check the real data size
 after some real use, measure the database (snapshots), the avatar images and the backups folder, and compare them with the estimates (about 100 bytes per snapshot, so about 36 KB per character per year). Revisit the "keep forever" decision only if the real numbers are much bigger.
 
-### v1.5.0: Weekly boss tracker
+### v1.4.0: Weekly boss tracker
 For personal tracking: pick which bosses each roster character does, tick them off each week, and see the meso made from boss crystals per week, per character and in total. Resets Thursday 00:00 UTC (to confirm, see Reset times).
 - **To research first:** crystal prices per boss and difficulty, the weekly crystal limits (per character and per world), how party size affects the meso, and monthly bosses.
 
-### v1.6.0: Daily and weekly checklist
+### v1.5.0: Daily and weekly checklist
 The non-boss tasks, ticked off per roster character: for example symbol dailies, Monster Park, Ursus, guild weeklies (Culvert, Flag) and Epic Dungeons. Daily ones reset at 00:00 UTC, weekly ones on their own day (Monday or Thursday 00:00 UTC). Same "pick per character, tick off, reset" design as the boss tracker.
 - **To research first:** the current list of dailies and weeklies, and each one's reset (the weekly times are from third-party guides so far, see Reset times).
 
-### v1.7.0: Symbol progress
+### v1.6.0: Symbol progress
 Each roster character's Arcane and Sacred (Authentic) symbol levels, entered by hand, and how long until each is maxed at the daily symbol count. The levels are also the Arcane and Sacred Force that v3.0.0 needs.
 - **To research first:** the symbols per area, the symbols needed and meso cost per level, and the symbols a day from dailies.
 
-### v1.8.0: HEXA (6th job) progress
+### v1.7.0: HEXA (6th job) progress
 Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v3.0.0 (they matter for boss damage).
 - **To research first:** the current HEXA skills and the cost of each level, for GMS's current patch.
 
-### v1.9.0: Gear tab
+### v1.8.0: Gear tab
 Save every piece of gear for **every roster character**: its flame with a **flame score**, its **potential** and bonus potential (tier and each line), and its **stars** (Star Force).
 - All entered by hand (Nexon's GMS rankings don't include gear, and reading the game is off limits), so entering it should be quick: pick from item lists, copy a piece between characters, and so on.
 - **To research first:** the flame score formula (it depends on the class's main stat, and guides weigh attack and all-stat % differently), GMS's current Star Force limits and the stats each star gives, and the potential lines and tiers per slot. Recorded with their source and patch, like the EXP table.
@@ -184,11 +181,13 @@ For roster characters only, starting from a piece saved in the gear tab. Other s
 - **v2.2.0, Star Force:** the expected meso, and the chance of booming, to reach a star.
 
 ### v3.0.0: Bosses
-Which bosses each roster character **can actually do**, worked out from its stats and saved. Separate from the boss tracker (v1.5.0), which records what you *do*. Like MapleScouter: stats entered by hand, such as the stat window's boss damage, ignore defense, damage and attack, alongside the saved gear, symbols (v1.7.0) and HEXA levels (v1.8.0).
+Which bosses each roster character **can actually do**, worked out from its stats and saved. Separate from the boss tracker (v1.4.0), which records what you *do*. Like MapleScouter: stats entered by hand, such as the stat window's boss damage, ignore defense, damage and attack, alongside the saved gear, symbols (v1.6.0) and HEXA levels (v1.7.0).
 - **To research first:** what MapleScouter offers for GMS and whether its data can be used (an API, or terms that allow it). It's built mostly around KMS and Korea's official API, which GMS doesn't have. No scraping a site that doesn't allow it. Otherwise we calculate it ourselves from each boss's published requirements.
 - Expected to be more work than everything before it combined.
+- **Research found 2026-10-23** (from another open-source GMS project's notes, `iamnbutler/maple`, `docs/research/existing-tools.md`, researched 2026-09-06): MapleScouter is KMS-only and can't load GMS characters (GMS players use its "Enter Directly" page); its backend API is private. `RonaldLiu2143/maplecompile` has a full reverse-engineering of its damage and boss clear-rate maths (`src/lib/scouter/calc.ts`, `boss-cuts.ts`) and boss data (`boss-info-data.json`), but **no license**, so it's a reference to reimplement from, not code to copy. The same notes list sources for item stats, Star Force and cube rates (useful for v1.8.0 and v2.x).
 
 ### Later, no version yet
+- **Lookup tab** (dropped from v1.1.0 on 2026-10-23): searching any player without adding them. Its one useful extra over adding them, per-day EXP, isn't possible: Nexon only publishes current numbers, so per-day history needs our own repeated checks. Sites like MapleRanks build theirs by checking characters over and over at scale; open-source scrapers show it means getting around Nexon's per-address block (about 800 requests), which we won't do, and which would risk Nexon blocking this Mac's tracking. (Nexon's weekly board does give "EXP gained this week" for anyone, but per-day is what matters here.) If it comes back: look-ups could quietly start a small, capped tracking list, with history from the first look-up. For now, adding a character to the roster is how to follow anyone.
 - **Export everything (JSON):** low priority. Once gear, stats and checklists are entered by hand, that typing is the most valuable data in the app; backups protect it, and an export would be a second safety net.
 - **Login:** far future, only when moving to a server. Until then the app answers only on the machine it runs on. Anywhere reachable from other devices, it needs a login first.
 

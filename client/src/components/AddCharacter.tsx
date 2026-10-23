@@ -1,4 +1,4 @@
-import { characterName, worldName } from "@miku/shared";
+import { characterName, MAX_LEVEL, worldName } from "@miku/shared";
 import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAddCharacter, useSearch } from "../api/hooks";
 import type { CharacterView } from "../api/types";
@@ -129,7 +129,7 @@ function AddBox({ world, characters, inside, onClose }: { world: number; charact
 // The EXP bar, as Home shows it: "52.60% to level 292 · 170T / 324T EXP".
 function FoundProgress({ found }: { found: SearchResult }) {
   const progress = levelProgress(found);
-  if (!progress) return <div className="muted small">Level 300: the highest level.</div>;
+  if (!progress) return <div className="muted small">Level {MAX_LEVEL}: the highest level.</div>;
   return (
     <div>
       <div className="expbar" role="progressbar" aria-label={`${found.name}'s EXP into level ${found.level}`} aria-valuenow={Number(progress.percent.toFixed(2))} aria-valuemin={0} aria-valuemax={100}>

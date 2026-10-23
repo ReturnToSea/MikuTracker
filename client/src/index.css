@@ -306,3 +306,18 @@ p.block.error { padding: 12px 24px; }
 .eta-item + .eta-item { border-left: var(--border-width) solid var(--border); }
 .eta-level { font-weight: 700; }
 .eta-item .value { font-family: var(--font-display); font-size: 1.5em; font-weight: 700; }
+
+/* The level chart (the EXP section's "Level" view): same grid as the EXP chart */
+.chart-view { margin-right: 8px; font-family: var(--font); font-size: 0.8em; vertical-align: middle; }
+.level-line { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.level-line polyline { fill: none; stroke: var(--level-line); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.level-line polygon { fill: var(--level-fill); stroke: none; }
+.level-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); background: var(--level-line); pointer-events: none; z-index: 2; }
+.level-dot.latest { width: 9px; height: 9px; background: var(--text); }
+.level-dot.up { width: 11px; height: 11px; background: var(--line); border: 2px solid var(--surface); } /* a level-up keeps its highlight, even on the latest day */
+.level-chart { grid-template-columns: 74px 1fr; --bar-gap: 0px; }
+.level-area { position: absolute; inset: 0 4px; pointer-events: none; }
+.chart-head .chart-title { flex: 1; }
+.level-chart .yaxis span { white-space: nowrap; }
+.level-col { flex: 1; height: 100%; }
+.level-col:focus { outline: 1px dashed var(--border); outline-offset: -1px; }

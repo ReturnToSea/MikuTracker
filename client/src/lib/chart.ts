@@ -19,9 +19,12 @@ export const barLabel = (bar: DayBar) => (bar.gained === null ? "" : fmtExp(bar.
 // "Oct 7": a bar's day, as the UTC calendar day it is.
 export const dayLabel = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
+// "Tue, Oct 20": a day with its weekday, as the UTC calendar day it is.
+export const fullDate = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+
 // What the tooltip says about a bar.
 export function barDetail(bar: DayBar, today: string): string {
-  const date = new Date(`${bar.day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }) + (bar.day === today ? " (today)" : "");
+  const date = fullDate(bar.day) + (bar.day === today ? " (today)" : "");
   if (bar.gained === null) return `${date}: no data (not checked that day)`;
   const amount = `${bar.gained.toLocaleString("en-US")} EXP`;
   return bar.covers > 1 ? `${date}: ${amount} over ${bar.covers} days (some days weren't checked)` : `${date}: ${amount}`;

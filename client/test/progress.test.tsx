@@ -5,6 +5,7 @@ import type { CharacterView, DayBar, ProgressView } from "../src/api/types";
 import { App } from "../src/App";
 import { amountStyle, barDetail, barLabel, dayLabel, fmtLevelPct, niceMax, showDate, ticks } from "../src/lib/chart";
 import { nextUtcMidnight, untilNextUtcDay, utcDay } from "../src/lib/countdown";
+import { levelDetail, levelHeight, levelScale, levelText, tickLabel } from "../src/lib/levelChart";
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 const MIKU: CharacterView = {
@@ -41,6 +42,15 @@ const range = (days: number, total: number, levelPerDay: number) => ({ days, sta
 const PROGRESS: ProgressView = {
   today: TODAY,
   bars: bars({ 0: { gained: 1.4 * T }, 1: { gained: 5 * T }, 5: { gained: 3 * T, covers: 2 }, 6: { gained: null, covers: 0 }, 9: { gained: 0 }, 11: { gained: null, covers: 0 } }),
+  // Level on checked days: 6 days back 276.40, then up to 278.93 today; 279 isn't reached. Not checked 6 back (gap) in this list: 5 back reached 277 "since the last check".
+  levels: [
+    { day: dayBack(20), level: 275.9, reached: [], covers: 1 },
+    { day: dayBack(7), level: 276.4, reached: [276], covers: 13 },
+    { day: dayBack(5), level: 277.1, reached: [277], covers: 2 },
+    { day: dayBack(4), level: 277.5, reached: [], covers: 1 },
+    { day: dayBack(1), level: 278.2, reached: [278], covers: 3 },
+    { day: dayBack(0), level: 278.93, reached: [], covers: 1 },
+  ],
   ranges: [range(7, 14 * T, 0.0205), range(14, 21 * T, 0.0151), range(30, 45 * T, 0.0153), range(90, 270 * T, 0.0306)],
 };
 
@@ -133,19 +143,19 @@ describe("the range boxes", () => {
     show();
     const s = await section("EXP");
     const user = userEvent.setup();
-    await user.click(within(s.querySelector<HTMLElement>(".segmented")!).getByRole("button", { name: "7 days" }));
+    await user.click(within(s.querySelector<HTMLElement>('[aria-label="Days shown"]')!).getByRole("button", { name: "7 days" }));
     expect(texts(s, ".range-box.on .range-name")).toEqual(["7 days"]);
-    expect(texts(s, ".segmented [aria-pressed=true]")).toEqual(["7 days"]);
+    expect(texts(s, '[aria-label="Days shown"] [aria-pressed=true]')).toEqual(["7 days"]);
     expect(barCols(s)).toHaveLength(7);
     await user.click(s.querySelectorAll<HTMLElement>(".range-box")[2]!);
-    expect(texts(s, ".segmented [aria-pressed=true]")).toEqual(["30 days"]);
+    expect(texts(s, '[aria-label="Days shown"] [aria-pressed=true]')).toEqual(["30 days"]);
     expect(texts(s, ".range-box.on .range-name")).toEqual(["30 days"]);
     expect(barCols(s)).toHaveLength(30);
     expect(s.querySelector(".legend")!.textContent).toBe("30-day average 1.50T");
   });
 });
 
-const pick = async (s: HTMLElement, days: number) => userEvent.setup().click(within(s.querySelector<HTMLElement>(".segmented")!).getByRole("button", { name: `${days} days` }));
+const pick = async (s: HTMLElement, days: number) => userEvent.setup().click(within(s.querySelector<HTMLElement>('[aria-label="Days shown"]')!).getByRole("button", { name: `${days} days` }));
 
 describe("the chart", () => {
   it("14 bars ending today, with amounts above and dates below, scaled to a round top", async () => {
@@ -373,5 +383,111 @@ describe("time to level", () => {
     await section("EXP");
     await waitFor(() => expect(server.calls.map((c) => c.path)).toContain("/characters/2/progress"));
     expect(server.calls.map((c) => c.path)).not.toContain("/characters/1/progress");
+  });
+});
+
+describe("level chart helpers", () => {
+  it("the scale rounds out to quarter levels, with lines every quarter, level or few levels", () => {
+    expect(levelScale([])).toBeNull();
+    expect(levelScale([278.93])).toEqual({ lo: 278.75, hi: 279, ticks: [278.75, 279] });
+    expect(levelScale([278.3, 278.93])).toEqual({ lo: 278.25, hi: 279, ticks: [278.25, 278.5, 278.75, 279] });
+    expect(levelScale([276.4, 278.93])).toEqual({ lo: 276.25, hi: 279, ticks: [277, 278, 279] });
+    expect(levelScale([264.1, 278.93])).toEqual({ lo: 264, hi: 279, ticks: [264, 267, 270, 273, 276, 279] });
+    expect(levelScale([280, 280])).toEqual({ lo: 279.75, hi: 280, ticks: [279.75, 280] }); // never flat (the room goes below)
+    expect(levelScale([300, 300])).toEqual({ lo: 299.75, hi: 300, ticks: [299.75, 300] }); // never above 300 (no "300 · 25%")
+    expect(levelScale([299.9, 300])).toEqual({ lo: 299.75, hi: 300, ticks: [299.75, 300] });
+    expect(levelScale([278, 279])).toEqual({ lo: 278, hi: 279, ticks: [278, 278.25, 278.5, 278.75, 279] }); // exactly one level: still quarters
+    expect(levelScale([270, 282])).toEqual({ lo: 270, hi: 282, ticks: [270, 272, 274, 276, 278, 280, 282] }); // 12 levels: every 2
+  });
+
+  it("how high a level sits, from 0 to 1", () => {
+    const scale = { lo: 276, hi: 280, ticks: [] };
+    expect([levelHeight(276, scale), levelHeight(278, scale), levelHeight(280, scale)]).toEqual([0, 0.5, 1]);
+  });
+
+  it("labels: whole levels, quarters as a percent, and a day's level", () => {
+    expect([tickLabel(278), tickLabel(278.25), tickLabel(278.75)]).toEqual(["278", "278 · 25%", "278 · 75%"]);
+    expect([levelText(278.93), levelText(250), levelText(300)]).toEqual(["Lv. 278 · 93.00%", "Lv. 250 · 0.00%", "Lv. 300"]);
+    expect(levelText(285.99996)).toBe("Lv. 285 · 99.99%"); // rounded down: never "100.00%" of a level not done
+    expect([levelText(278.2), levelText(278.29), levelText(278.07)]).toEqual(["Lv. 278 · 20.00%", "Lv. 278 · 29.00%", "Lv. 278 · 7.00%"]); // stored as 278.19999…, still 20.00%
+  });
+
+  it("a day's tooltip: its level, level-ups (since the last check, when that was earlier), or no data", () => {
+    expect(levelDetail("2026-10-21", { day: "2026-10-21", level: 278.93, reached: [], covers: 1 }, TODAY)).toBe("Wed, Oct 21 (today): Lv. 278 · 93.00%");
+    expect(levelDetail("2026-10-20", { day: "2026-10-20", level: 278.2, reached: [278], covers: 1 }, TODAY)).toBe("Tue, Oct 20: Lv. 278 · 20.00% · reached 278");
+    expect(levelDetail("2026-10-20", { day: "2026-10-20", level: 279.1, reached: [278, 279], covers: 3 }, TODAY)).toBe("Tue, Oct 20: Lv. 279 · 10.00% · reached 278, 279 since the last check (Oct 17)");
+    expect(levelDetail("2026-10-19", undefined, TODAY)).toBe("Mon, Oct 19: no data (not checked that day)");
+  });
+});
+
+describe("the Level view", () => {
+  const showLevel = async (progress: unknown = PROGRESS) => {
+    show(progress);
+    const s = await section("EXP");
+    await userEvent.setup().click(within(s.querySelector<HTMLElement>(".chart-view")!).getByRole("button", { name: "Level" }));
+    return s;
+  };
+
+  it("starts on EXP per day; 'Level' swaps the bars for the level line, and back", async () => {
+    show();
+    const s = await section("EXP");
+    expect(texts(s, '.chart-view [aria-pressed="true"]')).toEqual(["EXP per day"]);
+    const user = userEvent.setup();
+    await user.click(within(s.querySelector<HTMLElement>(".chart-view")!).getByRole("button", { name: "Level" }));
+    expect(within(s).getByRole("group", { name: "Level per day" })).toBeTruthy();
+    expect(barCols(s)).toHaveLength(0);
+    expect(s.querySelector(".legend")).toBeNull(); // the EXP average belongs to the bars
+    expect(s.querySelector(".chart-foot")!.textContent).toContain("Highlighted dots: level-ups");
+    expect(s.querySelector(".chart-title")!.textContent).toBe("Level per day (UTC)"); // a heading of its own, not the buttons
+    await user.click(within(s.querySelector<HTMLElement>(".chart-view")!).getByRole("button", { name: "EXP per day" }));
+    expect(barCols(s)).toHaveLength(14);
+    expect(s.querySelector(".chart-title")!.textContent).toMatch(/^EXP farmed per day \(UTC\)/);
+  });
+
+  it("one column per day of the range (same days and dates as the bars), points only on checked days", async () => {
+    const s = await showLevel();
+    expect(s.querySelectorAll(".level-col")).toHaveLength(14);
+    expect(texts(s, ".xaxis span").at(-1)).toBe("Today");
+    // 14 days: the points 7, 5, 4, 1 and 0 days back (20 back is outside)
+    expect(s.querySelectorAll(".level-dot")).toHaveLength(5);
+    expect(s.querySelectorAll(".level-dot.up")).toHaveLength(3); // 276, 277, 278
+    expect(s.querySelectorAll(".level-dot.latest")).toHaveLength(1);
+    expect(s.querySelector<HTMLElement>(".level-dot.latest")!.style.left).toBe(`${(13.5 / 14) * 100}%`);
+  });
+
+  it("the scale fits the range: 276.25 to 279, a line every level", async () => {
+    const s = await showLevel();
+    expect(texts(s, ".yaxis span")).toEqual(["277", "278", "279"]);
+    // 278.93 of 276.25–279: 97.45…% up
+    expect(Number.parseFloat(s.querySelector<HTMLElement>(".level-dot.latest")!.style.bottom)).toBeCloseTo(((278.93 - 276.25) / 2.75) * 100, 6);
+  });
+
+  it("tooltips: each day's level and level-ups, and the days without data", async () => {
+    const s = await showLevel();
+    const cols = Array.from(s.querySelectorAll<HTMLElement>(".level-col"));
+    expect(cols.at(-1)!.getAttribute("title")).toBe(levelDetail(dayBack(0), PROGRESS.levels.at(-1), TODAY));
+    expect(cols[8]!.getAttribute("aria-label")).toBe(`${levelDetail(dayBack(5), PROGRESS.levels[2], TODAY)}`);
+    expect(cols[8]!.getAttribute("aria-label")).toMatch(/reached 277 since the last check/);
+    expect(cols[0]!.getAttribute("title")).toMatch(/no data/);
+    expect(cols.every((c) => c.tabIndex === 0)).toBe(true);
+  });
+
+  it("follows the range: 7 days shows the last 7 days' points and rescales", async () => {
+    const s = await showLevel();
+    await pick(s, 7);
+    expect(s.querySelectorAll(".level-col")).toHaveLength(7);
+    expect(s.querySelectorAll(".level-dot")).toHaveLength(4); // today and 6 days back: 5, 4 and 1 back, and today (7 back is just outside)
+    await pick(s, 90);
+    // beyond 14 days only level-ups (276, 277, 278) and today get dots
+    expect(s.querySelectorAll(".level-dot")).toHaveLength(4);
+    expect(s.querySelectorAll(".level-dot.up")).toHaveLength(3);
+    expect(texts(s, ".yaxis span")).toEqual(["276", "277", "278", "279"]);
+  });
+
+  it("without level history yet: says so, no line", async () => {
+    const s = await showLevel({ ...PROGRESS, levels: [] });
+    expect(s.querySelector(".chart-empty")!.textContent).toMatch(/No level history yet/);
+    expect(s.querySelector(".level-line")).toBeNull();
+    expect(s.querySelectorAll(".yaxis span")).toHaveLength(0);
   });
 });

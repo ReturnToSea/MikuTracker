@@ -22,6 +22,8 @@
   --bar: linear-gradient(180deg, #ff6b6b, #b8283a);
   --bar-hover: linear-gradient(180deg, #ff9a9a, #e5484d);
   --line: #d4b46e;
+  --level-line: #8fc6e8;
+  --level-fill: rgba(143, 198, 232, 0.16);
   --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
   --danger: #ff6b6b;
   --shadow: 0 8px 30px rgba(10, 8, 25, 0.45);
@@ -57,6 +59,8 @@
   --bar-hover: #3b9fe0;
   --bar-outline: #231f20;
   --line: #ef7fae;
+  --level-line: #3b9fe0;
+  --level-fill: rgba(59, 159, 224, 0.14);
   --exp: linear-gradient(90deg, #8fd0f4, #f7d94c);
   --danger: #e60012;
   --shadow: 2px 2px 0 #231f20;

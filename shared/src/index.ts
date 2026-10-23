@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { WORLDS } from "./worlds";
 
+export * from "./levels";
 export * from "./worlds";
 
 // The themes the app offers. Ren is the default (dark first).

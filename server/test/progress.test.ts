@@ -49,6 +49,15 @@ describe("/api/characters/:id/progress", () => {
     expect(seven.goals[0]).toEqual({ kind: "next-level", target: 286, remaining: toNext, days: toNext / (7e12 / 14) });
   });
 
+  it("gives the level on each checked day, with level-ups", async () => {
+    const start = totalExp(250, 0);
+    const id = await withHistory(250, 0, [["2026-10-19", start, 0], ["2026-10-20", totalExp(251, 0), totalExp(251, 0) - start]]);
+    expect((await progress(id)).levels).toEqual([
+      { day: "2026-10-19", level: 250, reached: [], covers: 1 },
+      { day: "2026-10-20", level: 251, reached: [251], covers: 1 },
+    ]);
+  });
+
   it("time to level follows each range's own average", async () => {
     const id = await withHistory(250, 0, [["2026-09-20", 0, 0], ["2026-10-13", 9e12, 9e12], ["2026-10-20", 9.7e12, 0.7e12]]);
     const ranges = (await progress(id)).ranges;
@@ -63,6 +72,7 @@ describe("/api/characters/:id/progress", () => {
     const id = await withHistory(250, 0, [["2026-10-20", totalExp(250, 0), 0]], NOW);
     const body = await progress(id);
     expect(body.bars.every((b: { gained: null }) => b.gained === null)).toBe(true);
+    expect(body.levels).toEqual([]);
     expect(body.ranges.map((r: { stats: null; goals: { days: null }[] }) => [r.stats, r.goals.map((g) => g.days)])).toEqual(Array(4).fill([null, [null, null]]));
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHART_DAYS, dailyBars, daysBetween, RANGES, rangeStats, type SnapshotPoint } from "./dailyGains";
+import { CHART_DAYS, dailyBars, daysBetween, levelAt, levelPoints, RANGES, rangeStats, type SnapshotPoint } from "./dailyGains";
 import { expToNext, totalExp } from "./exp";
 import { addUtcDays } from "./utcDays";
 
@@ -150,5 +150,74 @@ describe("rangeStats", () => {
     expect(rangeStats(points, TODAY, 3)).toEqual({ total: end - start, average: (end - start) / 3, levelPerDay: 0.5 });
     // a character's first day starts from its total minus what it gained that day
     expect(rangeStats(history([["2026-10-21", end, end - start]]), TODAY, 7)!.levelPerDay).toBe(1.5);
+    // reaching level 300: half a level, not one and a half (level 300 isn't "300 and 100%")
+    const half = totalExp(299, Math.round(expToNext(299) / 2));
+    const max = totalExp(300, 0);
+    expect(rangeStats(history([["2026-10-20", half, 0], ["2026-10-21", max, max - half]]), TODAY, 1)!.levelPerDay).toBeCloseTo(0.5, 9);
+  });
+});
+
+describe("levelPoints", () => {
+  const at = (level: number, fraction: number) => totalExp(level, Math.round(expToNext(level) * fraction));
+  // Levels to 6 decimals: "25% through" built from whole EXP is a hair off .25.
+  const rounded = (points: { level: number }[]) => points.map((p) => ({ ...p, level: Math.round(p.level * 1e6) / 1e6 }));
+
+  it("levelAt: the level with progress through it (by hand)", () => {
+    expect(levelAt(totalExp(285, 0))).toBe(285);
+    expect(levelAt(at(250, 0.25))).toBeCloseTo(250.25, 9);
+    expect(levelAt(at(299, 0.5))).toBeCloseTo(299.5, 9);
+    expect(levelAt(totalExp(300, 0))).toBe(300); // not 301
+  });
+
+  it("one point per checked day, oldest first, with the levels reached since the check before", () => {
+    const points = history([
+      ["2026-10-18", at(250, 0.5), 0],
+      ["2026-10-19", at(250, 0.75), 1],
+      ["2026-10-21", at(252, 0.25), 1], // the 20th wasn't checked: 251 and 252 since the 19th
+    ]);
+    expect(rounded(levelPoints(points, TODAY))).toEqual([
+      { day: "2026-10-18", level: 250.5, reached: [], covers: 1 },
+      { day: "2026-10-19", level: 250.75, reached: [], covers: 1 },
+      { day: "2026-10-21", level: 252.25, reached: [251, 252], covers: 2 },
+    ]);
+  });
+
+  it("only the days in range (today included), but a level-up counts from the check before the range", () => {
+    const points = history([
+      ["2026-10-10", at(250, 0.9), 0],
+      ["2026-10-16", at(251, 0.1), 1],
+      ["2026-10-22", at(252, 0), 1], // after today (a clock that went back): left out
+    ]);
+    expect(rounded(levelPoints(points, TODAY, 7))).toEqual([{ day: "2026-10-16", level: 251.1, reached: [251], covers: 6 }]);
+    expect(levelPoints(points, TODAY, 3)).toEqual([]);
+  });
+
+  it("a character's first day: level-ups from where that day started (its total minus what it gained)", () => {
+    const start = at(260, 0.95);
+    const end = at(261, 0.05);
+    expect(rounded(levelPoints(history([["2026-10-21", end, end - start]]), TODAY))).toEqual([{ day: "2026-10-21", level: 261.05, reached: [261], covers: 1 }]);
+  });
+
+  it("several levels in one day, and none at all", () => {
+    const points = history([["2026-10-20", at(200, 0.5), 0], ["2026-10-21", at(203, 0.5), 1], ["2026-10-22", at(203, 0.6), 1]]);
+    expect(levelPoints(points, "2026-10-22").map((p) => p.reached)).toEqual([[], [201, 202, 203], []]);
+  });
+
+  it("works whatever order the snapshots arrive in", () => {
+    const sorted = history([["2026-10-19", at(250, 0.9), 0], ["2026-10-20", at(251, 0.1), 1]]);
+    expect(levelPoints([sorted[1]!, sorted[0]!], TODAY)).toEqual(levelPoints(sorted, TODAY));
+  });
+
+  it("a first day that claims more gained than its total (inconsistent data): its gain is ignored, not an error", () => {
+    const points = history([["2026-10-21", 5_000, 9_000]]);
+    expect(levelPoints(points, TODAY)).toEqual([{ day: "2026-10-21", level: levelAt(5_000), reached: [], covers: 1 }]);
+    expect(rangeStats(points, TODAY, 7)).toMatchObject({ total: 0 });
+    // exactly its total gained (from level 1 with 0 EXP) is still believed
+    expect(rangeStats(history([["2026-10-21", 5_000, 5_000]]), TODAY, 7)).toMatchObject({ total: 5_000 });
+  });
+
+  it("90 days by default", () => {
+    const points = history([["2026-07-23", at(250, 0), 0], ["2026-07-24", at(250, 0.1), 1]]);
+    expect(levelPoints(points, TODAY).map((p) => p.day)).toEqual(["2026-07-24"]);
   });
 });

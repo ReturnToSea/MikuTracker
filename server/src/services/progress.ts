@@ -1,16 +1,17 @@
-import { dailyBars, type DayBar, RANGES, type RangeStats, rangeStats } from "../calc/dailyGains";
+import { dailyBars, type DayBar, type LevelPoint, levelPoints, RANGES, type RangeStats, rangeStats } from "../calc/dailyGains";
 import { type LevelGoal, levelGoals } from "../calc/levelGoals";
 import { utcDay } from "../calc/utcDays";
 import { db } from "../db";
 import { HttpError } from "../http";
 
 // Everything the character view shows below the character: EXP per UTC day for the last 90 days
-// (today included), and for the last 7, 14, 30 and 90 days the EXP gained, the daily average, the
+// (today included), the level on each checked day of them, and for the last 7, 14, 30 and 90 days the EXP gained, the daily average, the
 // share of a level gained a day, and the time to the next level and the next multiple of 5 at
 // that average.
 export interface ProgressView {
   today: string; // the current UTC day
   bars: DayBar[];
+  levels: LevelPoint[]; // the checked days among the bars' days
   ranges: { days: number; stats: RangeStats | null; goals: LevelGoal[] }[];
 }
 
@@ -26,6 +27,7 @@ export async function characterProgress(ownerId: string, id: number): Promise<Pr
   return {
     today,
     bars: dailyBars(points, today),
+    levels: levelPoints(points, today),
     ranges: RANGES.map((days) => {
       const stats = rangeStats(points, today, days);
       return { days, stats, goals: levelGoals(c.level, Number(c.exp), Math.max(0, stats?.average ?? 0)) };

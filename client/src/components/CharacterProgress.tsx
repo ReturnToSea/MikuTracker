@@ -1,9 +1,11 @@
+import { MAX_LEVEL } from "@miku/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { keys, useProgress } from "../api/hooks";
-import type { DayBar, LevelGoal, ProgressView } from "../api/types";
+import type { DayBar, LevelGoal, LevelPoint, ProgressView } from "../api/types";
 import { amountStyle, barDetail, barLabel, dayLabel, fmtLevelPct, niceMax, showDate, ticks } from "../lib/chart";
 import { nextUtcMidnight, untilNextUtcDay, utcDay } from "../lib/countdown";
+import { levelDetail, levelHeight, levelScale, tickLabel } from "../lib/levelChart";
 import { fmtDuration, fmtExp, fmtFutureDate } from "../lib/format";
 
 type Range = ProgressView["ranges"][number];
@@ -14,6 +16,7 @@ type Range = ProgressView["ranges"][number];
 export function CharacterProgress({ id }: { id: number }) {
   const progress = useProgress(id);
   const [days, setDays] = useState(14);
+  const [view, setView] = useState<"exp" | "level">("exp");
   if (progress.isPending) return <p className="notice muted block">Loading…</p>;
   if (progress.isError) {
     return (
@@ -22,7 +25,7 @@ export function CharacterProgress({ id }: { id: number }) {
       </p>
     );
   }
-  const { today, bars, ranges } = progress.data;
+  const { today, bars, levels, ranges } = progress.data;
   const range = ranges.find((r) => r.days === days)!;
   const average = range.stats?.average ?? null;
   return (
@@ -34,9 +37,17 @@ export function CharacterProgress({ id }: { id: number }) {
           ))}
         </div>
         <div className="chart-head">
-          <h3>
-            EXP farmed per day (UTC)
-            {average !== null && (
+          <div className="segmented chart-view" role="group" aria-label="Chart">
+            <button type="button" aria-pressed={view === "exp"} onClick={() => setView("exp")}>
+              EXP per day
+            </button>
+            <button type="button" aria-pressed={view === "level"} onClick={() => setView("level")}>
+              Level
+            </button>
+          </div>
+          <h3 className="chart-title">
+            {view === "exp" ? "EXP farmed per day (UTC)" : "Level per day (UTC)"}
+            {view === "exp" && average !== null && (
               <span className="legend">
                 <i aria-hidden="true" />
                 {days}-day average <b>{fmtExp(average)}</b>
@@ -51,9 +62,12 @@ export function CharacterProgress({ id }: { id: number }) {
             ))}
           </div>
         </div>
-        <DailyChart bars={bars.slice(-days)} average={average} today={today} />
+        {view === "exp" ? <DailyChart bars={bars.slice(-days)} average={average} today={today} /> : <LevelChart days={bars.slice(-days).map((b) => b.day)} levels={levels} today={today} />}
         <p className="chart-foot muted small">
-          <Countdown id={id} /> Each bar is one UTC day; today's grows with each check of Nexon (every 4 hours). Days that weren't checked show as "no data", and their EXP lands on the next day that was.
+          <Countdown id={id} />{" "}
+          {view === "exp"
+            ? `Each bar is one UTC day; today's grows with each check of Nexon (every 4 hours). Days that weren't checked show as "no data", and their EXP lands on the next day that was.`
+            : "Level on each checked UTC day, with progress through the level. Highlighted dots: level-ups (a level-up on a day that wasn't checked shows on the next day that was)."}
         </p>
       </section>
       <TimeToLevel range={range} />
@@ -153,6 +167,65 @@ function DailyChart({ bars, average, today }: { bars: DayBar[]; average: number 
   );
 }
 
+// Level over the shown days: a line through each checked day's level (with progress through it),
+// highlighted dots at level-ups, the latest day in white, and up to 14 days a small dot on every checked
+// day (beyond that they crowd the line). Same days and dates as the EXP chart.
+function LevelChart({ days, levels, today }: { days: string[]; levels: LevelPoint[]; today: string }) {
+  const shown = levels.filter((p) => p.day >= days[0]!);
+  const scale = levelScale(shown.map((p) => p.level));
+  const at = new Map(shown.map((p) => [p.day, p]));
+  const x = (day: string) => ((days.indexOf(day) + 0.5) / days.length) * 100;
+  const y = (level: number) => (scale ? levelHeight(level, scale) * 100 : 0);
+  const line = shown.map((p) => `${x(p.day)},${100 - y(p.level)}`).join(" ");
+  const latest = shown.at(-1);
+  const dotted = shown.filter((p) => days.length <= 14 || p.reached.length > 0 || p === latest);
+  return (
+    <div className="chart level-chart" role="group" aria-label="Level per day">
+      <div className="yaxis" aria-hidden="true">
+        {scale?.ticks.map((t) => (
+          <span key={t} style={{ bottom: `${y(t)}%` }}>
+            {tickLabel(t)}
+          </span>
+        ))}
+      </div>
+      <div className="plot">
+        {scale?.ticks.map((t) => (
+          <div key={t} className="grid-line" style={{ bottom: `${y(t)}%` }} />
+        ))}
+        {/* The line and dots share the day columns' box (no gaps between columns here), so each
+            point sits exactly over its column and its date. */}
+        <div className="level-area">
+        {scale && (
+          <svg className="level-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon points={`${x(shown[0]!.day)},100 ${line} ${x(shown.at(-1)!.day)},100`} />
+            <polyline points={line} />
+          </svg>
+        )}
+        {dotted.map((p) => (
+          <span
+            key={p.day}
+            className={`level-dot${p.reached.length ? " up" : ""}${p === latest ? " latest" : ""}`}
+            style={{ left: `${x(p.day)}%`, bottom: `${y(p.level)}%` }}
+            aria-hidden="true"
+          />
+        ))}
+        </div>
+        {!scale && <p className="chart-empty muted">No level history yet: the first point appears after the next check of Nexon (every 4 hours).</p>}
+        <div className="bars">
+          {days.map((day) => (
+            <div key={day} className={`level-col${at.has(day) ? "" : " no-data"}`} tabIndex={0} title={levelDetail(day, at.get(day), today)} aria-label={levelDetail(day, at.get(day), today)} />
+          ))}
+        </div>
+      </div>
+      <div className="xaxis" aria-hidden="true">
+        {days.map((day, i) => (
+          <span key={day}>{showDate(i, days.length) ? (day === today ? "Today" : dayLabel(day)) : ""}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const GOAL_LABEL: Record<LevelGoal["kind"], string> = { "next-level": "Next level", "next-multiple-of-5": "Next multiple of 5" };
 
 function TimeToLevel({ range }: { range: Range }) {
@@ -168,7 +241,7 @@ function TimeToLevel({ range }: { range: Range }) {
         )}
       </div>
       {range.goals.length === 0 ? (
-        <p className="muted">Level 300: nothing left to reach.</p>
+        <p className="muted">Level {MAX_LEVEL}: nothing left to reach.</p>
       ) : (
         <div className="eta">
           {range.goals.map((g) => (

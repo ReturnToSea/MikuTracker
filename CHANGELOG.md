@@ -2,6 +2,28 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.1.0 (2026-10-23): the level line
+
+- **"EXP per day | Level"** at the EXP chart's top left (layout B of five mockups) swaps the chart between the daily EXP bars and **the level line**. The range, boxes, dates and countdown stay the same, and each view has its own heading.
+  - **The line:** the level on each checked day, with progress through the level (278 at 93% is 278.93), so it climbs smoothly between level-ups. Nothing new is collected: it comes from the totals already saved.
+  - **Highlighted dots** (gold in Ren, pink in Pochacco) mark level-ups. A level-up on a day that wasn't checked shows on the next checked day, whose tooltip says "reached 278 since the last check (Oct 19)". Today is a white dot, and up to 14 days every checked day gets a small dot.
+  - **The scale** is rounded out to quarter levels ("278 · 25%"), with lines every quarter, level, or few levels, and never above level 300.
+  - Each day has a tooltip ("Lv. 278 · 93.00%", rounded down so an unfinished level never shows 100.00%).
+- **Fixed: a range reaching level 300 counted it as 301**, crediting an extra level to its "% of a level a day" (since v0.9.0). Found while building the line.
+- **Dropped from the plan for now: the Lookup tab.** Per-day EXP for characters we don't track isn't possible without checking them over and over at scale, which means getting around Nexon's limits (as open-source scrapers do). Noted under "Later", with how it could come back. The versions after it moved up one. The plan's Bosses version gained research on MapleScouter (KMS-only; an open-source reverse-engineering of its boss maths exists, without a license).
+- **The level cap (300) now lives in the shared package**, used by the EXP table and the page alike.
+- **From the review pass** (9 findings, all fixed):
+  - The line's points sat slightly off their day columns, and at 90 days a narrow window could scroll sideways. The level chart's columns are now gapless, and the line shares their box.
+  - The note said "gold dots" (they're pink in Pochacco).
+  - A level-300 character got a "300 · 25%" line.
+  - 99.996% showed as "100.00%". My first fix showed 278.2 as "19.99%", because of how 278.2 is stored, and a test caught it.
+  - An inconsistent record (more gained than its total) would have made the whole EXP section fail. Its gain is now ignored. My first guard invented level-ups from level 1, and a test caught that too.
+  - Duplicated date formatting.
+  - The page hard-coded 300.
+  - The switch sat inside the chart's heading, so screen readers read the buttons as the title.
+- **Tests:** 373 server and 177 app tests, in California time and UTC. Mutation testing on the changed code: 100%. `qa:check`: 118/118, with new checks for the Level view (against a hand-worked 90-day history), a narrow window, and points lining up with their days.
+  - **My mistakes along the way:** test expectations that compared levels exactly (EXP-built fractions are a hair off), used fractional EXP, or miscounted which days are in "7 days". I also first drew dots on every day at 90 days, which crowded the line.
+
 ## v1.0.1 (2026-10-23): testing that doesn't depend on your data, and safer updates
 
 From a look at how we test: what was redundant, and what was weak.

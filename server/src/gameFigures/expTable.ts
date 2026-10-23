@@ -17,7 +17,7 @@
 // Re-check after each GMS patch: Nexon changes the EXP curve now and then.
 export const EXP_TABLE_PATCH = "v.271";
 export const EXP_TABLE_DATE = "2026-09";
-export const MAX_LEVEL = 300;
+export { MAX_LEVEL } from "@miku/shared"; // shared with the app
 
 export const EXP_TO_NEXT: readonly number[] = [
   // 1–10

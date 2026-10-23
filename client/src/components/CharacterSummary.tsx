@@ -1,4 +1,4 @@
-import { worldName } from "@miku/shared";
+import { MAX_LEVEL, worldName } from "@miku/shared";
 import type { CharacterView } from "../api/types";
 import { levelProgress } from "../lib/characters";
 import { fmtInt } from "../lib/format";
@@ -36,7 +36,7 @@ export function CharacterSummary({ c, onDelete }: { c: CharacterView; onDelete: 
               </small>
             </>
           ) : (
-            <small className="muted">Level 300: the highest level.</small>
+            <small className="muted">Level {MAX_LEVEL}: the highest level.</small>
           )}
         </div>
         <div className="level-box">

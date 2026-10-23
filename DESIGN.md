@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.0.1)
+## The app (as of v1.1.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -36,6 +36,11 @@ Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`)
 - **The EXP section** (for the selected character, from `/api/characters/:id/progress`):
   - **Four range boxes, 7, 14, 30 and 90 days** (today included), each with the daily average, the share of a level gained a day ("Gained +20.5% a day", from progress through levels, across level-ups), and the total EXP. "—" for a range without history. 14 days is chosen at first.
   - **Choosing a range:** the buttons at the top right of the chart, or clicking a box; both stay in step. The chart shows that many bars, the dashed line is that range's average, and Time to level uses it.
+  - **"EXP per day | Level"** at the chart's top left swaps it between the daily EXP bars (the default) and the level line. The range, boxes, dates and countdown stay the same.
+  - **The level line** (v1.1.0): the level on each checked day, with progress through the level (278 at 93% is 278.93), so it climbs smoothly between level-ups.
+    - **Gold dots** (the theme's level-up color) mark level-ups; a level-up on a day that wasn't checked shows on the next checked day, whose tooltip says "reached 278 since the last check (Oct 19)". The latest day is a white dot. Up to 14 days, every checked day also gets a small dot; beyond that they'd crowd the line.
+    - **The scale** is rounded out to quarter levels, with a line every quarter level when the range spans one level or less ("278 · 25%"), otherwise every level, or every few levels (at most 6 steps).
+    - Each day has a tooltip (hover or keyboard): its level ("Lv. 278 · 93.00%"), level-ups, or "no data". Without history yet: "No level history yet".
   - **The daily EXP chart:** one bar per UTC day, ending with **today, whose bar grows with each check**. Each bar shows:
     - its amount above it ("5.60T", "0" for a checked day with no EXP), its day below ("Oct 7", and "Today"), and its exact EXP and day in a tooltip (hover, or focus with the keyboard)
     - a **hatched "no data" stub** for a day that wasn't checked; the bar after such days carries their EXP together, with "2 days" under its amount
@@ -127,7 +132,8 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
   - **`dailyGains.ts`:** EXP per UTC day from the snapshots' `gained` (each check adds the change in total EXP since the check before, so level-ups need nothing special). Today is a bar too. A day without a snapshot is "no data"; the next day that has one carries their EXP, with how many days it `covers` (a character's first day covers 1).
     - **Ranges (7, 14, 30, 90 days, today included):** the EXP from the total at the end of the day before the range (from the last snapshot on or before it, even if days just before weren't checked) to the latest snapshot. For a character first tracked within the range, from where its first day started (its total minus that day's `gained`).
     - **Daily average:** that EXP divided by the days from that starting point to today, today counting as a day. So a character tracked for 3 days isn't averaged over 14, and days not checked are still counted.
-    - **Levels a day:** the same, as levels with progress through them (285 at 86.91% is 285.8691), so "+20.5% a day" works across level-ups.
+    - **Levels a day:** the same, as levels with progress through them (285 at 86.91% is 285.8691), so "+20.5% a day" works across level-ups. Level 300 is just 300 (until v1.1.0 it counted as 301, crediting an extra level to a range that reached 300).
+    - **Daily levels** (`levelPoints`): each checked day's level with progress, the whole levels reached since the check before (from where a character's first day started, for its first), and how many days that covers.
     - With no snapshot in the range, there's nothing to say (`null`).
   - **`levelGoals.ts`:** the next level and the next multiple of 5 (207 → 210, 285 → 290; at most 300), each with the EXP still needed and the days at a daily rate. There's one goal when they're the same level (209 → 210), none at 300, and the days are "unknown" (`null`) at 0 EXP a day.
 - **`client/src/lib/format.ts`:** how the app shows things.
@@ -157,7 +163,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/settings`:** GET returns `{ theme, worldId }`, creating the defaults (Ren, Kronos 45) on first read. PUT saves `{ theme }`, `{ worldId }` or both. An empty save, an unknown theme or world, or extra fields are refused with a 400.
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
-- **`/api/characters/:id/progress`:** `{ today, bars: [{ day, gained, covers }] (90, ending today), ranges: [{ days, stats: { total, average, levelPerDay } | null, goals }] (7, 14, 30, 90) }`, each range's goals at its own average (none at 300; a negative average counts as 0). A character not checked since it was added has no history yet. 404 for an unknown character or another owner's.
+- **`/api/characters/:id/progress`:** `{ today, bars: [{ day, gained, covers }] (90, ending today), levels: [{ day, level, reached, covers }] (the checked days among them), ranges: [{ days, stats: { total, average, levelPerDay } | null, goals }] (7, 14, 30, 90) }`, each range's goals at its own average (none at 300; a negative average counts as 0). A character not checked since it was added has no history yet. 404 for an unknown character or another owner's.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
   - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.

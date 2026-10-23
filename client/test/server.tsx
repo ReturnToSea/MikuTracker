@@ -64,6 +64,7 @@ export function fakeExpTable() {
 export const NO_PROGRESS = {
   today: "2026-10-20",
   bars: Array.from({ length: 90 }, (_, i) => ({ day: new Date(Date.UTC(2026, 9, 20 - 89 + i)).toISOString().slice(0, 10), gained: null, covers: 0 })),
+  levels: [],
   ranges: [7, 14, 30, 90].map((days) => ({ days, stats: null, goals: [] })),
 };
 

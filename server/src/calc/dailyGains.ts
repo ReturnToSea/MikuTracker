@@ -1,3 +1,4 @@
+import { MAX_LEVEL } from "../gameFigures/expTable";
 import { fromTotal, progress } from "./exp";
 import { addUtcDays, startOfUtcDay } from "./utcDays";
 
@@ -20,6 +21,16 @@ export interface DayBar {
   covers: number; // how many days `gained` spans: 1 normally, more right after days without data; 0 with no data
 }
 
+// A checked day's level, with progress through it (285 at 86.91% is 285.8691), and the whole
+// levels reached since the check before (a level-up on a day that wasn't checked shows on the
+// next checked day, which then covers more than one day).
+export interface LevelPoint {
+  day: string;
+  level: number;
+  reached: number[];
+  covers: number;
+}
+
 export interface RangeStats {
   total: number; // EXP gained over the range
   average: number; // EXP per day
@@ -31,6 +42,11 @@ export const CHART_DAYS = 90; // the most bars the chart shows
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const daysBetween = (from: string, to: string) => Math.round((startOfUtcDay(to).getTime() - startOfUtcDay(from).getTime()) / DAY_MS);
+
+// Where a character's first day started: its total minus what it gained that day. A record that
+// claims more gained than its total is inconsistent, and its gain is ignored (one bad record mustn't
+// break the whole EXP section, nor invent level-ups).
+const startOf = (p: SnapshotPoint) => (p.gained > p.totalExp ? p.totalExp : p.totalExp - p.gained);
 
 // The points in day order (whatever order they arrive in).
 const inDayOrder = (points: SnapshotPoint[]) => [...points].sort((a, b) => a.day.localeCompare(b.day));
@@ -48,10 +64,11 @@ export function dailyBars(unordered: SnapshotPoint[], today: string, count = CHA
   return bars;
 }
 
-// Level with progress through it: 285 at 86.91% is 285.8691.
-function levelAt(total: number): number {
+// Level with progress through it: 285 at 86.91% is 285.8691. Level 300 is just 300 (progress()
+// counts it as 100% through, which would make it 301).
+export function levelAt(total: number): number {
   const { level, exp } = fromTotal(total);
-  return level + progress(level, exp);
+  return level === MAX_LEVEL ? MAX_LEVEL : level + progress(level, exp);
 }
 
 // The last `days` days, today included. The range starts from the total at the end of the day
@@ -65,8 +82,22 @@ export function rangeStats(unordered: SnapshotPoint[], today: string, days: numb
   if (!end || end.day < first) return null;
   const before = points.filter((p) => p.day < first).at(-1);
   const start = before ?? points[0]!;
-  const startTotal = before ? before.totalExp : start.totalExp - start.gained;
+  const startTotal = before ? before.totalExp : startOf(start);
   const span = daysBetween(start.day, today) + (before ? 0 : 1);
   const total = end.totalExp - startTotal;
   return { total, average: total / span, levelPerDay: (levelAt(end.totalExp) - levelAt(startTotal)) / span };
+}
+
+// The level on each checked day of the `count` days ending today, oldest first.
+export function levelPoints(unordered: SnapshotPoint[], today: string, count = CHART_DAYS): LevelPoint[] {
+  const points = inDayOrder(unordered).filter((p) => p.day <= today);
+  const first = addUtcDays(today, -(count - 1));
+  return points.flatMap((p, i) => {
+    if (p.day < first) return [];
+    const before = points[i - 1]; // none for the first
+    const level = levelAt(p.totalExp);
+    const from = Math.floor(levelAt(before ? before.totalExp : startOf(p)));
+    const reached = Array.from({ length: Math.max(0, Math.floor(level) - from) }, (_, k) => from + 1 + k);
+    return [{ day: p.day, level, reached, covers: before ? daysBetween(before.day, p.day) : 1 }];
+  });
 }

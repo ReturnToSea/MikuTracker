@@ -216,13 +216,13 @@ try {
   // 90 days: 12.4 + 76 more 1T days = 88.4T over 90 days.
   check("Ranges", "90 days: 88.4T total, 982B a day, by hand", /982B/.test(boxes[3]) && /88\.4T/.test(boxes[3]), boxes[3].replace(/\n/g, " "));
   for (const d of [7, 14, 30, 90]) {
-    await page.locator('section[aria-label="EXP"] .segmented button', { hasText: `${d} days` }).click();
+    await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: `${d} days` }).click();
     await settle(200);
     check("Ranges", `the "${d} days" button shows ${d} bars and highlights its box`, (await count(".bar-col")) === d && (await text(".range-box.on .range-name"))?.toLowerCase() === `${d} days`);
   }
   await page.locator(".range-box").nth(0).click();
   await settle(200);
-  check("Ranges", "clicking a box picks its range (the buttons follow)", (await count(".bar-col")) === 7 && (await text('section[aria-label="EXP"] .segmented [aria-pressed="true"]')) === "7 days");
+  check("Ranges", "clicking a box picks its range (the buttons follow)", (await count(".bar-col")) === 7 && (await text('section[aria-label="EXP"] [aria-label="Days shown"] [aria-pressed="true"]')) === "7 days");
   const labels = await page.locator(".bar-label").allInnerTexts();
   check("Chart", "7 bars: amounts, the 0 day, the missed day empty, '2 days', today so far", labels.map((l) => l.replace(/\n/g, " ")).join("|") === "|2.00T 2 days|1.00T|0|1.00T|1.00T|400B", labels.join("|"));
   check("Chart", "the last bar is today, dated 'Today'", (await page.locator(".xaxis span").last().innerText()) === "Today" && /\(today\)/.test((await page.locator(".bar-col").last().getAttribute("title")) ?? ""));
@@ -231,6 +231,23 @@ try {
   const ttl = (await text('section[aria-label="Time to level"]')) ?? "";
   check("Time to level", "follows the chosen range (7 days)", /7-day average of 771B/.test(ttl), ttl.replace(/\n/g, " | ").slice(0, 120));
   await shot("03-history");
+
+  // ---------- the Level view (v1.1.0) ----------
+  // The same history as levels: MikuBeam ends at 285 and 86.92% (86.5T of 99.5T); 88.4T earlier it was
+  // just below 285, so the line crosses into 285 near the start of the 90 days.
+  await page.locator(".chart-view button", { hasText: "Level" }).click();
+  await settle(300);
+  check("Level", "'Level' swaps the bars for the level line (7 days: 7 columns)", (await count(".bar-col")) === 0 && (await count(".level-col")) === 7 && (await count(".level-line polyline")) === 1);
+  check("Level", "today's tooltip: Lv. 285 · 86.92%", /Lv\. 285 · 86\.92%/.test((await page.locator(".level-col").last().getAttribute("title")) ?? ""), await page.locator(".level-col").last().getAttribute("title"));
+  check("Level", "the missed day has no point, and says so", /no data/.test((await page.locator(".level-col").first().getAttribute("title")) ?? "") && (await count(".level-dot")) === 6);
+  await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "90 days" }).click();
+  await settle(300);
+  check("Level", "90 days: the level-up into 285 is marked", (await count(".level-dot.up")) === 1 && /reached 285/.test((await page.locator(".level-col").evaluateAll((cols) => cols.map((c) => c.title).join("|")))), "");
+  check("Level", "the scale labels levels", (await page.locator(".yaxis span").allInnerTexts()).some((t) => t === "285"));
+  await shot("03b-level");
+  await page.locator(".chart-view button", { hasText: "EXP per day" }).click();
+  await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "7 days" }).click();
+  await settle(300);
 
   // ---------- a refresh: a level-up, and a character that disappears ----------
   await nexon("set", { name: "MikuBeam", level: 286, exp: 1_000 });
@@ -285,6 +302,12 @@ try {
   check("Themes", "Pochacco: in use, the page switches, no sky", (await theme()) === "pochacco" && (await count("canvas.sky")) === 0 && /In use/.test((await text('.theme-card[aria-pressed="true"]')) ?? ""));
   await go("/");
   check("Themes", "the theme is saved", (await theme()) === "pochacco");
+  await page.locator(".ctab", { hasText: "MikuBeam" }).click();
+  await settle(500);
+  await page.locator(".chart-view button", { hasText: "Level" }).click();
+  await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "30 days" }).click();
+  await settle(300);
+  await shot("04a-pochacco-level");
   await go("/themes");
   await page.locator(".theme-card", { hasText: "Ren" }).click();
   await settle(1200);
@@ -348,6 +371,19 @@ try {
   await page.setViewportSize({ width: 900, height: 900 });
   await go("/");
   check("Layout", "at 900 px wide, no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.locator(".ctab", { hasText: "MikuBeam" }).click();
+  await settle(400);
+  await page.locator(".chart-view button", { hasText: "Level" }).click();
+  await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "90 days" }).click();
+  await settle(300);
+  check("Layout", "the Level view at 90 days, 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  // each point sits over its own day's column: today's dot over the last column's middle
+  const lined = await page.evaluate(() => {
+    const dot = document.querySelector(".level-dot.latest").getBoundingClientRect();
+    const col = [...document.querySelectorAll(".level-col")].at(-1).getBoundingClientRect();
+    return Math.abs(dot.left + dot.width / 2 - (col.left + col.width / 2));
+  });
+  check("Layout", "the Level view's points line up with their days' columns", lined < 1.5, `${lined.toFixed(2)} px off`);
   await shot("05-narrow");
 
   check("Page errors", "no errors in the page or its console", errors.length === 0, errors.slice(0, 5).join(" || "));
