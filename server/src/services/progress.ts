@@ -2,6 +2,7 @@ import { dailyBars, type DayBar, type LevelPoint, levelPoints, RANGES, type Rang
 import { type LevelGoal, levelGoals } from "../calc/levelGoals";
 import { utcDay } from "../calc/utcDays";
 import { db } from "../db";
+import { ownCharacter } from "./characters";
 import { HttpError } from "../http";
 
 // Everything the character view shows below the character: EXP per UTC day for the last 90 days
@@ -16,8 +17,7 @@ export interface ProgressView {
 }
 
 export async function characterProgress(ownerId: string, id: number): Promise<ProgressView> {
-  const c = await db().character.findFirst({ where: { id, ownerId } });
-  if (!c) throw new HttpError(404, "Not found");
+  const c = await ownCharacter(ownerId, id);
   const snapshots = await db().snapshot.findMany({ where: { characterId: id }, select: { day: true, totalExp: true, gained: true, capturedAt: true } });
   // A character that hasn't been checked since it was added has nothing to compare yet: its only
   // snapshot says 0 gained, which would read as "no EXP today".

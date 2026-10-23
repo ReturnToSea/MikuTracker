@@ -7,11 +7,12 @@ import path from "node:path";
 // means setting these, not changing code.
 
 export interface Config {
-  dataDir: string; // the database, backups, avatars and theme art live here
+  dataDir: string; // the database, backups, avatars, theme art and boss art live here
   databaseUrl: string; // "file:/…/miku.db" (SQLite); MIKU_DATABASE=dev picks dev.db, DATABASE_URL overrides both
   databaseFile: string;
   backupDir: string;
   themeArtDir: string;
+  bossArtDir: string; // the bosses' pictures (<boss id>.png), never in git
   avatarDir: string; // character avatars, each named after its contents
   host: string;
   port: number;
@@ -99,11 +100,12 @@ export function loadConfig(env: Env = process.env, home: string = env.HOME || os
   if (!databaseUrl.startsWith("file:")) throw new Error(`Only SQLite databases ("file:…") are supported for now (DATABASE_URL is "${databaseUrl}")`);
   const databaseFile = path.resolve(databaseUrl.slice("file:".length));
   // The development database gets its own backups and avatars: clearing out avatars no character
-  // uses, or old backups, must never touch the real app's files. Theme art is shared.
+  // uses, or old backups, must never touch the real app's files. Theme art and boss art are shared.
   const own = path.basename(databaseFile) === "dev.db" ? "dev-" : "";
   const folders = {
     backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, `${own}backups`)),
     themeArtDir: path.resolve(env.THEME_ART_DIR || path.join(dataDir, "theme-art")),
+    bossArtDir: path.resolve(env.BOSS_ART_DIR || path.join(dataDir, "boss-art")),
     avatarDir: path.resolve(env.AVATAR_DIR || path.join(dataDir, `${own}avatars`)),
   };
   // A test run may not reach the real data folder at all: not its database, nor any folder.

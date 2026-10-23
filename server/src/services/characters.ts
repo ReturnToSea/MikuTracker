@@ -118,8 +118,9 @@ export async function addCharacter(ownerId: string, worldId: number, name: strin
   return (await listCharacters(ownerId, worldId)).characters.find((c) => c.id === character.id)!;
 }
 
-// One of the owner's characters, or a 404 (another owner's characters don't exist for them).
-async function own(ownerId: string, id: number): Promise<Character> {
+// One of the owner's characters, or a 404 (another owner's characters don't exist for them). The
+// one place every service checks this, for when login arrives.
+export async function ownCharacter(ownerId: string, id: number): Promise<Character> {
   const c = await db().character.findFirst({ where: { id, ownerId } });
   if (!c) throw new HttpError(404, "Not found");
   return c;
@@ -135,7 +136,7 @@ export async function reorderCharacters(ownerId: string, worldId: number, ids: n
 }
 
 export async function selectCharacter(ownerId: string, id: number) {
-  const c = await own(ownerId, id);
+  const c = await ownCharacter(ownerId, id);
   await db().selection.upsert({
     where: { ownerId_worldId: { ownerId, worldId: c.worldId } },
     create: { ownerId, worldId: c.worldId, characterId: id },
@@ -146,7 +147,7 @@ export async function selectCharacter(ownerId: string, id: number) {
 // Deletes a character with everything about it: its snapshots, avatars (files no other character
 // uses are removed too) and selection.
 export async function deleteCharacter(ownerId: string, id: number) {
-  const c = await own(ownerId, id);
+  const c = await ownCharacter(ownerId, id);
   await db().$transaction([
     db().character.delete({ where: { id } }),
     // close the gap in the tab positions

@@ -43,6 +43,8 @@ model Character {
   snapshots   Snapshot[]
   avatars     Avatar[]
   selection   Selection?
+  bossPlans   BossPlan[]
+  bossClears  BossClear[]
 
   @@unique([ownerId, worldId, nameKey])
   @@index([ownerId, worldId, sortOrder])
@@ -101,4 +103,35 @@ model Selection {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@id([ownerId, worldId])
+}
+
+// A boss a character does: one row per boss, with the difficulty and party size it's done at.
+// The plan stays the same week to week until it's changed. `boss` is an id from
+// src/gameFigures/bosses.ts.
+model BossPlan {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  boss        String
+  difficulty  String // "Easy" | "Normal" | "Hard" | "Chaos" | "Extreme"
+  partySize   Int
+
+  @@unique([characterId, boss])
+}
+
+// A boss ticked as cleared, in one boss week (named by its first day, a Thursday: "2026-10-22") or,
+// for a monthly boss, one month ("2026-11"). A new week simply has none yet, so nothing is cleared
+// at the reset, and past weeks stay for a boss history later. The difficulty and party size are
+// the plan's at the time (kept in step with the plan during the same week).
+model BossClear {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  boss        String
+  period      String
+  difficulty  String
+  partySize   Int
+  clearedAt   DateTime
+
+  @@unique([characterId, boss, period])
 }

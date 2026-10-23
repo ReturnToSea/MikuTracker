@@ -1,8 +1,9 @@
-import type { AddCharacterInput, SettingsInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, SettingsInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { withTick } from "../lib/bosses";
 import { api } from "./client";
-import type { CharacterList, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -11,6 +12,7 @@ export const keys = {
   characters: (world: number) => ["characters", world],
   refresh: ["refresh"],
   progress: (id: number) => ["progress", id],
+  bosses: (world: number) => ["bosses", world],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -29,6 +31,7 @@ export function useRefreshStatus() {
     if (seen.current !== undefined) {
       void qc.invalidateQueries({ queryKey: ["characters"] });
       void qc.invalidateQueries({ queryKey: ["progress"] });
+      void qc.invalidateQueries({ queryKey: ["bosses"] });
     }
     seen.current = finished;
   }, [finished, qc]);
@@ -51,10 +54,13 @@ export function useUpdateSettings() {
 export const useSearch = () =>
   useMutation({ mutationFn: ({ world, name }: AddCharacterInput) => api<SearchResult>(`/search?world=${world}&name=${encodeURIComponent(name)}`) });
 
-// Changes to a world's characters reload that world's list.
+// Changes to a world's characters reload that world's list, and its Bosses tab (which lists them).
 function useCharacterChange<I, O>(world: number, send: (input: I) => Promise<O>) {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: send, onSuccess: () => qc.invalidateQueries({ queryKey: keys.characters(world) }) });
+  return useMutation({
+    mutationFn: send,
+    onSuccess: () => Promise.all([qc.invalidateQueries({ queryKey: keys.characters(world) }), qc.invalidateQueries({ queryKey: keys.bosses(world) })]),
+  });
 }
 
 export const useAddCharacter = (world: number) => useCharacterChange(world, (name: string) => api<CharacterView>("/characters", { method: "POST", body: { world, name } }));
@@ -63,3 +69,30 @@ export const useDeleteCharacter = (world: number) => useCharacterChange(world, (
 
 export const useReorderCharacters = (world: number) =>
   useCharacterChange(world, (ids: number[]) => api<CharacterList>("/characters/order", { method: "PUT", body: { world, ids } }));
+
+// The Bosses tab of a world; saving a plan loads it again.
+export const useBossBoard = (world: number) => useQuery({ queryKey: keys.bosses(world), queryFn: () => api<BossBoard>(`/bosses?world=${world}`) });
+
+function useBossChange<I>(world: number, send: (input: I) => Promise<void>) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: send, onSuccess: () => qc.invalidateQueries({ queryKey: keys.bosses(world) }) });
+}
+
+export const useSaveBossPlan = (world: number) =>
+  useBossChange(world, ({ id, plan }: { id: number; plan: BossPlanInput["plan"] }) => api<void>(`/bosses/${id}/plan`, { method: "PUT", body: { plan } }));
+
+// A tick shows at once, and ticks are sent one at a time in the order they were clicked, so a
+// quick untick right after a tick can't be overtaken by it. Then the board is loaded again.
+export function useSetBossCleared(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "boss-ticks" },
+    mutationFn: ({ id, boss, cleared }: { id: number; boss: string; cleared: boolean }) => api<void>(`/bosses/${id}/clears/${boss}`, { method: "PUT", body: { cleared } }),
+    onMutate: async ({ id, boss, cleared }) => {
+      await qc.cancelQueries({ queryKey: keys.bosses(world) }); // a load already on its way would undo it
+      qc.setQueryData<BossBoard>(keys.bosses(world), (b) => b && withTick(b, id, boss, cleared));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.bosses(world) }),
+  });
+}

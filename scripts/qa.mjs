@@ -1,6 +1,6 @@
 // npm run qa: a throwaway copy of the app for testing by hand or in a browser, so testing never
 // touches your data. It copies the data (the real database once it exists, otherwise dev.db, with
-// its avatars and the theme art) into a fresh temporary folder, starts the app on its own ports
+// its avatars, the theme art and the boss art) into a fresh temporary folder, starts the app on its own ports
 // with backups and the Nexon refresh off, and deletes the folder when stopped (Ctrl+C).
 //   http://127.0.0.1:4753  the production build, exactly as the always-on app serves it: test here
 //                          (built once, as it starts: restart the QA copy after changing the page)
@@ -49,7 +49,7 @@ export async function startQa({ empty = false, fakeNexon = false, devPage = true
     } else {
       console.log(`Starting empty in ${dir}`);
     }
-    if (existsSync(path.join(real, "theme-art"))) cpSync(path.join(real, "theme-art"), path.join(dir, "theme-art"), { recursive: true });
+    for (const art of ["theme-art", "boss-art"]) if (existsSync(path.join(real, art))) cpSync(path.join(real, art), path.join(dir, art), { recursive: true });
   } catch (error) {
     remove(); // a failed copy leaves nothing behind
     throw error;
@@ -66,6 +66,7 @@ export async function startQa({ empty = false, fakeNexon = false, devPage = true
     BACKUP_DIR: "",
     AVATAR_DIR: "",
     THEME_ART_DIR: "",
+    BOSS_ART_DIR: "",
     MIKU_BACKUPS: "off",
     MIKU_REFRESH: "off",
     PORT: String(API_PORT),
@@ -96,9 +97,15 @@ export async function startQa({ empty = false, fakeNexon = false, devPage = true
   };
   const finished = (child) => new Promise((r) => (child.exitCode !== null || child.signalCode !== null ? r(child.exitCode) : child.once("exit", (code) => r(code))));
 
-  async function stop() {
-    if (stopping) return;
+  // Stopping more than once (a signal, and a part ending because of the same signal) waits for the
+  // one stop already under way: returning early let the script exit before the copy was deleted.
+  let stopped;
+  function stop() {
     stopping = true;
+    stopped ??= stopAll();
+    return stopped;
+  }
+  async function stopAll() {
     const running = [...children];
     for (const c of running) {
       try {

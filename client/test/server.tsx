@@ -68,6 +68,21 @@ export const NO_PROGRESS = {
   ranges: [7, 14, 30, 90].map((days) => ({ days, stats: null, goals: [] })),
 };
 
+// A world's Bosses tab with no characters: the week of Thu 15 Oct 2026, and two bosses (one
+// weekly, one monthly) instead of the whole list.
+export const EMPTY_BOSSES = {
+  pricesPatch: "v.270",
+  week: { start: "2026-10-15", resetsAt: "2026-10-22T00:00:00.000Z" },
+  month: { name: "2026-10", resetsAt: "2026-11-01T00:00:00.000Z" },
+  limits: { perCharacter: 14, perWorld: 180 },
+  bosses: [
+    { id: "zakum", name: "Zakum", kind: "weekly", art: null, difficulties: [{ difficulty: "Chaos", maxParty: 6, perPerson: [81e6, 40.5e6, 27e6, 20.25e6, 16.2e6, 13.5e6] }] },
+    { id: "black_mage", name: "Black Mage", kind: "monthly", art: null, difficulties: [{ difficulty: "Hard", maxParty: 6, perPerson: [4.5e9, 2.25e9, 1.5e9, 1.125e9, 0.9e9, 0.75e9] }] },
+  ],
+  characters: [],
+  totals: { planned: 0, soFar: 0, cleared: 0, bosses: 0, crystals: 0, monthlyPlanned: 0, monthlySoFar: 0 },
+};
+
 // The usual answers: Ren saved on Kronos, no theme art, no characters yet.
 export const BASE_ROUTES = {
   "GET /settings": { theme: "ren", worldId: 45 },
@@ -76,4 +91,5 @@ export const BASE_ROUTES = {
   "GET /characters": { characters: [], selectedId: null },
   "GET /refresh": { last: null },
   "GET /characters/:id/progress": NO_PROGRESS,
+  "GET /bosses": EMPTY_BOSSES,
 };

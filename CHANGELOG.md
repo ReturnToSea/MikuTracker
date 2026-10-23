@@ -2,6 +2,31 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.2.0 (2026-10-23): the weekly boss tracker
+
+- **The Bosses tab** (in place of the first TBD tab), for one world at a time like Home: layout A of five mockups, worked on over three rounds.
+  - **A card per character**, in one row that scrolls sideways: its planned bosses as a checklist with each boss's banner, difficulty, party and meso per person, and Black Mage under "Monthly". Only planned bosses can be ticked; ticks are saved at once.
+  - **The summary:** meso so far out of planned this week, bosses cleared, the world's crystals against its 180 limit, Black Mage's meso separately (monthly), and the countdown to the weekly reset in your time.
+  - **The 14-crystal limit:** past a character's 14 weekly crystals, the least valuable are marked "not counted" with a warning (and past the world's 180, the least valuable of the rest).
+  - **Resets:** weekly at Thursday 00:00 UTC, Black Mage on the 1st of each month. Nothing is deleted at a reset: a tick belongs to its week (or month), so a new week starts empty and past weeks are kept for the boss history later. The page reloads by itself when a reset passes.
+- **The planning menu:** every boss once in game order, as big cards 2 per row, with its difficulty (one per boss) and party size (up to what the game allows: 3 for the newest bosses, 2 for Extreme Lotus), and the meso per person. The plan stays week to week. Save, Cancel, Escape, or a click outside.
+- **Boss prices** (`server/src/gameFigures/bosses.ts`, as of v.270): the MapleStory Wiki's table, checked against masonym.dev's data (they agree on 55 of 57 prices; Jupiter's stays unconfirmed), ×5 for Heroic worlds, split equally and rounded down. The limits and reset times come from Nexon's v.255 patch notes.
+- **Boss pictures:** the game's boss banners, in the data folder's new `boss-art/` (never in git: Nexon's art), at their real size on the cards and 2× with sharp pixels in the menu. Better art for the menu is on the "Later" list (smooth enlarging and Real-ESRGAN were tried and turned down).
+- **Fixed: the QA copy could leave its copy of your data behind** in the temporary folder when stopped. Stopping from two places at once (a signal, and a part ending because of it) returned early from the second and exited before deleting. Found when a copy was left over today; it happened when the stop reached every part at once, as Ctrl+C can.
+- **From the review pass** (9 findings; 7 fixed):
+  - A quick untick right after a tick could send "ticked" twice (the box only changed when the board reloaded). Ticks now show at once and are sent one at a time, in order.
+  - The Bosses tab didn't reload after a refresh while it was open, so levels and avatars went stale. (I had removed the line that did it earlier, thinking it did nothing; the review was right that the tab needs to watch for refreshes itself.)
+  - A future patch removing a difficulty or lowering a party limit would have made the whole tab fail to load, with the planner unreachable to fix it. Old plans now load: removed entries are left out, oversized parties count as the largest allowed.
+  - After a reset, the page could ask for the board every second while the server's clock was behind. It now asks once per reset.
+  - A tick and a plan save at the same moment could leave a tick for a boss no longer planned. The tick is now checked and saved in one transaction.
+  - The "is this your character?" check had three copies; there's now one, `ownCharacter()`, for when login comes.
+  - Plans are matched with a lookup instead of a search per boss.
+  - **Not changed:** loading the full character list for the tab and checking the 29 picture files on each load. Both are negligible for one person on this Mac.
+- **Tests:** 411 server and 206 app tests, in California time and UTC. Full mutation testing: 100% (server and shared, and the app's logic). Two mutants are marked as harmless with their reasons: the database filter that only narrows what's read for the board, and the name of the tick queue. `qa:check`: 145/145, with 27 new checks for the Bosses tab (planning, the 14-crystal limit, Extreme Lotus's party of 2, Escape without saving, ticks kept after reloading, weekly and monthly resets, the other world, bad requests, a narrow window).
+  - **Found by mutation testing:** nothing checked that unticking one boss leaves the others ticked, that the world's crystal count leaves out a character's over-14 ones, or that ticking reloads only the board. And a tie-break I wrote between equal crystals did nothing (JavaScript's sort already keeps their order), so it's gone.
+  - **Found by planting bugs in the page by hand:** 15 of 16 were caught at first. The miss: the page could have reloaded the board every second without any test noticing. That's checked now.
+  - **My mistakes along the way:** test expectations that put Zakum in a plan twice, forgot a character on Hyperion, and misread how the browser tool reports a disabled section; a test variable typed too narrowly; and the useful refresh line I removed (above).
+
 ## v1.1.0 (2026-10-23): the level line
 
 - **"EXP per day | Level"** at the EXP chart's top left (layout B of five mockups) swaps the chart between the daily EXP bars and **the level line**. The range, boxes, dates and countdown stay the same, and each view has its own heading.

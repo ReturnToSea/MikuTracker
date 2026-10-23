@@ -9,6 +9,19 @@ export const HomeIcon = () => (
   </svg>
 );
 
+export const BossIcon = () => (
+  <svg {...common}>
+    <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+    <path d="M13 19l6-6" />
+    <path d="M16 16l4 4" />
+    <path d="M19 21l2-2" />
+    <path d="M9.5 6.5L18 3h3v3l-3.5 8.5" />
+    <path d="M5 14l4 4" />
+    <path d="M7 17l-3 3" />
+    <path d="M3 19l2 2" />
+  </svg>
+);
+
 export const TbdIcon = () => (
   <svg {...common}>
     <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />

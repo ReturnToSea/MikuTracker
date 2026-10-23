@@ -27,6 +27,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - `dev.db`: development (`npm run dev`, `npm run db:migrate`).
   - `backups/` and `avatars/`: the real data's. The dev copy has its own `dev-backups/` and `dev-avatars/`, so its clean-ups never touch the real files.
   - `theme-art/`: theme pictures (shared).
+  - `boss-art/`: the bosses' banners from the game (`<boss id>.png`, shared; Nexon's art, so never in git).
   - `app/`: the always-on app's own copy of `main`.
 - `tempdata/` is never committed. It holds the research log and the original theme art.
 
@@ -51,10 +52,10 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 
 - **Game time is UTC.** Daily resets and "EXP per day" use UTC days, computed explicitly in UTC, and are shown in local time.
 - **Big numbers (EXP, raid power) are `BigInt` in the database** and plain numbers in JSON, which are exact up to 9,007,199,254,740,991. The most EXP a character can have, 8,509,498,537,428,819, fits.
-- **Game figures** (worlds, the EXP table) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table after each GMS patch.
+- **Game figures** (worlds, the EXP table, boss crystal prices) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table and boss prices after each GMS patch.
 - **The server binds `127.0.0.1`** and refuses other addresses until login exists. The only exception is Docker: `HOST=0.0.0.0` with `MIKU_IN_CONTAINER=1`, port published to `127.0.0.1`.
 - **Front end:** no hard-coded colors; only theme CSS variables (`client/src/styles/themes.css`). Ren is the default.
-- **Theme art never goes in git.** It lives in the data folder's `theme-art/`.
+- **Theme art and boss art never go in git.** They live in the data folder's `theme-art/` and `boss-art/`.
 - **The user's data never leaves the Mac.** The only outside requests are to Nexon (rankings and avatars, from v0.4.0) and Google Fonts.
 - **Never read the game client, read its memory, or automate the game.** Those can get an account banned.
 

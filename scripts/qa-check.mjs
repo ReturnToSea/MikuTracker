@@ -5,7 +5,7 @@
 // version (CLAUDE.md). Screenshots go to the folder it prints. Exit status 1 if anything failed.
 //   CHROME=/path/to/chrome  if Chrome isn't in /Applications
 import { execFileSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
@@ -46,13 +46,13 @@ try {
 
   // ---------- the rail and pages ----------
   await go("/");
-  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/1", "TBD"], ["Home", "/", null]]) {
+  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/2", "TBD"], ["Bosses", "/bosses", null], ["Home", "/", null]]) {
     await page.locator(".rail a", { hasText: label }).first().click();
     await page.waitForFunction((l) => document.querySelector(".rail a.active")?.textContent?.includes(l), label, { timeout: 3000 }).catch(() => {});
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "four TBD tabs", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 4);
+  check("Rail", "three TBD tabs, after Bosses", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 3 && (await page.locator(".rail a").nth(1).innerText()).includes("Bosses"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -263,6 +263,77 @@ try {
   check("Refresh", "a character Nexon no longer has is marked, keeping its numbers", /Not found in Nexon's rankings since/.test((await text("main")) ?? ""));
   await nexon("reset", {});
 
+  // ---------- the Bosses tab (v1.2.0) ----------
+  // Kronos has MikuBeam and LeekSpin now; Hyperion has NewHere and SakuraRin.
+  const card = (name) => page.locator("article.boss-card", { has: page.locator("h2", { hasText: name }) });
+  const dialog = page.getByRole("dialog");
+  const planCard = (name) => dialog.getByRole("group", { name, exact: true });
+  await go("/bosses");
+  check("Bosses", "a card for each of the world's characters, in tab order", (await page.locator("article.boss-card h2").allInnerTexts()).join(",") === "MikuBeam,LeekSpin");
+  check("Bosses", "nothing planned yet: each card says so", (await page.locator(".boss-empty").count()) === 2);
+  check("Bosses", "the weekly reset countdown and the price patch show", /Weekly reset in (\d+d \d+h|\d+h \d+m|\d+m) · \w{3} \d+:\d\d [AP]M your time/.test((await text(".countdown")) ?? "") && /v\.270/.test((await text(".page-head")) ?? ""), await text(".countdown"));
+  await card("MikuBeam").getByRole("button", { name: "Plan bosses…" }).click();
+  check("Planner", "opens for that character, with focus inside", (await dialog.getByRole("heading").first().innerText()) === "Plan bosses · MikuBeam" && (await dialog.evaluate((d) => d === document.activeElement)));
+  check("Planner", "lists every boss once: 28 weekly, then Black Mage", (await dialog.getByRole("group").filter({ has: page.locator(".plan-pick") }).count()) === 29 && (await dialog.locator(".plan-grid").last().locator(".plan-card").count()) === 1);
+  check("Planner", "a boss not in the plan has its controls off", (await planCard("Magnus").getByRole("button", { name: "Hard" }).isDisabled()) && (await planCard("Magnus").getByRole("button", { name: "More people" }).isDisabled()));
+  if (existsSync(path.join(qa.dir, "boss-art"))) {
+    const art = await planCard("Lucid").locator("img").evaluate((i) => [i.naturalWidth, i.getBoundingClientRect().width, getComputedStyle(i).imageRendering]);
+    check("Planner", "banners show at 2× with sharp pixels", art[0] === 135 && art[1] === 270 && art[2] === "pixelated", String(art));
+  }
+  const fifteen = ["Zakum", "Papulatus", "Vellum", "Akechi Mitsuhide", "Lotus", "Damien", "Guardian Angel Slime", "Lucid", "Will", "Gloom", "Verus Hilla", "Darknell", "Chosen Seren", "Kalos the Guardian", "First Adversary"];
+  for (const n of fifteen) await dialog.getByRole("checkbox", { name: `Plan ${n}` }).click();
+  await planCard("Lotus").getByRole("button", { name: "Extreme" }).click();
+  const more = planCard("Lotus").getByRole("button", { name: "More people" });
+  await more.click();
+  check("Planner", "Extreme Lotus: a party of 2 at most, and the meso per person halves", (await planCard("Lotus").locator(".plan-party").innerText()).includes("party of 2") && (await more.isDisabled()) && (await planCard("Lotus").locator(".plan-meso").innerText()) === "699M");
+  check("Planner", "15 weekly bosses: warns that the least valuable won't count", /15 weekly bosses · 1 over the 14-crystal limit/.test(await dialog.locator(".modal-head").innerText()));
+  await dialog.getByRole("checkbox", { name: "Plan Black Mage" }).click();
+  check("Planner", "Black Mage adds a monthly amount", /4\.50B a month/.test(await dialog.locator(".modal-head").innerText()));
+  await shot("06-planner");
+  await page.keyboard.press("Escape");
+  check("Planner", "Escape closes it without saving", (await dialog.count()) === 0 && (await page.locator(".boss-empty").count()) === 2);
+  await card("MikuBeam").getByRole("button", { name: "Plan bosses…" }).click();
+  check("Planner", "opening again starts from the saved plan", !(await dialog.getByRole("checkbox", { name: "Plan Zakum" }).isChecked()));
+  for (const n of [...fifteen, "Black Mage"]) await dialog.getByRole("checkbox", { name: `Plan ${n}` }).click();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await dialog.waitFor({ state: "detached" });
+  const mikuCard = card("MikuBeam");
+  check("Bosses", "the saved plan shows in game order", (await mikuCard.locator(".boss-row input").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).join(",") === [...fifteen, "Black Mage"].map((n) => `${n} cleared`).join(","));
+  check("Bosses", "the cheapest weekly crystal (Zakum) isn't counted, with a warning", (await mikuCard.locator(".boss-row.over input").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).join() === "Zakum cleared" && /1 over the 14-crystal limit/.test(await mikuCard.innerText()));
+  await mikuCard.getByRole("checkbox", { name: "Lucid cleared" }).click();
+  await mikuCard.getByRole("checkbox", { name: "Black Mage cleared" }).click();
+  await settle();
+  await go("/bosses");
+  check("Bosses", "ticks are saved: still ticked after reloading", (await mikuCard.getByRole("checkbox", { name: "Lucid cleared" }).isChecked()) && (await mikuCard.getByRole("checkbox", { name: "Black Mage cleared" }).isChecked()));
+  check("Bosses", "the totals count the tick: 1 / 15 cleared", /1 \/ 15/.test(await page.locator(".boss-stats").innerText()) && (await mikuCard.locator(".boss-card-sum").innerText()).startsWith("1 / 15 cleared"));
+  await shot("07-bosses");
+  // A week and a month go by: the ticks are moved into the past (the server keeps them as last week's).
+  const bossDb = new Database(path.join(qa.dir, "miku.db"));
+  bossDb.prepare("UPDATE BossClear SET period = '2000-01-06' WHERE boss = 'lucid'").run();
+  await go("/bosses");
+  check("Bosses", "after the weekly reset: unticked, the plan kept", !(await mikuCard.getByRole("checkbox", { name: "Lucid cleared" }).isChecked()) && (await mikuCard.locator(".boss-row").count()) === 16);
+  check("Bosses", "the monthly tick stays through the weekly reset", await mikuCard.getByRole("checkbox", { name: "Black Mage cleared" }).isChecked());
+  bossDb.prepare("UPDATE BossClear SET period = '2000-01' WHERE boss = 'black_mage'").run();
+  bossDb.close();
+  await go("/bosses");
+  check("Bosses", "after the monthly reset: Black Mage unticked", !(await mikuCard.getByRole("checkbox", { name: "Black Mage cleared" }).isChecked()));
+  await page.getByRole("button", { name: "Hyperion" }).click();
+  await settle();
+  const hyperion = (await page.locator("article.boss-card h2").allInnerTexts()).join(",");
+  check("Bosses", "the world switch shows Hyperion's characters", hyperion === "NewHere,SakuraRin", hyperion);
+  await page.getByRole("button", { name: "Kronos" }).click();
+  await settle();
+  for (const [what, method, where, body, status] of [
+    ["bosses: bad world", "GET", "/bosses?world=3", undefined, 400],
+    ["plan: unknown boss", "PUT", `/bosses/${miku.id}/plan`, { plan: [{ boss: "nobody", difficulty: "Hard", partySize: 1 }] }, 400],
+    ["plan: a party too big", "PUT", `/bosses/${miku.id}/plan`, { plan: [{ boss: "limbo", difficulty: "Hard", partySize: 4 }] }, 400],
+    ["tick: a boss not planned", "PUT", `/bosses/${miku.id}/clears/magnus`, { cleared: true }, 409],
+    ["tick: unknown character", "PUT", "/bosses/99999/clears/zakum", { cleared: true }, 404],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));
@@ -385,6 +456,8 @@ try {
   });
   check("Layout", "the Level view's points line up with their days' columns", lined < 1.5, `${lined.toFixed(2)} px off`);
   await shot("05-narrow");
+  await go("/bosses");
+  check("Layout", "the Bosses tab at 900 px wide: no sideways page scrolling (the cards scroll on their own)", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
 
   check("Page errors", "no errors in the page or its console", errors.length === 0, errors.slice(0, 5).join(" || "));
 } catch (error) {

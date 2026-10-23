@@ -2,13 +2,13 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.1.0)
+## The app (as of v1.2.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
-- **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
+- **Top:** Home, Bosses, then three TBD tabs (placeholders for features still to be decided).
 - **Bottom:** the EXP table and Themes.
 
-Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
+Each tab has its own address (`/`, `/bosses`, `/tbd/2`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
 
 ## Home: characters
 
@@ -56,6 +56,31 @@ Each tab has its own address (`/`, `/tbd/1`–`/tbd/4`, `/exp-table`, `/themes`)
 - **Legion is shared by a world's characters.** Nexon lists Legion under one character per account per world (for an account, apparently its highest-level character there; RemyRabbit for one real account). Once that character is added, every character on the world shows its Legion, with "listed under RemyRabbit" on the others. Until then it's **N/A**, with a hint to add that character. With two listed characters on one world (two accounts), the most recently checked one is used. The search preview shows the character's own Legion entry, or else the world's.
 - **Delete** asks first ("This also deletes all of its saved history").
 - While loading, Home says "Loading…". An empty world says how to add a character. Failures are shown.
+
+## Bosses: the weekly boss tracker
+
+For personal tracking: which bosses each roster character does, ticked off as they're cleared, and the meso they make. Layout A of five mockups, worked on over three rounds.
+- **One world at a time,** following the same Kronos / Hyperion switch as Home (the choice is shared).
+- **The summary at the top:**
+  - meso so far this week, out of what's planned
+  - bosses cleared, out of those planned (with a bar)
+  - the world's weekly crystals against its limit of 180
+  - Black Mage's meso, separately, as it's monthly, with the monthly reset date ("resets Nov 1", the game's UTC date)
+  - the countdown to the weekly reset ("5d 4h", then "3h 30m", then "13m") with its local time ("Wed 5:00 PM your time"), and the prices' patch. When a reset passes, the page loads the board again (once for that reset, even if this computer's clock is a little ahead of the server's) and the ticks clear.
+- **A card per character** in tab order, in one row that **scrolls sideways** when there are more than fit (with a hint past two). Each card has the character's avatar, level and job, "Plan bosses…", how many of its weekly bosses are cleared, its meso so far out of planned, then its planned bosses in game order as a checklist (each with its banner, difficulty, party and meso per person) and Black Mage under "Monthly".
+  - **Only planned bosses can be ticked.** A tick shows at once and is saved straight away; ticks are sent one at a time in the order they were clicked (so a quick untick can't be overtaken by the tick before it), and the board is then loaded again with its totals. The tick is checked and saved in one database transaction, so a plan saved at the same moment can't leave a tick behind for a boss it took out.
+  - After each check of Nexon (every 4 hours), the board loads again, so the cards' levels, jobs and avatars stay current.
+  - **Crystals that can't be sold** are marked "not counted" and greyed, with a warning: past a character's 14 weekly crystals, the least valuable ones; past the world's 180, the least valuable of the rest.
+  - A character with nothing planned says so. A world with no characters says to add them on Home.
+  - At phone width, the difficulty and party go under the banner.
+- **The planning menu** ("Plan bosses…"): every boss once, in game order, as a big card, 2 per row, scrolling down, with Black Mage under "Monthly".
+  - Ticking a card's box (or clicking its banner) adds the boss at its easiest difficulty, solo, or takes it out. A boss not in the plan is grey, with its controls off.
+  - Each card: the difficulty buttons (one per boss, as the game allows one clear a week), the party size − / + (from solo to what the difficulty allows, e.g. "party max 3"; changing to a difficulty that allows fewer shrinks it), and the meso per person, as it would be.
+  - The top stays in place while scrolling: the number of weekly bosses (with a warning when it's over 14), and the planned meso a week and a month.
+  - **Save** saves the plan (in game order) and closes it; a failed save says why and stays open. **Cancel**, Escape or a click outside close it without saving. It opens with the focus inside.
+  - The plan stays week to week until it's changed. **A plan outlives game changes:** if a patch removes a boss or a difficulty, it's left out of the board (until the plan is saved again), and a party larger than the game now allows counts as the largest allowed, so the tab never fails to load because of an old plan.
+- **Boss pictures** are the game's boss-list banners (135 × 30: the boss's name and face), from masonym.dev's repo (`public/bossImages/`). They're Nexon's art, so like the theme art they live in the data folder's `boss-art/` (`<boss id>.png`) and **never in git**. Shared by the real app and the dev copy, and copied into the QA copy. On the cards at their real size; in the menu at 2× with sharp pixel edges. A boss without a picture shows its name instead. Tried and turned down (2026-10-23): cropping to the face, smooth enlarging (blurry), and enlarging with Real-ESRGAN (its anime model flattens the art). Better art for the menu is on the plan's "Later" list.
+- **Difficulty colors** are theme variables (`--diff-easy` … `--diff-extreme`), like the warning color and the menu's backdrop.
 
 ## The EXP table tab
 
@@ -136,6 +161,15 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
     - **Daily levels** (`levelPoints`): each checked day's level with progress, the whole levels reached since the check before (from where a character's first day started, for its first), and how many days that covers.
     - With no snapshot in the range, there's nothing to say (`null`).
   - **`levelGoals.ts`:** the next level and the next multiple of 5 (207 → 210, 285 → 290; at most 300), each with the EXP still needed and the days at a daily rate. There's one goal when they're the same level (209 → 210), none at 300, and the days are "unknown" (`null`) at 0 EXP a day.
+- **`server/src/gameFigures/bosses.ts`:** every weekly boss in game order (Zakum to Jupiter, 28) and Black Mage (monthly), each difficulty with its base crystal price and largest party, with sources (as of **v.270**):
+  - **Prices:** the MapleStory Wiki's "Intense Power Crystal" table (GMS v270, edited 2026-10-15), checked against masonym.dev's boss data: they agree on every price except Jupiter's, where the wiki's is used and unconfirmed. GMS v.271 changed no prices.
+  - **Heroic worlds pay 5×** (Kronos and Hyperion both are). A party splits the crystal equally, rounded down. Whether the ×5 comes before or after the split isn't documented; we multiply first (a few meso at most).
+  - **Party sizes:** 6, except First Adversary, Malefic Star, Limbo, Baldrix and Jupiter (3) and Extreme Lotus (2).
+  - **Limits:** 14 weekly crystals per character a week (Nexon's v.255 notes) and 180 per world (the wiki). The monthly crystal doesn't count toward them (v.255).
+  - **Resets:** weekly at Thursday 00:00 UTC (v.255); Black Mage on the 1st of each month at 00:00 UTC (StrategyWiki; game time is UTC).
+  - The difficulty names live in `shared/` (the app's input rules use them), with `countedCrystals`: of a list of crystal values, which pay out under a limit (the most valuable, and of equal ones the earlier). The server's totals and the planning menu both use it.
+- **`server/src/calc/bosses.ts`:** the boss week a moment falls in (named by its Thursday: "2026-10-15") and when it resets, the boss month ("2026-10") and its reset, and the meso per person (price × 5 ÷ party, rounded down).
+- **`client/src/lib/bosses.ts`:** the planning menu's changes to a plan (add or remove a boss, change a difficulty, a party size), a plan's summary and game order, and how resets are shown.
 - **`client/src/lib/format.ts`:** how the app shows things.
   - EXP to 3 significant digits (5.12B, 137B, 20.7T); a value that rounds up to 1,000 moves to the next unit (999.6B → 1.00T).
   - Thousands separators.
@@ -164,6 +198,12 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/health`:** answers `{ ok: true }`. It's used to check the always-on app later.
 - **`/api/exp-table`:** `{ patch, date, rows: [{ level, expToNext, total }] }` for levels 1–299, with every number exact.
 - **`/api/characters/:id/progress`:** `{ today, bars: [{ day, gained, covers }] (90, ending today), levels: [{ day, level, reached, covers }] (the checked days among them), ranges: [{ days, stats: { total, average, levelPerDay } | null, goals }] (7, 14, 30, 90) }`, each range's goals at its own average (none at 300; a negative average counts as 0). A character not checked since it was added has no history yet. 404 for an unknown character or another owner's.
+- **`/api/bosses?world=45`:** the Bosses tab: `{ pricesPatch, week: { start, resetsAt }, month: { name, resetsAt }, limits: { perCharacter, perWorld }, bosses, characters, totals }`.
+  - `bosses`: every boss in game order (monthly last) with its picture's address (or null) and each difficulty's largest party and meso per person for each party size.
+  - `characters`: the world's characters in tab order, each with its `weekly` and `monthly` rows (`{ boss, difficulty, partySize, meso, cleared, over }`, `over` being `"character"`, `"world"` or null) and its `planned`, `soFar` and `cleared`.
+  - `totals`: planned, so far, cleared, bosses planned, crystals within each character's limit, and the monthly planned and so far.
+- **`PUT /api/bosses/:id/plan`** `{ plan: [{ boss, difficulty, partySize }] }`: replaces the character's plan. Each boss at most once, a party of 1–6; a boss, difficulty or party the game doesn't have is refused with a 400 saying which ("Extreme Lotus allows a party of up to 2"), and nothing changes. This week's ticks follow it: a boss taken out loses its tick, a kept one takes the new difficulty and party. Earlier weeks' ticks stay. 204, or 404 for an unknown character or another owner's.
+- **`PUT /api/bosses/:id/clears/:boss`** `{ cleared }`: ticks a planned boss for this week (this month for Black Mage) or unticks it. A boss not in the plan is a 409 ("Lucid isn't in Remy's plan. Add it to the plan first."); an unknown boss or character, a 404.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
   - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.
@@ -184,7 +224,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
   - a missing record → 404
   - anything unexpected → a plain 500, logged on the server with no details sent
 - **Big numbers:** EXP and raid power are `BigInt` in the database and are sent as plain JSON numbers, which are exact up to 9,007,199,254,740,991. The most EXP a character can have, 8,509,498,537,428,819, fits. Anything bigger is refused rather than rounded.
-- **Whose data:** every API request passes the login check (`server/src/middleware/auth.ts`). With no login yet, it marks the request as the sole owner's. Code reads the owner only through `currentOwner()` (`server/src/owner.ts`), so adding login later changes only those two files. Top-level tables carry an `ownerId`.
+- **Whose data:** one check, `ownCharacter()` (`server/src/services/characters.ts`), answers 404 for a character that isn't the owner's, for every service. Every API request passes the login check (`server/src/middleware/auth.ts`). With no login yet, it marks the request as the sole owner's. Code reads the owner only through `currentOwner()` (`server/src/owner.ts`), so adding login later changes only those two files. Top-level tables carry an `ownerId`.
 
 ## Settings for the server
 
@@ -195,7 +235,7 @@ Every setting is in `server/src/config.ts`, read from environment variables (or 
 | Data folder | `MIKU_DATA_DIR` | `~/Library/Application Support/MikuTracker` |
 | Which database | `MIKU_DATABASE` | `real` (`miku.db`); `dev` picks `dev.db` |
 | Database (overrides both) | `DATABASE_URL` | `file:<data folder>/miku.db` |
-| Backups / theme art / avatars | `BACKUP_DIR`, `THEME_ART_DIR`, `AVATAR_DIR` | `<data folder>/backups`, `/theme-art`, `/avatars` |
+| Backups / theme art / boss art / avatars | `BACKUP_DIR`, `THEME_ART_DIR`, `BOSS_ART_DIR`, `AVATAR_DIR` | `<data folder>/backups`, `/theme-art`, `/boss-art`, `/avatars` |
 | Address and port | `HOST`, `PORT` | `127.0.0.1`, `4750` |
 | Backups, daily refresh | `MIKU_BACKUPS`, `MIKU_REFRESH` | `on` (`off` for the dev copy) |
 | Nexon's rankings data | `NEXON_RANKINGS_URL` | `https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na` |
@@ -258,8 +298,10 @@ Tables:
 - **`RefreshRun`:** each refresh: start and end, checked, updated, missing and failed counts, and the problem if any.
 - **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
 - **`Selection`:** the selected character on each world.
+- **`BossPlan`:** a boss a character does, with the difficulty and party size: one row per character and boss. Kept until the plan changes.
+- **`BossClear`:** a boss ticked as cleared in one boss week (named by its first day, a Thursday) or, for Black Mage, one month ("2026-11"), with the difficulty and party at the time. A new week simply has none yet, so nothing is cleared at the reset, and past weeks are kept for a boss history later. Unique per character, boss and period.
 
-Deleting a character deletes its snapshots, avatars and selection.
+Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks.
 
 **Avatar files** are in the data folder's `avatars/` (`dev-avatars/` for the dev copy):
 - Downloaded only from Nexon's https image servers, up to 1 MB, and only if the first bytes really are a PNG, GIF or JPEG.
@@ -284,7 +326,7 @@ Deleting a character deletes its snapshots, avatars and selection.
 - **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app's `lib/` and `api/`). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
   - Every mutant must be caught, or be marked with a written reason that it provably can't change behavior.
   - The page's components and pages aren't mutation-tested (from v0.10.0): they get normal tests, screenshots, and a click-through on the QA copy before each version. Class names and styles are skipped anyway (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`.
-- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, builds the page (once, as it starts), and serves the production build on http://127.0.0.1:4753 (as the always-on app does; testing happens there) and the development build on http://127.0.0.1:4754, with backups and refresh off. It deletes the folder when stopped. `--empty` starts with no data; `--fake-nexon` answers searches and refreshes from the fake Nexon instead of the real one. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
+- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars, theme art and boss art) into a temporary folder, builds the page (once, as it starts), and serves the production build on http://127.0.0.1:4753 (as the always-on app does; testing happens there) and the development build on http://127.0.0.1:4754, with backups and refresh off. It deletes the folder when stopped. `--empty` starts with no data; `--fake-nexon` answers searches and refreshes from the fake Nexon instead of the real one. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind. Stopping twice at once (a signal, and a part ending because of it) waits for the first stop: until v1.2.0 the second returned at once and the script could exit before deleting the copy.
 - **The fake Nexon** (`server/scripts/fakeNexon.ts`, port 4755): made-up characters (the tests' three, a level-300 one, and one without Legion), answering rankings the way the real Nexon does (from `server/test/fixtures/nexon.ts`) and serving their avatars as real little pictures. `POST /control/set`, `/remove` and `/reset` change them, to make a character level up or vanish.
-- **The click-through** (`npm run qa:check`, `scripts/qa-check.mjs`): an empty QA copy with the fake Nexon, driven in Chrome (`playwright-core`) on the production build. It goes through every page and button and the edge cases (name rules, not found, the other world, numbers that don't fit the EXP table, level 300, shared Legion, reordering at both ends, delete and cancel, the EXP table's jumps, both themes and the Ren sky after switching), writes a known 90-day history and checks the ranges against hand-worked numbers, runs a real refresh with a level-up and a lost character, fakes eight kinds of failure, sends bad requests, and checks a narrow window and that the page logged no errors. Nothing in it depends on your data. Exit status 1 if anything failed.
+- **The click-through** (`npm run qa:check`, `scripts/qa-check.mjs`): an empty QA copy with the fake Nexon, driven in Chrome (`playwright-core`) on the production build. It goes through every page and button and the edge cases (name rules, not found, the other world, numbers that don't fit the EXP table, level 300, shared Legion, reordering at both ends, delete and cancel, the EXP table's jumps, both themes and the Ren sky after switching), writes a known 90-day history and checks the ranges against hand-worked numbers, runs a real refresh with a level-up and a lost character, plans and ticks bosses (the 14-crystal limit, Extreme Lotus's party of 2, Escape without saving, weekly and monthly resets, the other world), fakes eight kinds of failure, sends bad requests, and checks a narrow window and that the page logged no errors. Nothing in it depends on your data. Exit status 1 if anything failed.
 - **GitHub** runs the typecheck, the tests and the production build when a version branch is pushed (`.github/workflows/tests.yml`).

@@ -7,10 +7,10 @@ import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 const tabNames = () => within(screen.getByRole("navigation", { name: "Features" })).getAllByRole("link").map((l) => l.textContent);
 
 describe("the feature tabs", () => {
-  it("are Home and four TBD tabs, then the EXP table and Themes", () => {
+  it("are Home, Bosses and three TBD tabs, then the EXP table and Themes", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
-    expect(tabNames()).toEqual(["Home", "TBD", "TBD", "TBD", "TBD", "EXP table", "Themes"]);
+    expect(tabNames()).toEqual(["Home", "Bosses", "TBD", "TBD", "TBD", "EXP table", "Themes"]);
   });
 
   it("each opens its page, and only its own tab is marked as current", async () => {
@@ -21,6 +21,7 @@ describe("the feature tabs", () => {
       ["EXP table", 0, "EXP table (GMS)"],
       ["Themes", 0, "Themes"],
       ["TBD", 2, "TBD"],
+      ["Bosses", 0, "Bosses"],
       ["Home", 0, "Home"],
     ];
     for (const [label, index, heading] of pages) {
@@ -42,7 +43,7 @@ describe("the feature tabs", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
     const hrefs = within(screen.getByRole("navigation", { name: "Features" })).getAllByRole("link").map((l) => l.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/tbd/1", "/tbd/2", "/tbd/3", "/tbd/4", "/exp-table", "/themes"]);
+    expect(hrefs).toEqual(["/", "/bosses", "/tbd/2", "/tbd/3", "/tbd/4", "/exp-table", "/themes"]);
   });
 
   it("an unknown address goes to Home", async () => {
@@ -56,6 +57,7 @@ describe("the feature tabs", () => {
     for (const [path, heading] of [
       ["/", "Home"],
       ["/tbd/3", "TBD"],
+      ["/bosses", "Bosses"],
       ["/exp-table", "EXP table (GMS)"],
       ["/themes", "Themes"],
     ]) {

@@ -321,3 +321,76 @@ p.block.error { padding: 12px 24px; }
 .level-chart .yaxis span { white-space: nowrap; }
 .level-col { flex: 1; height: 100%; }
 .level-col:focus { outline: 1px dashed var(--border); outline-offset: -1px; }
+
+/* Bosses tab */
+.tools-inline { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.btn.quiet { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.btn.quiet:hover { border-color: var(--text-muted); }
+.warning { color: var(--warning); }
+.boss-stats { margin-top: 12px; }
+.boss-stats .stat { padding-bottom: 4px; }
+.boss-progress { height: 6px; margin: 6px 0 2px; border-radius: var(--radius); background: var(--surface-2); overflow: hidden; }
+.boss-progress > div { height: 100%; background: var(--exp); }
+.boss-strip { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: thin; }
+.boss-card { flex: 0 0 400px; scroll-snap-align: start; display: grid; gap: 8px; margin-bottom: 0; padding: 14px 16px; }
+.boss-strip-note { margin: 6px 0 16px; text-align: right; }
+.boss-card-head { display: flex; align-items: center; gap: 10px; }
+.boss-card-head .who { flex: 1; min-width: 0; }
+.boss-card-head h2 { font-size: 1.15em; line-height: 1.2; }
+.boss-card-head .btn { padding: 6px 10px; font-size: 0.85em; }
+.boss-card-sum { display: flex; justify-content: space-between; gap: 8px; }
+.boss-empty { margin: 4px 0; }
+.boss-rows { display: grid; gap: 2px; }
+.boss-row { display: grid; grid-template-columns: 20px auto 1fr auto; align-items: center; gap: 8px; padding: 4px; border-radius: calc(var(--radius) * 0.7); cursor: pointer; }
+.boss-row:hover { background: var(--accent-soft); }
+.boss-row input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.boss-row.done .boss-banner { opacity: 0.45; }
+.boss-row.done .boss-name { opacity: 0.6; text-decoration: line-through; }
+.boss-row.over .boss-banner { filter: grayscale(0.8); }
+.boss-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.boss-meso { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.boss-banner { display: block; border-radius: 3px; }
+.boss-banner.big { image-rendering: pixelated; }
+.boss-name { font-weight: 600; }
+.boss-name.big { font-family: var(--font-display); font-size: 1.3em; min-width: 270px; }
+.boss-monthly { padding-top: 8px; border-top: 1px dashed var(--border); }
+.diff { padding: 1px 6px; border-radius: 3px; font-size: 0.68em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-diff); }
+.diff-easy { background: var(--diff-easy); }
+.diff-normal { background: var(--diff-normal); }
+.diff-hard { background: var(--diff-hard); }
+.diff-chaos { background: var(--diff-chaos); }
+.diff-extreme { background: var(--diff-extreme); }
+
+/* The planning menu */
+.modal-back { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--backdrop); }
+.modal { width: min(980px, 100%); max-height: calc(100vh - 32px); overflow: auto; margin: 0; padding-top: 0; display: grid; gap: 10px; outline: none; background: var(--bg); }
+.modal-head { position: sticky; top: 0; z-index: 2; display: grid; gap: 6px; padding: 16px 0 10px; background: var(--bg); border-bottom: var(--border-width) solid var(--border); }
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 760px) { .plan-grid { grid-template-columns: 1fr; } .boss-card { flex-basis: 320px; } }
+.plan-card { display: grid; gap: 10px; padding: 12px 14px; border: var(--border-width) solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.plan-card.on { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-soft), transparent 70%), var(--surface); }
+.plan-card:not(.on) .boss-banner { filter: grayscale(1) brightness(0.65); }
+.plan-pick { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.plan-pick input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.plan-meso { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.plan-card:not(.on) .plan-meso { color: var(--text-muted); }
+.plan-controls { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.plan-controls:disabled { opacity: 0.4; }
+.plan-diffs { display: flex; gap: 4px; flex-wrap: wrap; }
+.plan-diffs button, .plan-party button { padding: 3px 10px; border: var(--border-width) solid var(--border); border-radius: calc(var(--radius) * 0.7); background: var(--surface-2); font-size: 0.85em; font-weight: 600; color: var(--text-muted); }
+.plan-diffs button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.plan-controls:disabled button { cursor: default; }
+.plan-party { display: flex; align-items: center; gap: 8px; }
+.plan-party > span:first-of-type { min-width: 76px; text-align: center; }
+.plan-party .small { margin-left: auto; }
+.plan-party button:disabled { opacity: 0.4; cursor: default; }
+@media (max-width: 560px) {
+  /* Narrow: the difficulty and party go under the banner */
+  .boss-row { grid-template-columns: 20px 1fr auto; grid-template-areas: "tick banner meso" "tick meta meso"; row-gap: 2px; }
+  .boss-row input { grid-area: tick; }
+  .boss-row .boss-banner, .boss-row .boss-name { grid-area: banner; }
+  .boss-row .boss-meta { grid-area: meta; }
+  .boss-row .boss-meso { grid-area: meso; }
+  .boss-card { flex-basis: calc(100vw - 64px); }
+  .boss-stats .stat:nth-child(3) { padding-left: 0; border-left: 0; }
+}

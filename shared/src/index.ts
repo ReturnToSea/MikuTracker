@@ -1,7 +1,9 @@
 // Input rules shared by the API (server/) and the app (client/), written with zod.
 import { z } from "zod";
+import { DIFFICULTIES } from "./bosses";
 import { WORLDS } from "./worlds";
 
+export * from "./bosses";
 export * from "./levels";
 export * from "./worlds";
 
@@ -37,6 +39,23 @@ export type AddCharacterInput = z.infer<typeof addCharacterInput>;
 
 // The characters of a world: /api/characters?world=45
 export const characterListQuery = z.strictObject({ world: worldId });
+
+// The Bosses tab for a world: /api/bosses?world=45
+export const bossBoardQuery = z.strictObject({ world: worldId });
+
+// A character's boss plan: every boss it does, each once, with the difficulty and party size.
+// Whether the boss, its difficulty and the party size exist in the game is checked by the server
+// against its price list.
+export const bossPlanInput = z.strictObject({
+  plan: z
+    .array(z.strictObject({ boss: z.string().min(1).max(40), difficulty: z.enum(DIFFICULTIES), partySize: z.number().int().min(1).max(6) }))
+    .max(100)
+    .refine((plan) => new Set(plan.map((p) => p.boss)).size === plan.length, { message: "Each boss can be planned once" }),
+});
+export type BossPlanInput = z.infer<typeof bossPlanInput>;
+
+// Ticking a planned boss as cleared this week (this month for a monthly one), or unticking it.
+export const bossClearInput = z.strictObject({ cleared: z.boolean() });
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({
