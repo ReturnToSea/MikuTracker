@@ -34,7 +34,10 @@ function startSky(canvas: HTMLCanvasElement): () => void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return () => {}; // no canvas drawing (e.g. in tests)
   const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-  const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // Ren's colors, read from the canvas itself: it's marked data-theme="ren", so they're Ren's
+  // whatever the page's theme is at that moment (v1.0.0: read from the page right after
+  // switching from Pochacco, they were blank and everything was drawn black).
+  const css = (name: string) => getComputedStyle(canvas).getPropertyValue(name).trim();
   let w = 0;
   let h = 0;
   let frame = 0;
@@ -213,5 +216,5 @@ function startSky(canvas: HTMLCanvasElement): () => void {
 export function RenSky() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => startSky(ref.current!), []);
-  return <canvas ref={ref} className="sky" aria-hidden="true" data-testid="ren-sky" />;
+  return <canvas ref={ref} className="sky" aria-hidden="true" data-theme="ren" data-testid="ren-sky" />;
 }

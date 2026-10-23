@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
 import { artImage, knownTheme } from "../src/lib/themes";
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
@@ -104,6 +104,30 @@ describe("theme art", () => {
     fakeServer({ ...BASE_ROUTES, "GET /theme-art": { ren: "/theme-art/ren.png?v=2", pochacco: null } });
     renderWithApp(<App />);
     await waitFor(() => expect(screen.queryByTestId("ren-sky")).toBeNull());
+  });
+
+  it("switching to Ren, the page is already Ren's when the sky starts (it reads Ren's colors then)", async () => {
+    // Found by hand: after Pochacco, the production build drew a black tree, no blossoms and black
+    // petals, because the sky read the colors while the page was still marked Pochacco.
+    const themeWhenSkyStarted: (string | undefined)[] = [];
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
+      themeWhenSkyStarted.push(pageTheme());
+      return null; // the test browser can't draw; the sky stops here
+    });
+    let theme = "pochacco";
+    fakeServer({ ...BASE_ROUTES, "GET /settings": () => ({ theme, worldId: 45 }), "PUT /settings": (body: { theme: string }) => ((theme = body.theme), { theme, worldId: 45 }) });
+    renderWithApp(<App />, "/themes");
+    await waitFor(() => expect(pageTheme()).toBe("pochacco"));
+    await userEvent.click(card("Ren"));
+    await waitFor(() => expect(screen.getByTestId("ren-sky")).toBeTruthy());
+    expect(themeWhenSkyStarted.length).toBeGreaterThan(0);
+    expect(themeWhenSkyStarted.filter((t) => t !== "ren")).toEqual([]); // every start saw Ren's page
+  });
+
+  it("the sky carries Ren's colors itself (marked as Ren, whatever the page's theme)", async () => {
+    fakeServer(BASE_ROUTES);
+    renderWithApp(<App />);
+    expect((await screen.findByTestId("ren-sky")).dataset.theme).toBe("ren");
   });
 
   it("Pochacco has no drawn background", async () => {

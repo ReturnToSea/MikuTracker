@@ -1,8 +1,11 @@
 // npm run qa: a throwaway copy of the app for testing by hand or in a browser, so testing never
 // touches your data. It copies the data (the real database once it exists, otherwise dev.db, with
 // its avatars and the theme art) into a fresh temporary folder, starts the app on its own ports
-// (API 4753, page http://127.0.0.1:4754) with backups and the Nexon refresh off, and deletes the
-// folder when stopped (Ctrl+C). `npm run qa -- --empty` starts with no data instead.
+// with backups and the Nexon refresh off, and deletes the folder when stopped (Ctrl+C).
+//   http://127.0.0.1:4753  the production build, exactly as the always-on app serves it: test here
+//   http://127.0.0.1:4754  the development build (live reload), for looking while changing things
+// (The development build runs some code twice on purpose, which once hid a bug only the production
+// build had: v1.0.0's Ren sky.) `npm run qa -- --empty` starts with no data instead.
 // Searching and adding characters still ask Nexon's real rankings (read-only; there's no other source).
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -95,11 +98,16 @@ async function stop(status = 0, why = "") {
 process.on("SIGINT", () => stop());
 process.on("SIGTERM", () => stop());
 
-// Bring the copy's database up to date, then start the API and the page.
+// Build the page (the API serves it at 4753), bring the copy's database up to date, then start
+// the API and the development page.
+// (Built once, now: after changing the page, restart the QA copy to test the change at 4753.)
+const build = start("npm", ["run", "build"], ".", { lasting: false }); // stopped with everything else
+const built = await new Promise((r) => build.on("exit", r));
+if (built !== 0 || stopping) process.exit(1); // stop() has already cleaned up
 const migrate = start("npx", ["prisma", "migrate", "deploy"], "server", { lasting: false });
 migrate.on("exit", (code) => {
   if (code !== 0 || stopping) return;
   start("npx", ["tsx", "src/index.ts"], "server");
   start("npx", ["vite"], "client");
-  console.log(`QA copy: http://127.0.0.1:${PAGE_PORT} (Ctrl+C stops it and deletes the copy)`);
+  console.log(`QA copy: http://127.0.0.1:${API_PORT} (production build, as of now: restart after changes; test here), http://127.0.0.1:${PAGE_PORT} (development build, live). Ctrl+C stops it and deletes the copy.`);
 });

@@ -1,5 +1,5 @@
 import { THEMES } from "@miku/shared";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { useSettings, useThemeArt } from "../api/hooks";
 import { artImage, knownTheme } from "../lib/themes";
 import { RenSky } from "../looks/RenSky";
@@ -11,7 +11,10 @@ export function ThemeEffect() {
   const theme = knownTheme(useSettings().data?.theme);
   const art = useThemeArt().data;
 
-  useEffect(() => {
+  // Before anything else starts (a layout effect runs before every ordinary one): the Ren sky
+  // reads Ren's colors from the page when it starts, and a page still marked Pochacco then has
+  // none (a black tree, black petals).
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 

@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.10.0)
+## The app (as of v1.0.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -148,7 +148,7 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
   - The server lists what's there at `/api/theme-art`, with the file's change time in each address so a replaced picture isn't served from cache, and serves the files at `/theme-art/…`.
   - Each theme's art gets its own variable (`--art-ren`, `--art-pochacco`), whichever theme is in use, so each card previews its own art.
 - **Without art**, each theme draws its own background:
-  - **Ren:** a moonlit violet sky, with an ink blossom tree, a full moon and red petals drifting down, drawn on a canvas (`client/src/looks/RenSky.tsx`). It holds still when the system asks for reduced motion.
+  - **Ren:** a moonlit violet sky, with an ink blossom tree, a full moon and red petals drifting down, drawn on a canvas (`client/src/looks/RenSky.tsx`). It holds still when the system asks for reduced motion. It reads its colors from its own canvas, which is marked `data-theme="ren"`, so they're always Ren's, whatever the page's theme is at that moment. (In v1.0.0, read from the page right after switching from Pochacco, they were blank and everything was drawn black. As a second layer, the page is also switched to a theme in a layout effect, before anything on it starts.)
   - **Pochacco:** light-blue gingham.
 - **Fonts** come from Google Fonts: Inter, Shippori Mincho, Nunito and Fredoka. They're the only outside requests the page makes so far.
 
@@ -219,7 +219,7 @@ Moving to a server or Docker means setting these variables, not changing code. G
 
 `server/scripts/app.ts` and `server/src/launchAgent.ts`, adapted from Goal Tracker.
 - **A macOS launch agent** (`~/Library/LaunchAgents/com.mikutracker.app.plist`) starts the server when you log in and again if it stops (at most every 10 seconds). A sleeping Mac just pauses it.
-- It serves **http://localhost:4750**, only on this Mac, with the real database and **backups and the 4-hourly Nexon refresh on**. Its output goes to `~/Library/Logs/MikuTracker/app.log`.
+- It serves **http://127.0.0.1:4750**, only on this Mac, with the real database and **backups and the 4-hourly Nexon refresh on**. Its output goes to `~/Library/Logs/MikuTracker/app.log`.
 - **It runs from its own copy of `main`** (the latest finished version) in the data folder's `app/`, so work in progress never reaches it.
 - **Commands:**
   - `app:install` once, and `app:restart` after each finished version. Both first make a fresh copy of `main` next to the running one and build it (libraries cloned from the running copy, or installed when they changed), with the running app untouched. Only then do they stop the app, back up the database (`…-before-update.db`), update it (`prisma migrate deploy`), swap the copy in, start it, and wait until it answers. If the build fails, the old app never stopped; if the backup or update fails, the old app is started again.
@@ -276,5 +276,5 @@ Deleting a character deletes its snapshots, avatars and selection.
 - **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app's `lib/` and `api/`). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
   - Every mutant must be caught, or be marked with a written reason that it provably can't change behavior.
   - The page's components and pages aren't mutation-tested (from v0.10.0): they get normal tests, screenshots, and a click-through on the QA copy before each version. Class names and styles are skipped anyway (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`.
-- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, serves it on http://127.0.0.1:4754 (API 4753) with backups and refresh off, and deletes the folder when stopped. `--empty` starts with no data. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
+- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, builds the page (once, as it starts), and serves the production build on http://127.0.0.1:4753 (as the always-on app does; testing happens there) and the development build on http://127.0.0.1:4754, with backups and refresh off. It deletes the folder when stopped. `--empty` starts with no data. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
 - **GitHub** runs the typecheck and tests when a version branch is pushed (`.github/workflows/tests.yml`).

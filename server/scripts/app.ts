@@ -88,7 +88,7 @@ async function swapIn(next: string) {
 async function waitUntilUp() {
   for (let i = 0; i < 30; i++) {
     try {
-      if ((await fetch(`http://127.0.0.1:${PORT}/api/health`)).ok) return console.log(`Running: open http://localhost:${PORT}`);
+      if ((await fetch(`http://127.0.0.1:${PORT}/api/health`)).ok) return console.log(`Running: open http://127.0.0.1:${PORT}`);
     } catch {
       // not yet
     }

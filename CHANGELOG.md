@@ -2,6 +2,21 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.0.0 (2026-10-23): first real use
+
+The always-on app is in real use, with RemyRabbit and meowoblush tracked from 2026-10-23.
+
+- **Fixed: switching to the Ren theme drew the blossom background in black** (a black tree without blossoms, black petals, a faded moon) until a reload. Reported from real use. The background started a moment before the page switched to Ren's colors, which only Ren's settings define, so it read blank colors. Now the background carries Ren's colors itself (whatever the page's theme), and the page also switches theme before anything on it starts. It only happened in the production build that the always-on app runs. Checked on the production build, including with the second layer taken out.
+- **`npm run qa` now tests the production build** (http://127.0.0.1:4753, as the always-on app serves it); the development build (4754) runs some code twice on purpose, which is why my click-through missed the bug above. The rule in `CLAUDE.md` says so.
+- **The README** is rewritten for using the app: what it does, where the numbers come from (history starts when a character is added; Nexon updates its rankings on its own schedule), the always-on app's commands, backups and how to restore one, and the dev and QA copies.
+- **The EXP table was re-checked:** GMS is still on v.271, whose EXP cut it includes; v.272 (November) isn't out yet, and gets re-checked when it is.
+- **From the review pass** (9 findings, 6 real): the Ren fix no longer depends on the order things start in (above); `npm run qa` now stops its build too if stopped during it, and says the production page is built once (restart after changes); the README's backup restore now says to delete SQLite's leftover side files; and the addresses say `127.0.0.1:4750`, where the app actually listens (`localhost` works in browsers but not every tool). Not changed: a "stale colors" case that can't happen (the sky only shows in Ren), and the QA copy's build, which takes a third of a second.
+- **Decided: nothing waits on real data.** Bugs noticed in use are fixed in whichever version is open, and the reality checks (Nexon's lag, our EXP per day against another site) happen once there's data.
+- **Tests:** 362 server and 167 app tests, in California time and UTC.
+  - New: the page is already Ren's when the background starts (fails on the old code), and the background is marked as Ren itself.
+  - No mutation run: nothing it covers changed since v0.10.0's full runs (100%). The rule now says so: a full run before a version only when covered code changed.
+  - The click-through on the production build passed, apart from one check where my script expected the dev copy's older rank numbers (the QA copy now copies the real database, which has the current ones). On the production build the petals kept falling through every way of switching themes.
+
 ## v0.10.0 (2026-10-23): backups and the always-on app
 
 - **The always-on app.** A macOS launch agent starts MikuTracker at login and again if it stops, on http://localhost:4750, with the real database. It runs from its own copy of `main` in the data folder's `app/`, with backups and the 4-hourly Nexon refresh on.

@@ -127,8 +127,15 @@ Built and described in `DESIGN.md`; see `CHANGELOG.md`. (From using v0.8.0: toda
 ### v0.10.0: backups and the always-on app — done
 Built and described in `DESIGN.md`; see `CHANGELOG.md`. (No "back up now" button and no "start over empty" command: decided 2026-10-23 they're not needed. The dev copy got its own avatars and backups folders.)
 
-### v1.0.0: first real use
-Use it for a few days, fix what comes up, re-check the EXP table against the latest GMS patch, do the full mutation runs, and update `README.md` with how to run it.
+### v1.0.0: first real use — done
+The always-on app in real use: the README rewritten for using it, the EXP table re-checked (still current at v.271), the Ren sky fixed after switching themes, and `npm run qa` testing the production build. See `CHANGELOG.md`.
+
+**Decided 2026-10-23: nothing waits on real data.** Bugs noticed while using the app are fixed in whichever version is being worked on then, and the reality checks below are done once there's enough data, also in whichever version is open.
+
+**Reality checks, once there's data:**
+- **How far Nexon's rankings lag behind the game.** Next time a character levels up, note when the game showed it and when the always-on app first does; that shows roughly how often Nexon updates. (On 2026-10-23 at 08:31 UTC Nexon listed RemyRabbit at level 278, 93.3%, which matched the game as far as we know.)
+- **Our EXP per day against another site** (for example mapleranks) for the same characters and days.
+- **The EXP table** was re-checked on 2026-10-23: GMS is still on v.271 (whose EXP cut it includes), and v.272 (the November update, test server Oct 29 – Nov 1) isn't out yet. **Re-check it when v.272 is released.**
 
 ## After v1.0.0
 
