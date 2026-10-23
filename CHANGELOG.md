@@ -2,6 +2,40 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v0.10.0 (2026-10-23): backups and the always-on app
+
+- **The always-on app.** A macOS launch agent starts MikuTracker at login and again if it stops, on http://localhost:4750, with the real database. It runs from its own copy of `main` in the data folder's `app/`, with backups and the 4-hourly Nexon refresh on.
+  - **Commands:** `npm run app:install` / `app:restart` / `app:status` / `app:uninstall`. A restart backs up, copies `main`, migrates, builds and swaps the copy in.
+  - Its log is `~/Library/Logs/MikuTracker/app.log`.
+  - `npm start` is gone.
+- **Daily backups** of the real database, made with SQLite's own backup and named by the UTC day.
+  - **When:** at start if there's none from today, then checked hourly; before every install or restart (`…-before-update.db`); and by hand with `npm run backup`.
+  - **Kept:** the newest 30, plus the first of each month for 12 months (about 42 at most).
+  - Decided not to add a "back up now" button or a "start over empty" command.
+- **Bugs found and fixed:**
+  - **The dev copy and the real app would have shared one `avatars/` folder,** so deleting a character in one would have deleted the other's pictures. The dev copy now has its own `dev-avatars/` and `dev-backups/`, and its two existing pictures were moved.
+  - **One interrupted backup would have blocked backups for the rest of that day:** its half-written temporary file made SQLite refuse the next try. It's now cleared first. (Goal Tracker has the same bug.)
+  - **Deleting a character right after a move that went nowhere** (Alt+→ on the last tab, or a drag dropped where it started) **crashed the page to blank.** Found by testing every button by hand; the tabs now ignore a leftover order that doesn't list exactly the current characters.
+  - **"Failed to fetch"** (the browser's words when the server can't be reached) now reads "Couldn't reach MikuTracker's server. Is it running?".
+  - **From the review pass** (`/code-review`, 10 findings, 9 real; the tenth, reading the backups folder twice, isn't worth changing):
+    - `app:restart` moved the running app's libraries into the new copy before it was ready, and migrated the database and deleted the old files while the old app was still running. It now builds the new copy with the running app untouched (libraries cloned), and only then stops, backs up, migrates and swaps; a failure restarts the old app.
+    - A before-update backup counted as the day's backup, so an update day got no regular one. Now only a regular one counts.
+    - The dev copy's own folders were chosen from `MIKU_DATABASE` only, so `DATABASE_URL` pointing at `dev.db` would have used the real backups and avatars. Now decided by the database file.
+    - A reorder the server failed to save stayed on screen as if saved; it now goes back to the saved order (the error shows). An unchanged order no longer leaves a draft behind at all.
+    - `npm run qa`: a failure exited as success, its tsx and vite processes could outlive it and keep the ports, and a failed copy left its folder behind. All fixed and tried for real.
+    - Finding Node for the launch agent no longer crashes `app:status` or `app:uninstall` when `which node` fails.
+- **New way of testing** (decided 2026-10-23, written into `CLAUDE.md`):
+  - **`npm run qa`:** a throwaway copy of the app (your data copied into a temporary folder, its own ports 4753/4754, deleted when stopped). All testing by hand or in a browser happens there, never on the dev copy or the always-on app.
+  - **Mutation testing now covers the code where accuracy matters:** server, shared, and the app's `lib/` and `api/`. The page's components are checked with normal tests, screenshots, and a click-through of every button on the QA copy before each version. Also reality checks against real data, and a review pass before each commit.
+- **The plan after v1.0.0** now has its own version for everything, each to be discussed before building: Lookup tab, leveling chart, avatar history, Docker check, data size check, weekly boss tracker, daily and weekly checklist, symbols, HEXA, gear tab, flame / potential / Star Force calculators (v2.0.0+), and bosses (v3.0.0). Export and login are noted for later.
+  - Version numbers now go by importance (`CLAUDE.md`).
+- **Tests:** 362 server and 165 app tests, in California time and UTC. Server coverage is 100%.
+  - **Mutation testing:** server 1249/1249 (plus 8 that looped forever and were stopped); the app's logic 423/423 under the new scope. The real data folder was unchanged by the full runs.
+  - **The launch agent's settings file** is read back by macOS's own `plutil`.
+  - **9 deliberate bugs** in backups, the launch agent and the folders: 8 were caught at first, and the ninth (a backup written straight to its final name) led to the new interrupted-backup test, which found the bug above.
+  - **The by-hand click-through:** 112 checks of every button, page and edge case (adding level-300 Kraane, name checks, not found, wrong world, reordering at both ends, delete and cancel, the EXP table's jumps, both themes, eight kinds of failure, bad requests to the server, a narrow window). All pass after the fix.
+  - **My mistakes along the way:** four failures in my first click-through were my script's (a wrong search address, two buttons sharing a style, reading the highlight a split second early). I had also tested on the dev copy and restored it by hand, which is why the QA copy exists now.
+
 ## v0.9.0 (2026-10-21): EXP ranges, and today's bar
 
 From using v0.8.0. Backups and the always-on app move to v0.10.0.

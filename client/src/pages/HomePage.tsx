@@ -30,7 +30,7 @@ export function HomePage() {
           <RefreshNote />
         </div>
         <div className="strip-wrap">
-          <CharacterTabs characters={characters} selectedId={selected?.id ?? null} onSelect={(id) => select.mutate(id)} onReorder={(ids) => reorder.mutate(ids)} />
+          <CharacterTabs characters={characters} selectedId={selected?.id ?? null} onSelect={(id) => select.mutate(id)} onReorder={(ids, onFail) => reorder.mutate(ids, { onError: onFail })} />
           <AddCharacter key={world} world={world} characters={characters} />
         </div>
       </section>

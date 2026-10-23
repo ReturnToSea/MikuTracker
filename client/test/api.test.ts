@@ -28,6 +28,12 @@ describe("api", () => {
     expect([(err as ApiError).status, (err as ApiError).message]).toEqual([422, "Not on this world"]);
   });
 
+  it("a server that can't be reached at all says so plainly (not the browser's 'Failed to fetch')", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))));
+    const err = await api("/x").catch((e: unknown) => e);
+    expect([err instanceof ApiError, (err as Error).message]).toEqual([false, "Couldn't reach MikuTracker's server. Is it running?"]);
+  });
+
   it("an error reply without a message (or not JSON) still says what happened", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("<html>oops</html>", { status: 502 })));
     await expect(api("/x")).rejects.toThrow("Request failed (502)");

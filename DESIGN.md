@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v0.9.0)
+## The app (as of v0.10.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -106,7 +106,7 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
 
 `server/src/services/refresh.ts`. Every character is looked up in Nexon's rankings again **every 4 hours**. Nobody knows when Nexon updates its rankings (a watch saw no change for hours), so checking a few times a day catches it whenever it happens.
 - **When:** due when the last run *started* at least 4 hours ago, or there's been none. Checked when the server starts, then every 15 minutes, so a sleeping or switched-off Mac catches up when it's back. Runs never overlap. The timer doesn't keep the server alive, and a failed check is reported, never fatal.
-- **Only where `MIKU_REFRESH` is on:** off in the dev copy and in tests; the always-on app (v0.10.0) does it. `npm run refresh` runs one by hand (e.g. `MIKU_DATABASE=dev npm run refresh`).
+- **Only where `MIKU_REFRESH` is on:** off in the dev copy and in tests; the always-on app does it. `npm run refresh` runs one by hand (e.g. `MIKU_DATABASE=dev npm run refresh`).
 - **Each character, in world then tab order,** through the polite Nexon queue:
   - its details are updated (Nexon's current spelling of the name, job, level, EXP, ranks, Legion; `checkedAt`)
   - today's snapshot is created or **updated in place**, adding the EXP gained since the check before to the day's `gained` (the first check of a day counts from the last check before it, days that weren't checked included)
@@ -210,15 +210,38 @@ Moving to a server or Docker means setting these variables, not changing code. G
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | The development copy: API on 4751 with `dev.db` (migrated first, no backups or refresh), and the page on http://127.0.0.1:4752 with live reload. The page forwards `/api` and `/theme-art` to 4751. |
-| `npm start` | Builds the page, brings the real database up to date (`prisma migrate deploy`), and serves everything from http://localhost:4750. From v0.10.0 the always-on app does this, with a backup first. |
+| `npm run app:install` / `app:restart` / `app:status` / `app:uninstall` | The always-on app (below). |
+| `npm run backup` | Backs up the real database now (`MIKU_DATABASE=dev npm run backup` for the dev copy's, into `dev-backups/`). |
 | `npm run db:migrate -- --name <what>` | After changing `server/prisma/schema.prisma`: creates a migration, applies it to `dev.db`, and regenerates the database code. When Prisma wants to ask a question (e.g. before adding a uniqueness rule), write the migration with `prisma migrate diff` instead and apply it with `prisma migrate deploy` (see v0.7.0's `refresh` migration). |
 | `npm run refresh` | One refresh of every character now (`MIKU_DATABASE=dev npm run refresh` for the dev copy). |
+
+## The always-on app
+
+`server/scripts/app.ts` and `server/src/launchAgent.ts`, adapted from Goal Tracker.
+- **A macOS launch agent** (`~/Library/LaunchAgents/com.mikutracker.app.plist`) starts the server when you log in and again if it stops (at most every 10 seconds). A sleeping Mac just pauses it.
+- It serves **http://localhost:4750**, only on this Mac, with the real database and **backups and the 4-hourly Nexon refresh on**. Its output goes to `~/Library/Logs/MikuTracker/app.log`.
+- **It runs from its own copy of `main`** (the latest finished version) in the data folder's `app/`, so work in progress never reaches it.
+- **Commands:**
+  - `app:install` once, and `app:restart` after each finished version. Both first make a fresh copy of `main` next to the running one and build it (libraries cloned from the running copy, or installed when they changed), with the running app untouched. Only then do they stop the app, back up the database (`…-before-update.db`), update it (`prisma migrate deploy`), swap the copy in, start it, and wait until it answers. If the build fails, the old app never stopped; if the backup or update fails, the old app is started again.
+  - `app:status`: is it set up, and does it answer?
+  - `app:uninstall`: stops it and removes the launch agent and the copy. Data and backups stay.
+  - They refuse to run against anything but the real database.
+- No "back up now" button and no "start over empty" command (decided 2026-10-23: not needed).
+
+## Backups
+
+`server/src/backups.ts`, adapted from Goal Tracker.
+- **A copy of the database** made with SQLite's own backup (safe while the app runs), written under a temporary name first so a copy cut short never looks finished, into the data folder's `backups/`: one per UTC day, `miku-2026-10-23.db`.
+- **When:** as the server starts if there's no regular one from today (UTC; a before-update copy doesn't count, since it was taken before the day's changes), then checked every hour (the Mac isn't always on, so nothing waits for a clock time); before every `app:install` / `app:restart` (`miku-…-before-update.db`); and by hand with `npm run backup` (replacing today's copy).
+- **Kept:** the newest 30, plus the first of each UTC month for the last 12 months (this month included), so at most about 42. Older ones are removed after each backup; other files in the folder are left alone.
+- **Only where `MIKU_BACKUPS` is on:** the always-on app. Off for the dev copy and tests.
+- They're on the same drive as the database: they protect against mistakes and bugs. Time Machine to an external drive covers a lost or broken Mac.
 
 ## Database
 
 SQLite through Prisma 7 (`server/prisma/schema.prisma`), in the data folder, never in the repo:
 - **`miku.db`:** real data, used only by the always-on app.
-- **`dev.db`:** development.
+- **`dev.db`:** development, with its own `dev-backups/` and `dev-avatars/` folders (chosen by the database file's name, however it was picked), so clearing out unused avatars or old backups in one never touches the other's files. (Until v0.10.0 both shared `avatars/`; the dev copy's two files were moved.)
 
 Tables:
 - **`Settings`:** one row per owner: theme and world.
@@ -230,7 +253,7 @@ Tables:
 
 Deleting a character deletes its snapshots, avatars and selection.
 
-**Avatar files** are in the data folder's `avatars/`:
+**Avatar files** are in the data folder's `avatars/` (`dev-avatars/` for the dev copy):
 - Downloaded only from Nexon's https image servers, up to 1 MB, and only if the first bytes really are a PNG, GIF or JPEG.
 - Named after their contents (`<hash>.png`), so the same picture is stored once and a new look is a new file. Written under a temporary name first.
 - Served at `/avatars/…` with long caching, since a file never changes.
@@ -250,7 +273,8 @@ Deleting a character deletes its snapshots, avatars and selection.
   - Tests that create or delete folders use paths from the test setup, not from the code under test.
 
   (In v0.5.0 a mutation run broke the config in a way the old guard didn't cover, and a test's clean-up deleted the real `theme-art/` folder. See the CHANGELOG.)
-- **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
+- **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app's `lib/` and `api/`). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
   - Every mutant must be caught, or be marked with a written reason that it provably can't change behavior.
-  - The app's class names and styles are skipped (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`. Looks are checked on screenshots.
+  - The page's components and pages aren't mutation-tested (from v0.10.0): they get normal tests, screenshots, and a click-through on the QA copy before each version. Class names and styles are skipped anyway (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`.
+- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, serves it on http://127.0.0.1:4754 (API 4753) with backups and refresh off, and deletes the folder when stopped. `--empty` starts with no data. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
 - **GitHub** runs the typecheck and tests when a version branch is pushed (`.github/workflows/tests.yml`).

@@ -45,8 +45,18 @@ describe("overrides", () => {
     expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.avatarDir]).toEqual([REAL, "file:/elsewhere/dev.db", "/elsewhere/dev.db", "/b", "/art", "/av"]);
   });
 
-  it("MIKU_DATABASE=dev picks the development database next to the real one", () => {
-    expect(load({ MIKU_DATABASE: "dev" })).toMatchObject({ databaseUrl: `file:${REAL}/dev.db`, databaseFile: `${REAL}/dev.db` });
+  it("MIKU_DATABASE=dev picks the development database next to the real one, with its own backups and avatars (theme art shared)", () => {
+    expect(load({ MIKU_DATABASE: "dev" })).toMatchObject({
+      databaseUrl: `file:${REAL}/dev.db`,
+      databaseFile: `${REAL}/dev.db`,
+      backupDir: `${REAL}/dev-backups`,
+      avatarDir: `${REAL}/dev-avatars`,
+      themeArtDir: `${REAL}/theme-art`,
+    });
+    expect(load({ MIKU_DATABASE: "dev", BACKUP_DIR: "/b", AVATAR_DIR: "/av" })).toMatchObject({ backupDir: "/b", avatarDir: "/av" });
+    // decided by the database file itself, however it was chosen
+    expect(load({ DATABASE_URL: `file:${REAL}/dev.db` })).toMatchObject({ backupDir: `${REAL}/dev-backups`, avatarDir: `${REAL}/dev-avatars` });
+    expect(load({ MIKU_DATABASE: "dev", DATABASE_URL: `file:${REAL}/miku.db` })).toMatchObject({ backupDir: `${REAL}/backups`, avatarDir: `${REAL}/avatars` });
     expect(load({ MIKU_DATABASE: "real" }).databaseFile).toBe(`${REAL}/miku.db`);
     expect(load({ MIKU_DATABASE: "dev", MIKU_DATA_DIR: "/data" }).databaseFile).toBe("/data/dev.db");
   });

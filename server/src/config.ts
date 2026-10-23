@@ -81,10 +81,13 @@ export function loadConfig(env: Env = process.env, home: string = env.HOME || os
   const databaseUrl = env.DATABASE_URL || `file:${path.join(dataDir, databaseName(env))}`;
   if (!databaseUrl.startsWith("file:")) throw new Error(`Only SQLite databases ("file:…") are supported for now (DATABASE_URL is "${databaseUrl}")`);
   const databaseFile = path.resolve(databaseUrl.slice("file:".length));
+  // The development database gets its own backups and avatars: clearing out avatars no character
+  // uses, or old backups, must never touch the real app's files. Theme art is shared.
+  const own = path.basename(databaseFile) === "dev.db" ? "dev-" : "";
   const folders = {
-    backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, "backups")),
+    backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, `${own}backups`)),
     themeArtDir: path.resolve(env.THEME_ART_DIR || path.join(dataDir, "theme-art")),
-    avatarDir: path.resolve(env.AVATAR_DIR || path.join(dataDir, "avatars")),
+    avatarDir: path.resolve(env.AVATAR_DIR || path.join(dataDir, `${own}avatars`)),
   };
   // A test run may not reach the real data folder at all: not its database, nor any folder.
   // Checked against the home folder given and the account's own (which a test's HOME can't hide).

@@ -8,11 +8,16 @@ export class ApiError extends Error {
   }
 }
 
+// When the server can't be reached at all, the browser only says "Failed to fetch".
+export const UNREACHABLE = "Couldn't reach MikuTracker's server. Is it running?";
+
 export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
   const res = await fetch(`/api${path}`, {
     method: init.method ?? "GET",
     headers: init.body === undefined ? undefined : { "Content-Type": "application/json" },
     body: JSON.stringify(init.body), // undefined stays undefined
+  }).catch(() => {
+    throw new Error(UNREACHABLE);
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as { error?: string } | null;

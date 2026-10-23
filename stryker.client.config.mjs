@@ -5,9 +5,10 @@ export default {
   plugins: ["@stryker-mutator/vitest-runner", "./scripts/stryker-ignore-looks.mjs"],
   ignorers: ["looks"],
   vitest: { configFile: "client/vite.config.ts", dir: "client", related: false },
-  // main.tsx only starts the app; api/types.ts has no code (types only); looks/ only draws
-  // pictures on a canvas, which a browser test can't see (checked by eye on screenshots).
-  mutate: ["client/src/**/*.{ts,tsx}", "!client/src/main.tsx", "!client/src/api/types.ts", "!client/src/looks/**"],
+  // Only the app's logic: lib/ (display calculations) and api/ (talking to the server). The
+  // components and pages are checked with normal tests, screenshots and a click-through on the
+  // QA copy instead (CLAUDE.md, "What gets which kind of check"). api/types.ts has no code.
+  mutate: ["client/src/lib/**/*.ts", "client/src/api/**/*.ts", "!client/src/api/types.ts"],
   coverageAnalysis: "perTest",
   // On GitHub (STRYKER_BREAK_ON_SURVIVORS=1) any mutant no test catches fails the run.
   thresholds: { high: 100, low: 99, break: process.env.STRYKER_BREAK_ON_SURVIVORS ? 100 : null },

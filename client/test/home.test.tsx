@@ -296,6 +296,68 @@ describe("the selected character", () => {
     await waitFor(() => expect(tabNames()).toEqual(["LeekSpin"]));
   });
 
+  it("a move shows at once with any ids (not only ones already in number order)", async () => {
+    fakeServer({ ...BASE_ROUTES, "GET /characters": { characters: [character(7, "A"), character(3, "B"), character(5, "C")], selectedId: 7 }, "PUT /characters/order": () => new Promise(() => {}) });
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toEqual(["A", "B", "C"]));
+    fireEvent.keyDown(tab("A"), { key: "ArrowRight", altKey: true });
+    await waitFor(() => expect(tabNames()).toEqual(["B", "A", "C"]));
+  });
+
+  it("when the server's order changes, it replaces the one just moved", async () => {
+    // The server saves A, B, C as C, A, B (say, another window moved C meanwhile): its order wins.
+    const list = [character(1, "A"), character(2, "B"), character(3, "C")];
+    fakeServer({
+      ...BASE_ROUTES,
+      "GET /characters": () => ({ characters: list, selectedId: 1 }),
+      "PUT /characters/order": () => {
+        list.splice(0, 3, list[2]!, list[0]!, list[1]!);
+        return { characters: list, selectedId: 1 };
+      },
+    });
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toEqual(["A", "B", "C"]));
+    fireEvent.keyDown(tab("A"), { key: "ArrowRight", altKey: true });
+    await waitFor(() => expect(tabNames()).toEqual(["C", "A", "B"]));
+  });
+
+  it("a move the server fails to save goes back to the saved order, and says so", async () => {
+    fakeServer({
+      ...BASE_ROUTES,
+      "GET /characters": { characters: [character(1, "A"), character(2, "B")], selectedId: 1 },
+      "PUT /characters/order": new Response(JSON.stringify({ error: "Couldn't save the order" }), { status: 500 }),
+    });
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toEqual(["A", "B"]));
+    fireEvent.keyDown(tab("A"), { key: "ArrowRight", altKey: true });
+    expect((await screen.findByRole("alert")).textContent).toBe("Couldn't save the order");
+    await waitFor(() => expect(tabNames()).toEqual(["A", "B"]));
+  });
+
+  it("deleting after a move that went nowhere (Alt + → on the last tab) still works", async () => {
+    // Found by hand in the browser: the page went blank ("reading 'avatar'" of a deleted character).
+    home({ 45: [character(1, "MikuBeam"), character(2, "LeekSpin")] });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toEqual(["MikuBeam", "LeekSpin"]));
+    fireEvent.keyDown(tab("LeekSpin"), { key: "ArrowRight", altKey: true }); // already last
+    await userEvent.click(tab("LeekSpin"));
+    await userEvent.click(await screen.findByRole("button", { name: "Delete LeekSpin…" }));
+    await waitFor(() => expect(tabNames()).toEqual(["MikuBeam"]));
+  });
+
+  it("adding after a move that went nowhere shows the new tab at once", async () => {
+    home({ 45: [character(1, "MikuBeam")] });
+    renderWithApp(<App />);
+    await waitFor(() => expect(tabNames()).toEqual(["MikuBeam"]));
+    fireEvent.keyDown(tab("MikuBeam"), { key: "ArrowLeft", altKey: true }); // already first
+    await userEvent.click(screen.getByRole("button", { name: "Add a character" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Character name" }), "newone");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add NewOne" }));
+    await waitFor(() => expect(tabNames()).toEqual(["MikuBeam", "NewOne"]));
+  });
+
   it("a failed change says so", async () => {
     home({ 45: [character(1, "MikuBeam"), character(2, "LeekSpin")] });
     renderWithApp(<App />);

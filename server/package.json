@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,8 @@
     "db:migrate": "bash -c 'export MIKU_DATABASE=dev CHECKPOINT_DISABLE=1; prisma migrate dev \"$@\" && prisma generate' --",
     "db:generate": "CHECKPOINT_DISABLE=1 prisma generate",
     "postinstall": "CHECKPOINT_DISABLE=1 prisma generate",
-    "start": "CHECKPOINT_DISABLE=1 prisma migrate deploy && tsx src/index.ts",
+    "app": "tsx scripts/app.ts",
+    "backup": "tsx scripts/backup.ts",
     "dev": "export MIKU_DATABASE=dev PORT=4751 MIKU_BACKUPS=off MIKU_REFRESH=off CHECKPOINT_DISABLE=1; prisma migrate deploy && tsx watch src/index.ts",
     "nexon:check": "tsx scripts/nexonCheck.ts",
     "refresh": "CHECKPOINT_DISABLE=1 prisma migrate deploy >/dev/null && tsx scripts/refresh.ts"
