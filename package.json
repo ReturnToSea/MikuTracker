@@ -1,6 +1,6 @@
 {
   "name": "mikutracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -15,9 +15,11 @@
     "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
     "qa": "node scripts/qa.mjs",
+    "qa:check": "node scripts/qa-check.mjs",
     "backup": "npm run backup -w server",
     "app:install": "npm run app -w server -- install",
     "app:restart": "npm run app -w server -- restart",
+    "app:rehearse": "npm run app -w server -- rehearse",
     "app:status": "npm run app -w server -- status",
     "app:uninstall": "npm run app -w server -- uninstall",
     "test": "npm test -w server && npm test -w client",
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.0.0",
-    "concurrently": "^10.0.6"
+    "concurrently": "^10.0.6",
+    "playwright-core": "1.64.1"
   }
 }

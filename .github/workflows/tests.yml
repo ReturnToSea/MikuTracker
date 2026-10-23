@@ -1,5 +1,7 @@
 # A backup check on GitHub's machines when a version branch (v0.2.0, …) is pushed: the
-# typecheck and every test, in California time and UTC. Mutation testing runs on the Mac.
+# typecheck, every test (in California time and UTC), and the production build of the page (the
+# one the always-on app serves, so a build that fails shows here, not at app:restart).
+# Mutation testing and the click-through (npm run qa:check) run on the Mac.
 # Tests use made-up data only and never reach Nexon.
 name: Tests
 
@@ -15,7 +17,7 @@ concurrency:
 
 jobs:
   tests:
-    name: Typecheck and tests (California time and UTC)
+    name: Typecheck, tests (California time and UTC) and build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,3 +29,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run build

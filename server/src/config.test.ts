@@ -23,6 +23,7 @@ describe("defaults", () => {
       backups: true,
       refresh: true,
       nexonRankingsUrl: "https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na",
+      nexonImagesUrl: null,
     });
   });
 });
@@ -81,6 +82,18 @@ describe("overrides", () => {
 
   it("the address of Nexon's rankings data can be changed", () => {
     expect(load({ NEXON_RANKINGS_URL: "http://127.0.0.1:9/fake" }).nexonRankingsUrl).toBe("http://127.0.0.1:9/fake");
+  });
+
+  it("avatar downloads can go to a fake Nexon, but only on this Mac", () => {
+    expect(load({ NEXON_IMAGES_URL: "http://127.0.0.1:4755/images/" }).nexonImagesUrl).toBe("http://127.0.0.1:4755/images");
+    expect(load({ NEXON_IMAGES_URL: "http://localhost:4755" }).nexonImagesUrl).toBe("http://localhost:4755");
+    expect(load({ NEXON_IMAGES_URL: "http://127.0.0.1:4755/images//" }).nexonImagesUrl).toBe("http://127.0.0.1:4755/images");
+    expect(load({ NEXON_IMAGES_URL: "http://[::1]:4755" }).nexonImagesUrl).toBe("http://[::1]:4755");
+    expect(load({ NEXON_IMAGES_URL: "" }).nexonImagesUrl).toBeNull();
+    expect(() => load({ NEXON_IMAGES_URL: "https://images.example.com" })).toThrow('NEXON_IMAGES_URL may only point at this Mac (it is "https://images.example.com")');
+    expect(() => load({ NEXON_IMAGES_URL: "not an address" })).toThrow('NEXON_IMAGES_URL must be an address (it is "not an address")');
+    expect(() => load({ NEXON_IMAGES_URL: "file://localhost/tmp" })).toThrow('NEXON_IMAGES_URL must be an http or https address (it is "file://localhost/tmp")');
+    expect(load({ NEXON_IMAGES_URL: "https://127.0.0.1:4755" }).nexonImagesUrl).toBe("https://127.0.0.1:4755");
   });
 
   it("backups and the daily refresh can be turned off (and explicitly on)", () => {

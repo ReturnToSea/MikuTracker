@@ -18,6 +18,7 @@ export interface Config {
   backups: boolean; // daily backups (off for the development copy)
   refresh: boolean; // the daily rankings refresh (off for the development copy)
   nexonRankingsUrl: string; // Nexon's public rankings data (NA); tests never reach it
+  nexonImagesUrl: string | null; // a stand-in for Nexon's image servers, on this Mac only (the QA copy's fake Nexon)
 }
 
 type Env = Record<string, string | undefined>;
@@ -49,6 +50,22 @@ function databaseName(env: Env): string {
   if (which === "real") return "miku.db";
   if (which === "dev") return "dev.db";
   throw new Error(`MIKU_DATABASE must be "real" or "dev" (it is "${which}")`);
+}
+
+// Where avatar downloads go instead of Nexon's image servers: only ever a fake on this Mac (the
+// QA copy's), never somewhere else on the network.
+function imagesUrl(value: string | undefined): string | null {
+  if (!value) return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`NEXON_IMAGES_URL must be an address (it is "${value}")`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error(`NEXON_IMAGES_URL must be an http or https address (it is "${value}")`);
+  const host = url.hostname;
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(host)) throw new Error(`NEXON_IMAGES_URL may only point at this Mac (it is "${value}")`);
+  return value.replace(/\/+$/, "");
 }
 
 function port(value: string): number {
@@ -108,6 +125,7 @@ export function loadConfig(env: Env = process.env, home: string = env.HOME || os
     backups: onOff(env, "MIKU_BACKUPS"),
     refresh: onOff(env, "MIKU_REFRESH"),
     nexonRankingsUrl: env.NEXON_RANKINGS_URL || "https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na",
+    nexonImagesUrl: imagesUrl(env.NEXON_IMAGES_URL),
   };
 }
 

@@ -2,7 +2,7 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.0.0)
+## The app (as of v1.0.1)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
 - **Top:** Home, then four TBD tabs (placeholders for features still to be decided).
@@ -193,6 +193,7 @@ Every setting is in `server/src/config.ts`, read from environment variables (or 
 | Address and port | `HOST`, `PORT` | `127.0.0.1`, `4750` |
 | Backups, daily refresh | `MIKU_BACKUPS`, `MIKU_REFRESH` | `on` (`off` for the dev copy) |
 | Nexon's rankings data | `NEXON_RANKINGS_URL` | `https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na` |
+| A stand-in for Nexon's image servers (the QA copy's fake Nexon); only an address on this Mac is accepted | `NEXON_IMAGES_URL` | none (avatars come from Nexon) |
 
 The config refuses to load when:
 - **`HOST` isn't this machine.** There's no login yet. The one exception is `HOST=0.0.0.0` with `MIKU_IN_CONTAINER=1`, for Docker, where the container's port must be published to `127.0.0.1` only.
@@ -223,6 +224,7 @@ Moving to a server or Docker means setting these variables, not changing code. G
 - **It runs from its own copy of `main`** (the latest finished version) in the data folder's `app/`, so work in progress never reaches it.
 - **Commands:**
   - `app:install` once, and `app:restart` after each finished version. Both first make a fresh copy of `main` next to the running one and build it (libraries cloned from the running copy, or installed when they changed), with the running app untouched. Only then do they stop the app, back up the database (`…-before-update.db`), update it (`prisma migrate deploy`), swap the copy in, start it, and wait until it answers. If the build fails, the old app never stopped; if the backup or update fails, the old app is started again.
+  - **Before touching anything real, both rehearse the new copy** on a copy of the real database in a temporary folder, on port 4756 with backups and the refresh off. They update the copy's database, start the new version, and load the page, each world's characters and every character's EXP history, checking it's still their own server answering. If anything fails, they stop there (showing the new version's own output), delete the new copy, and the running app and your data are unchanged. A taken port 4756 stops the rehearsal before it starts (something else there could answer in place of a broken version), and Ctrl+C removes everything it made. `app:rehearse` does only this.
   - `app:status`: is it set up, and does it answer?
   - `app:uninstall`: stops it and removes the launch agent and the copy. Data and backups stay.
   - They refuse to run against anything but the real database.
@@ -276,5 +278,7 @@ Deleting a character deletes its snapshots, avatars and selection.
 - **Mutation testing** (Stryker, `/mutation-audit`): `npm run test:mutate` (server and shared) and `npm run test:mutate:client` (the app's `lib/` and `api/`). Both run incrementally, with 2 workers each. `npm run test:mutate:full` reruns everything before each version.
   - Every mutant must be caught, or be marked with a written reason that it provably can't change behavior.
   - The page's components and pages aren't mutation-tested (from v0.10.0): they get normal tests, screenshots, and a click-through on the QA copy before each version. Class names and styles are skipped anyway (`scripts/stryker-ignore-looks.mjs`), as is the canvas drawing in `client/src/looks/`.
-- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, builds the page (once, as it starts), and serves the production build on http://127.0.0.1:4753 (as the always-on app does; testing happens there) and the development build on http://127.0.0.1:4754, with backups and refresh off. It deletes the folder when stopped. `--empty` starts with no data. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
-- **GitHub** runs the typecheck and tests when a version branch is pushed (`.github/workflows/tests.yml`).
+- **The QA copy** (`npm run qa`, `scripts/qa.mjs`): testing by hand or in a browser happens only there. It copies the data (the real database once it exists, otherwise `dev.db`, with avatars and theme art) into a temporary folder, builds the page (once, as it starts), and serves the production build on http://127.0.0.1:4753 (as the always-on app does; testing happens there) and the development build on http://127.0.0.1:4754, with backups and refresh off. It deletes the folder when stopped. `--empty` starts with no data; `--fake-nexon` answers searches and refreshes from the fake Nexon instead of the real one. Each part runs in its own process group, so stopping (Ctrl+C, or any part ending on its own, which exits with status 1) frees both ports; a failed copy leaves no folder behind.
+- **The fake Nexon** (`server/scripts/fakeNexon.ts`, port 4755): made-up characters (the tests' three, a level-300 one, and one without Legion), answering rankings the way the real Nexon does (from `server/test/fixtures/nexon.ts`) and serving their avatars as real little pictures. `POST /control/set`, `/remove` and `/reset` change them, to make a character level up or vanish.
+- **The click-through** (`npm run qa:check`, `scripts/qa-check.mjs`): an empty QA copy with the fake Nexon, driven in Chrome (`playwright-core`) on the production build. It goes through every page and button and the edge cases (name rules, not found, the other world, numbers that don't fit the EXP table, level 300, shared Legion, reordering at both ends, delete and cancel, the EXP table's jumps, both themes and the Ren sky after switching), writes a known 90-day history and checks the ranges against hand-worked numbers, runs a real refresh with a level-up and a lost character, fakes eight kinds of failure, sends bad requests, and checks a narrow window and that the page logged no errors. Nothing in it depends on your data. Exit status 1 if anything failed.
+- **GitHub** runs the typecheck, the tests and the production build when a version branch is pushed (`.github/workflows/tests.yml`).

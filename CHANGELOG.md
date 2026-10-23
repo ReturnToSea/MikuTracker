@@ -2,6 +2,36 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.0.1 (2026-10-23): testing that doesn't depend on your data, and safer updates
+
+From a look at how we test: what was redundant, and what was weak.
+
+- **`npm run qa:check`, the click-through, is now part of the project** (it used to be a throwaway script of mine that expected your data's numbers). It starts an empty QA copy with a **fake Nexon** and checks the production build in Chrome. 111 checks:
+  - every page and button, and the edge cases (name rules, not found, the other world, numbers that don't fit the EXP table, level 300, the shared Legion, reordering at both ends, delete and cancel, the EXP table's jumps, both themes, and the Ren sky after switching)
+  - a known 90-day history, checked against hand-worked numbers
+  - a real refresh with a level-up and a character that vanished
+  - eight kinds of failure, bad requests, and a narrow window
+
+  It caught the Ren bug when that was put back on purpose.
+- **The fake Nexon** (`server/scripts/fakeNexon.ts`): made-up characters on this Mac, answering like the real one, with real little avatar pictures and controls to change or remove characters. No internet, nothing sent to Nexon. Also for hand tests: `npm run qa -- --fake-nexon`. It needed one setting, `NEXON_IMAGES_URL`, which only accepts an http(s) address on this Mac.
+- **`app:restart` rehearses first.** It tries the new version on a copy of your real database (on port 4756), updating it and loading every character, and stops before touching anything real if that fails. `npm run app:rehearse` does only that. Tried for real: on your data, with the port taken, and interrupted with Ctrl+C (nothing left behind).
+- **The GitHub check builds the production page too**, so a broken build shows there, not at `app:restart`.
+- **Testing rules** (`CLAUDE.md`):
+  - no separate coverage step (100% mutation testing implies it)
+  - hand-planted bugs only where mutation testing doesn't reach
+  - page tests check what's shown and what happens, not exact wording (except where the words matter)
+  - `qa:check` before every version, and each new feature adds its checks there
+- **From the review pass** (10 findings, 9 fixed):
+  - **My mistake:** while adding the rehearsal I'd moved the step that waits for the updated app to answer, so `app:restart` would no longer tell you whether the app came back up.
+  - An old rehearsal server left on its port could have answered for a broken new version; the rehearsal now refuses a taken port and checks it's still its own server answering.
+  - Ctrl+C during a rehearsal left its server, the copy of your data and the new build behind.
+  - A failed start hid the new version's output.
+  - The rehearsal copied avatars and theme art it never used.
+  - Smaller: a raw error instead of a clear one, the images setting accepting `file://` addresses, `qa:check` not saying when the QA copy didn't start, and the fake Nexon crashing on malformed requests.
+  - Not changed: the rehearsal and the QA copy each keep their own list of "isolate everything in a temp folder" settings (one is TypeScript, the other plain JavaScript); comments in each point at the other.
+- **Tests:** 364 server and 167 app tests, in California time and UTC. Mutation testing on the changed code (the new setting and the image address): 100%. `qa:check`: 111/111.
+  - **My mistakes along the way:** fake data with more EXP than its level holds (the app rightly refused it; it's now a deliberate check), and a refresh expectation that forgot the other world's characters.
+
 ## v1.0.0 (2026-10-23): first real use
 
 The always-on app is in real use, with RemyRabbit and meowoblush tracked from 2026-10-23.

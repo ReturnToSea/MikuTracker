@@ -24,7 +24,8 @@ A personal website for tracking MapleStory (GMS) progress on Kronos and Hyperion
 | Command | When |
 | --- | --- |
 | `npm run app:status` | Is it running? |
-| `npm run app:restart` | After each new version: builds it, then stops the app, backs up, updates the database, and starts it again. If anything fails, the old version keeps running. |
+| `npm run app:restart` | After each new version: builds it and tries it on a copy of your data first; only then stops the app, backs up, updates the database, and starts it again. If anything fails, the old version keeps running. |
+| `npm run app:rehearse` | Only the try-out on a copy of your data (nothing real changes). |
 | `npm run backup` | Back up by hand (it also backs up by itself every day). |
 | `npm run app:install` | Only once, to set it up (already done). |
 | `npm run app:uninstall` | Stops it and removes it from the login items. Your data and backups stay. |
@@ -44,7 +45,8 @@ Needs Node 22 or newer (`.nvmrc` says 24).
 ```
 npm install
 npm run dev     # the development copy: http://127.0.0.1:4752 (its own dev.db; never checks Nexon by itself)
-npm run qa      # a throwaway copy for testing by hand: http://127.0.0.1:4753 (deleted when stopped)
+npm run qa      # a throwaway copy for testing by hand: http://127.0.0.1:4753 (deleted when stopped; --fake-nexon for made-up characters)
+npm run qa:check   # click through every button and edge case on an empty throwaway copy (about 3 minutes)
 npm test        # every test, in California time and UTC
 ```
 

@@ -34,14 +34,15 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 
 - `npm test`: every server test, then every app test, each in California time and then UTC.
 - `npm run typecheck`
-- `npm run test:coverage`
-- `npm run test:mutate` / `test:mutate:client`: Stryker mutation testing of server + shared / the app. Both are **incremental** (only changed code and tests are retested). `npm run test:mutate:full` retests everything and is **required before each version is committed**.
+- `npm run test:coverage`: for curiosity only; 100% mutation testing already implies it, so it's not part of the checklist.
+- `npm run test:mutate` / `test:mutate:client`: Stryker mutation testing of server + shared / the app's logic. Both are **incremental** (only changed code and tests are retested). `npm run test:mutate:full` retests everything (see Testing rules for when).
+- `npm run qa:check`: the click-through: every button and edge case of the production build, in a real browser, on an empty QA copy with the fake Nexon. About 3 minutes; screenshots go to the folder it prints.
 - **Running them on this Mac (8 GB of memory):** the server and app runs may go at the same time, both with `nice -n 19` and `--concurrency 2`, but **nothing else heavy alongside**: no test suite, no build. One test suite at a time otherwise.
-- Pushing a version branch runs `.github/workflows/tests.yml` on GitHub: the typecheck and every test. Mutation testing runs only on the Mac.
+- Pushing a version branch runs `.github/workflows/tests.yml` on GitHub: the typecheck, every test, and the production build. Mutation testing and `qa:check` run only on the Mac.
 - `npm run db:migrate -- --name <what>`: after changing `server/prisma/schema.prisma`, applied to `dev.db`, then regenerates the database code (Prisma 7's `migrate dev` no longer does that itself). If Prisma wants to ask a yes/no question (it can't here), write the migration with `prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script` into a new `prisma/migrations/<timestamp>_<name>/migration.sql`, then `MIKU_DATABASE=dev prisma migrate deploy` and `prisma generate`. A test fails if a schema change has no migration.
-- `npm run qa`: the throwaway QA copy for testing by hand or in a browser (see Testing rules).
+- `npm run qa` (`-- --empty`, `-- --fake-nexon`): the throwaway QA copy for testing by hand or in a browser (see Testing rules).
 - `npm run dev`: the development copy. The page is on http://127.0.0.1:4752 and its API on 4751, using `dev.db`, with no backups and no refresh.
-- `npm run app:install` (once), `app:restart` (after each finished version: copy `main` and build it, then stop, back up, migrate the real database, swap, start), `app:status`, `app:uninstall` (data and backups stay): the always-on app on http://127.0.0.1:4750, started by macOS at login. Its log is `~/Library/Logs/MikuTracker/app.log`.
+- `npm run app:install` (once), `app:restart` (after each finished version: copy `main` and build it, **rehearse it on a copy of the real data**, then stop, back up, migrate the real database, swap, start), `app:rehearse` (only the rehearsal), `app:status`, `app:uninstall` (data and backups stay): the always-on app on http://127.0.0.1:4750, started by macOS at login. Its log is `~/Library/Logs/MikuTracker/app.log`.
 - `npm run backup`: back up the real database now (`MIKU_DATABASE=dev` for the dev copy's). The always-on app backs up daily by itself.
 - `npm run refresh`: one refresh of every character now (`MIKU_DATABASE=dev npm run refresh` for the dev copy). The always-on app refreshes every 4 hours by itself.
 - `npm run nexon:check -- <name> [45|70]`: looks one character up in Nexon's **real** rankings, by hand (never in tests), to check their data still has the shape we expect.
@@ -73,6 +74,8 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 
 - **Every behavior gets a test.** Prefer checks that don't reuse the code under test: hand-computed values, step-by-step simulations, or facts that must always hold.
 - **A new test must fail on the old code.** Temporarily break the code (or revert the fix) and confirm the test catches it before trusting it.
+- **Deliberate bugs by hand only where mutation testing doesn't reach:** the page, the scripts (QA copy, always-on app), and behavior across several parts. In mutation-tested code, mutation testing already plants them systematically.
+- **Page tests check what's shown and what happens, not exact wording** (decided 2026-10-23), except where the words carry the meaning (error messages, warnings, numbers). Exact sentences and class names in tests mostly break on harmless wording changes. Older tests stay as they are until they're touched.
 - **Tests never touch the real data.** `server/vitest.config.ts` gives every run:
   - a throwaway database and data folder
   - **a fake home folder (`HOME`)**, so even code broken by mutation testing can only find a fake "real" data folder
@@ -86,10 +89,12 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - It copies your data (the real database once it exists, otherwise `dev.db`, with its avatars and the theme art) into a fresh temporary folder and serves it on its own ports. Backups and the Nexon refresh are off. Ctrl+C stops it and deletes the copy. `npm run qa -- --empty` starts with no data.
   - **Test on http://127.0.0.1:4753: the production build, as the always-on app serves it.** It's built when the QA copy starts, so restart the QA copy after changing the page. http://127.0.0.1:4754 is the development build, for watching changes live; it runs some code twice on purpose, which hid a production-only bug once (v1.0.0's Ren sky).
   - Anything goes in it: delete, reorder, odd histories, a broken database. Nothing needs undoing.
-  - Searching and adding still ask Nexon's real rankings (read-only, through the polite client).
+  - Searching and adding ask Nexon's real rankings (read-only, through the polite client), unless started with `--fake-nexon`: then a fake Nexon on this Mac (`server/scripts/fakeNexon.ts`, port 4755) answers, with made-up characters and controls to change or remove them. The app reaches it through `NEXON_RANKINGS_URL` and `NEXON_IMAGES_URL` (which may only point at this Mac).
+  - **`npm run qa:check`** (`scripts/qa-check.mjs`) is the committed click-through: an empty QA copy with the fake Nexon, every button and edge case, a known 90-day history checked by hand, a level-up and a lost character through a real refresh. It depends on none of your data. **Each new feature adds its checks there.**
 - **What gets which kind of check** (decided 2026-10-23: accuracy first, where it matters):
   - **Calculations and data handling** (`server/`, `shared/`, and the app's `client/src/lib/` and `client/src/api/`): tests worked out by hand, simulations, facts that must always hold, and **full mutation testing at 100% before each version**.
-  - **The page** (`client/src/components/`, `client/src/pages/`): normal tests of what you see and click; **screenshots of every changed screen**; and **a click-through of every button and edge case on the QA copy before each version**. Not mutation-tested (it mostly pinned exact wording and class names).
+  - **The page** (`client/src/components/`, `client/src/pages/`): normal tests of what you see and click; **screenshots of every changed screen**; and **`npm run qa:check` before each version**. Not mutation-tested (it mostly pinned exact wording and class names).
+  - **The always-on app's updates:** `app:restart` rehearses the new version on a copy of the real data first, and stops before touching anything real if the rehearsal fails.
   - **Reality checks**, which tests can't do (they share our assumptions): compare our numbers with real characters and another site after real use; re-check game figures after each GMS patch; check calculators against published examples.
   - **A review pass** (`/code-review`) on each version's changes before committing, for design-level mistakes tests don't find.
 - **Mutation testing** (`/mutation-audit`): incremental while working, and a full run before each version is committed **when code it covers has changed since the last full run** (`git diff <last version tag> -- server/src shared/src client/src/lib client/src/api`; no changes there, no run). Incremental results go stale when a helper changes, so use `--force` then.
