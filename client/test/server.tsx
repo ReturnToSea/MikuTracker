@@ -109,4 +109,5 @@ export const BASE_ROUTES = {
   "GET /bosses": EMPTY_BOSSES,
   "GET /checklist": EMPTY_CHECKLIST,
   "GET /symbols": { patch: "v.271", symbols: [], characters: [] },
+  "GET /gear": { generated: "2026-10-23", slots: [], items: [], jobs: {}, characters: [] },
 };

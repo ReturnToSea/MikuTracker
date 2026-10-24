@@ -464,3 +464,42 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .graph-line { fill: none; stroke: var(--level-line); stroke-width: 2.5; }
 .graph-max { stroke: var(--line); stroke-dasharray: 4 4; }
 .graph-label { fill: var(--text-muted); font-size: 12px; font-family: var(--font); }
+
+/* Gear tab */
+.gear { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+@media (max-width: 860px) { .gear { grid-template-columns: 1fr; } }
+.gear > .block { margin-bottom: 0; }
+.gear-window { display: grid; gap: 12px; justify-content: start; }
+.gear-grid { display: grid; grid-template-columns: repeat(5, 64px); grid-auto-rows: 64px; gap: 8px; }
+@media (max-width: 400px) { .gear-grid { grid-template-columns: repeat(5, 54px); grid-auto-rows: 54px; gap: 6px; } }
+.gear-cell { position: relative; }
+.gear-slot { position: relative; width: 100%; height: 100%; display: grid; place-items: center; padding: 2px; border: var(--border-width) solid var(--border); border-radius: 6px; background: var(--surface-2); color: var(--text-muted); }
+.gear-slot:hover { border-color: var(--text-muted); }
+.gear-slot[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.gear-slot .slot-label { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 9.5px; line-height: 1; }
+.gear-slot .slot-text { font-size: 9.5px; line-height: 1.1; text-align: center; overflow: hidden; max-height: 3.3em; margin-bottom: 8px; }
+.gear-slot.covered { background: repeating-linear-gradient(135deg, var(--accent-soft) 0 6px, transparent 6px 12px), var(--surface-2); }
+.gear-slot.covered img, .gear-slot.covered .slot-text { opacity: 0.35; filter: grayscale(1); }
+.item-icon { width: 34px; height: 32px; object-fit: contain; image-rendering: pixelated; }
+.gear-slot .item-icon { transform: scale(1.35); margin-bottom: 6px; }
+.no-icon { width: 34px; height: 32px; display: grid; place-items: center; border: 1px dashed var(--border); border-radius: 4px; font-size: 9px; color: var(--text-muted); }
+.gear-plus { position: absolute; top: -7px; left: -7px; z-index: 2; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; overflow: hidden; border: 2px solid var(--accent); border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; box-shadow: var(--shadow); }
+.gear-plus.has { background: var(--surface-2); }
+.gear-plus[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent-soft); }
+.gear-plus .item-icon, .gear-kept .item-icon { width: 20px; height: 18px; transform: none; margin: 0; }
+.gear-kept { position: absolute; top: -7px; left: -7px; z-index: 2; width: 24px; height: 24px; display: grid; place-items: center; overflow: hidden; border: 2px dashed var(--text-muted); border-radius: 50%; background: var(--surface-2); opacity: 0.6; }
+.gear-totems { display: flex; gap: 8px; align-items: center; }
+.gear-totems .gear-cell { width: 64px; height: 64px; }
+.gear-sets { display: grid; gap: 4px; }
+.gear-panel { display: grid; gap: 10px; align-content: start; }
+.gear-list { max-height: 560px; overflow-y: auto; display: grid; gap: 4px; padding-right: 6px; }
+.gear-items { display: grid; gap: 4px; }
+.gear-item { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; padding: 6px 8px; text-align: left; border: var(--border-width) solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.gear-item:hover:not(:disabled) { border-color: var(--text-muted); }
+.gear-item[aria-pressed="true"] { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface-2); }
+.gear-item:disabled { opacity: 0.35; cursor: not-allowed; }
+.gear-item .item-icon, .gear-item .no-icon { justify-self: center; }
+.gear-group { margin: 6px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+.set-badge { padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; white-space: nowrap; color: var(--line); border: 1px solid var(--line); }
+.gear-other { display: flex; gap: 8px; align-items: center; }
+.gear-other .text-input { flex: 1; min-width: 0; }

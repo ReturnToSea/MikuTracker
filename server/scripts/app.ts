@@ -116,7 +116,7 @@ async function rehearse(next: string) {
         from.close();
       }
     }
-    const env = { ...process.env, CHECKPOINT_DISABLE: "1", MIKU_DATA_DIR: data, MIKU_DATABASE: "real", DATABASE_URL: "", BACKUP_DIR: "", AVATAR_DIR: "", THEME_ART_DIR: "", BOSS_ART_DIR: "", NEXON_IMAGES_URL: "", MIKU_BACKUPS: "off", MIKU_REFRESH: "off", PORT: String(REHEARSAL_PORT) };
+    const env = { ...process.env, CHECKPOINT_DISABLE: "1", MIKU_DATA_DIR: data, MIKU_DATABASE: "real", DATABASE_URL: "", BACKUP_DIR: "", AVATAR_DIR: "", THEME_ART_DIR: "", BOSS_ART_DIR: "", ITEM_ICON_DIR: "", NEXON_IMAGES_URL: "", MIKU_BACKUPS: "off", MIKU_REFRESH: "off", PORT: String(REHEARSAL_PORT) };
     execFileSync("npx", ["prisma", "migrate", "deploy"], { cwd: path.join(next, "server"), env, stdio: "inherit" });
     server = spawn(path.join(next, "node_modules", ".bin", "tsx"), ["src/index.ts"], { cwd: path.join(next, "server"), env, stdio: ["ignore", "pipe", "pipe"], detached: true });
     for (const stream of [server.stdout, server.stderr]) stream?.on("data", (chunk) => (output = (output + chunk).slice(-4000)));

@@ -1,0 +1,8338 @@
+{
+ "generated": "2026-10-24",
+ "sources": "MapleStory Wiki (the GMS wiki): set, item and job pages; an item is kept only if it has its own page there",
+ "jobs": {
+  "Adele": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Bladecaster"
+   ]
+  },
+  "Angelic Buster": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Soul Shooter"
+   ]
+  },
+  "Aran": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Polearm"
+   ]
+  },
+  "Arch Mage Fire/Poison": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff",
+    "Wand"
+   ]
+  },
+  "Arch Mage Ice/Lightning": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff",
+    "Wand"
+   ]
+  },
+  "Ark": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Knuckle"
+   ]
+  },
+  "Battle Mage": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff"
+   ]
+  },
+  "Bishop": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff",
+    "Wand"
+   ]
+  },
+  "Blaster": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Arm Cannon"
+   ]
+  },
+  "Blaze Wizard": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff",
+    "Wand"
+   ]
+  },
+  "Bow Master": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Bow"
+   ]
+  },
+  "Buccaneer": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Knuckle"
+   ]
+  },
+  "Cadena": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Chain"
+   ]
+  },
+  "Cannoneer": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Hand Cannon"
+   ]
+  },
+  "Corsair": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Gun"
+   ]
+  },
+  "Dark Knight": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Spear",
+    "Polearm"
+   ]
+  },
+  "Dawn Warrior": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Two-handed Sword",
+    "One-handed Sword"
+   ]
+  },
+  "Demon Avenger": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Desperado"
+   ]
+  },
+  "Demon Slayer": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "One-handed Axe",
+    "One-handed Blunt Weapon"
+   ]
+  },
+  "Dual Blade": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Dagger"
+   ]
+  },
+  "Evan": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Staff",
+    "Wand"
+   ]
+  },
+  "Hayato": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Katana"
+   ]
+  },
+  "Hero": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Two-handed Axe",
+    "Two-handed Sword",
+    "One-handed Axe",
+    "One-handed Sword"
+   ]
+  },
+  "Hoyoung": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Ritual Fan"
+   ]
+  },
+  "Illium": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Lucent Gauntlet"
+   ]
+  },
+  "Kain": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Whispershot"
+   ]
+  },
+  "Kaiser": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Two-handed Sword"
+   ]
+  },
+  "Kanna": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Fan"
+   ]
+  },
+  "Khali": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Chakram"
+   ]
+  },
+  "Kinesis": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Psy-limiter"
+   ]
+  },
+  "Lara": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Wand"
+   ]
+  },
+  "Luminous": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Shining Rod"
+   ]
+  },
+  "Marksman": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Crossbow"
+   ]
+  },
+  "Mechanic": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Gun"
+   ]
+  },
+  "Mercedes": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Dual Bowguns"
+   ]
+  },
+  "Mihile": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "One-handed Sword"
+   ]
+  },
+  "Night Lord": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Claw"
+   ]
+  },
+  "Night Walker": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Claw"
+   ]
+  },
+  "Paladin": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Two-handed Blunt Weapon",
+    "Two-handed Sword",
+    "One-handed Blunt Weapon",
+    "One-handed Sword"
+   ]
+  },
+  "Pathfinder": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Ancient Bow"
+   ]
+  },
+  "Phantom": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Cane"
+   ]
+  },
+  "Shade": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Knuckle"
+   ]
+  },
+  "Shadower": {
+   "branches": [
+    "Thief"
+   ],
+   "weapons": [
+    "Dagger"
+   ]
+  },
+  "Thunder Breaker": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Knuckle"
+   ]
+  },
+  "Wild Hunter": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Crossbow"
+   ]
+  },
+  "Wind Archer": {
+   "branches": [
+    "Bowman"
+   ],
+   "weapons": [
+    "Bow"
+   ]
+  },
+  "Xenon": {
+   "branches": [
+    "Thief",
+    "Pirate"
+   ],
+   "weapons": [
+    "Whip Blade"
+   ]
+  },
+  "Zero": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Long Sword"
+   ]
+  },
+  "Ren": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Sword"
+   ]
+  },
+  "Lynn": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Memorial Staff"
+   ]
+  },
+  "Mo Xuan": {
+   "branches": [
+    "Pirate"
+   ],
+   "weapons": [
+    "Martial Brace"
+   ]
+  },
+  "Sia Astelle": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Celestial Light"
+   ]
+  },
+  "Erel Light": {
+   "branches": [
+    "Warrior"
+   ],
+   "weapons": [
+    "Gram"
+   ]
+  }
+ },
+ "items": [
+  {
+   "id": 1003797,
+   "name": "Royal Warrior Helm",
+   "slot": "hat",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Royal Warrior Helm.png"
+  },
+  {
+   "id": 1042254,
+   "name": "Eagle Eye Warrior Armor",
+   "slot": "top",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Eagle Eye Warrior Armor.png"
+  },
+  {
+   "id": 1062165,
+   "name": "Trixter Warrior Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Trixter Warrior Pants.png"
+  },
+  {
+   "id": 1213016,
+   "name": "Fafnir Mercy",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Mercy.png",
+   "weaponType": "Bladecaster"
+  },
+  {
+   "id": 1215019,
+   "name": "Fafnir Soaring Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Soaring Sword.png",
+   "weaponType": "Sword"
+  },
+  {
+   "id": 1232057,
+   "name": "Fafnir Death Bringer",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Death Bringer.png",
+   "weaponType": "Desperado"
+  },
+  {
+   "id": 1302275,
+   "name": "Fafnir Mistilteinn",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Mistilteinn.png",
+   "weaponType": "One-handed Sword"
+  },
+  {
+   "id": 1312153,
+   "name": "Fafnir Twin Cleaver",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Twin Cleaver.png",
+   "weaponType": "One-handed Axe"
+  },
+  {
+   "id": 1322203,
+   "name": "Fafnir Guardian Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Guardian Hammer.png",
+   "weaponType": "One-handed Blunt Weapon"
+  },
+  {
+   "id": 1402196,
+   "name": "Fafnir Penitent Tears",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Penitent Tears.png",
+   "weaponType": "Two-handed Sword"
+  },
+  {
+   "id": 1412135,
+   "name": "Fafnir Battle Cleaver",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Battle Cleaver.png",
+   "weaponType": "Two-handed Axe"
+  },
+  {
+   "id": 1422140,
+   "name": "Fafnir Lightning Striker",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Lightning Striker.png",
+   "weaponType": "Two-handed Blunt Weapon"
+  },
+  {
+   "id": 1432167,
+   "name": "Fafnir Brionak",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Brionak.png",
+   "weaponType": "Spear"
+  },
+  {
+   "id": 1433019,
+   "name": "Fafnir Gram",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Gram.png",
+   "weaponType": "Gram"
+  },
+  {
+   "id": 1442223,
+   "name": "Fafnir Moon Glaive",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Moon Glaive.png",
+   "weaponType": "Polearm"
+  },
+  {
+   "id": 1542063,
+   "name": "Fafnir Raven Ring",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Raven Ring.png",
+   "weaponType": "Katana"
+  },
+  {
+   "id": 1582016,
+   "name": "Fafnir Big Mountain",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Big Mountain.png",
+   "weaponType": "Arm Cannon"
+  },
+  {
+   "id": 1003798,
+   "name": "Royal Dunwitch Hat",
+   "slot": "hat",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Royal Dunwitch Hat.png"
+  },
+  {
+   "id": 1042255,
+   "name": "Eagle Eye Dunwitch Robe",
+   "slot": "top",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Eagle Eye Dunwitch Robe.png"
+  },
+  {
+   "id": 1062166,
+   "name": "Trixter Dunwitch Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Trixter Dunwitch Pants.png"
+  },
+  {
+   "id": 1212063,
+   "name": "Fafnir Mana Cradle",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Mana Cradle.png",
+   "weaponType": "Shining Rod"
+  },
+  {
+   "id": 1252015,
+   "name": "Fafnir Memorial Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Memorial Staff.png",
+   "weaponType": "Memorial Staff"
+  },
+  {
+   "id": 1253016,
+   "name": "Fafnir Celestial Light",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Celestial Light.png",
+   "weaponType": "Celestial Light"
+  },
+  {
+   "id": 1254022,
+   "name": "Fafnir Spirit Walker Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Spirit Walker Fan.png",
+   "weaponType": "Fan"
+  },
+  {
+   "id": 1262016,
+   "name": "Fafnir Psy-limiter",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Psy-limiter.png",
+   "weaponType": "Psy-limiter"
+  },
+  {
+   "id": 1282015,
+   "name": "Fafnir Lucent Gauntlet",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Lucent Gauntlet.png",
+   "weaponType": "Lucent Gauntlet"
+  },
+  {
+   "id": 1372177,
+   "name": "Fafnir Mana Taker",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Mana Taker.png",
+   "weaponType": "Wand"
+  },
+  {
+   "id": 1382208,
+   "name": "Fafnir Mana Crown",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Mana Crown.png",
+   "weaponType": "Staff"
+  },
+  {
+   "id": 1003799,
+   "name": "Royal Ranger Beret",
+   "slot": "hat",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Royal Ranger Beret.png"
+  },
+  {
+   "id": 1042256,
+   "name": "Eagle Eye Ranger Cowl",
+   "slot": "top",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Eagle Eye Ranger Cowl.png"
+  },
+  {
+   "id": 1062167,
+   "name": "Trixter Ranger Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Trixter Ranger Pants.png"
+  },
+  {
+   "id": 1214016,
+   "name": "Fafnir Nightchaser",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Nightchaser.png",
+   "weaponType": "Whispershot"
+  },
+  {
+   "id": 1452205,
+   "name": "Fafnir Wind Chaser",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Wind Chaser.png",
+   "weaponType": "Bow"
+  },
+  {
+   "id": 1462193,
+   "name": "Fafnir Windwing Shooter",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Windwing Shooter.png",
+   "weaponType": "Crossbow"
+  },
+  {
+   "id": 1522094,
+   "name": "Fafnir Dual Windwing",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Dual Windwing.png",
+   "weaponType": "Dual Bowguns"
+  },
+  {
+   "id": 1592018,
+   "name": "Fafnir Ancient Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Ancient Bow.png",
+   "weaponType": "Ancient Bow"
+  },
+  {
+   "id": 1003800,
+   "name": "Royal Assassin Hood",
+   "slot": "hat",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Royal Assassin Hood.png"
+  },
+  {
+   "id": 1042257,
+   "name": "Eagle Eye Assassin Shirt",
+   "slot": "top",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Eagle Eye Assassin Shirt.png"
+  },
+  {
+   "id": 1062168,
+   "name": "Trixter Assassin Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Trixter Assassin Pants.png"
+  },
+  {
+   "id": 1242060,
+   "name": "Fafnir Split Edge",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Split Edge.png",
+   "weaponType": "Whip Blade"
+  },
+  {
+   "id": 1272015,
+   "name": "Fafnir Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Chain.png",
+   "weaponType": "Chain"
+  },
+  {
+   "id": 1292016,
+   "name": "Fafnir Dragon Ritual Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Dragon Ritual Fan.png",
+   "weaponType": "Ritual Fan"
+  },
+  {
+   "id": 1332225,
+   "name": "Fafnir Damascus",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Damascus.png",
+   "weaponType": "Dagger"
+  },
+  {
+   "id": 1362090,
+   "name": "Fafnir Ciel Claire",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Ciel Claire.png",
+   "weaponType": "Cane"
+  },
+  {
+   "id": 1404016,
+   "name": "Fafnir Chakram",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Chakram.png",
+   "weaponType": "Chakram"
+  },
+  {
+   "id": 1472214,
+   "name": "Fafnir Risk Holder",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Risk Holder.png",
+   "weaponType": "Claw"
+  },
+  {
+   "id": 1003801,
+   "name": "Royal Wanderer Hat",
+   "slot": "hat",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Royal Wanderer Hat.png"
+  },
+  {
+   "id": 1042258,
+   "name": "Eagle Eye Wanderer Coat",
+   "slot": "top",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Eagle Eye Wanderer Coat.png"
+  },
+  {
+   "id": 1062169,
+   "name": "Trixter Wanderer Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Trixter Wanderer Pants.png"
+  },
+  {
+   "id": 1222058,
+   "name": "Fafnir Angelic Shooter",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Angelic Shooter.png",
+   "weaponType": "Soul Shooter"
+  },
+  {
+   "id": 1403016,
+   "name": "Fafnir Martial Brace",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Martial Brace.png",
+   "weaponType": "Martial Brace"
+  },
+  {
+   "id": 1482168,
+   "name": "Fafnir Perry Talon",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Perry Talon.png",
+   "weaponType": "Knuckle"
+  },
+  {
+   "id": 1492179,
+   "name": "Fafnir Zeliska",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Zeliska.png",
+   "weaponType": "Gun"
+  },
+  {
+   "id": 1532098,
+   "name": "Fafnir Lost Cannon",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Lost Cannon.png",
+   "weaponType": "Hand Cannon"
+  },
+  {
+   "id": 1004422,
+   "name": "AbsoLab Knight Helm",
+   "slot": "hat",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Knight Helm.png"
+  },
+  {
+   "id": 1052882,
+   "name": "AbsoLab Knight Suit",
+   "slot": "top",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Knight Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073030,
+   "name": "AbsoLab Knight Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoes.png"
+  },
+  {
+   "id": 1082636,
+   "name": "AbsoLab Knight Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gloves.png"
+  },
+  {
+   "id": 1102775,
+   "name": "AbsoLab Knight Cape",
+   "slot": "cape",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Cape.png"
+  },
+  {
+   "id": 1152174,
+   "name": "AbsoLab Knight Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoulder.png"
+  },
+  {
+   "id": 1213017,
+   "name": "AbsoLab Bladecaster",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Bladecaster.png",
+   "weaponType": "Bladecaster"
+  },
+  {
+   "id": 1215021,
+   "name": "AbsoLab Furious Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Furious Sword.png",
+   "weaponType": "Sword"
+  },
+  {
+   "id": 1232109,
+   "name": "AbsoLab Desperado",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Desperado.png",
+   "weaponType": "Desperado"
+  },
+  {
+   "id": 1302333,
+   "name": "AbsoLab Saber",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Saber.png",
+   "weaponType": "One-handed Sword"
+  },
+  {
+   "id": 1312199,
+   "name": "AbsoLab Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Axe.png",
+   "weaponType": "One-handed Axe"
+  },
+  {
+   "id": 1322250,
+   "name": "AbsoLab Bit Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Bit Hammer.png",
+   "weaponType": "One-handed Blunt Weapon"
+  },
+  {
+   "id": 1402251,
+   "name": "AbsoLab Broad Saber",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Broad Saber.png",
+   "weaponType": "Two-handed Sword"
+  },
+  {
+   "id": 1412177,
+   "name": "AbsoLab Broad Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Broad Axe.png",
+   "weaponType": "Two-handed Axe"
+  },
+  {
+   "id": 1422184,
+   "name": "AbsoLab Broad Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Broad Hammer.png",
+   "weaponType": "Two-handed Blunt Weapon"
+  },
+  {
+   "id": 1432214,
+   "name": "AbsoLab Piercing Spear",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Piercing Spear.png",
+   "weaponType": "Spear"
+  },
+  {
+   "id": 1433021,
+   "name": "AbsoLab Gram",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gram.png",
+   "weaponType": "Gram"
+  },
+  {
+   "id": 1442268,
+   "name": "AbsoLab Hellslayer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Hellslayer.png",
+   "weaponType": "Polearm"
+  },
+  {
+   "id": 1542108,
+   "name": "AbsoLab Katana",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Katana.png",
+   "weaponType": "Katana"
+  },
+  {
+   "id": 1582032,
+   "name": "AbsoLab Pile God",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Pile God.png",
+   "weaponType": "Arm Cannon"
+  },
+  {
+   "id": 1004423,
+   "name": "AbsoLab Mage Crown",
+   "slot": "hat",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Mage Crown.png"
+  },
+  {
+   "id": 1052887,
+   "name": "AbsoLab Mage Suit",
+   "slot": "top",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Mage Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073032,
+   "name": "AbsoLab Mage Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoes.png"
+  },
+  {
+   "id": 1082637,
+   "name": "AbsoLab Mage Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gloves.png"
+  },
+  {
+   "id": 1102794,
+   "name": "AbsoLab Mage Cape",
+   "slot": "cape",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Cape.png"
+  },
+  {
+   "id": 1152176,
+   "name": "AbsoLab Mage Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoulder.png"
+  },
+  {
+   "id": 1212115,
+   "name": "AbsoLab Shining Rod",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shining Rod.png",
+   "weaponType": "Shining Rod"
+  },
+  {
+   "id": 1252093,
+   "name": "AbsoLab Memorial Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Memorial Staff.png",
+   "weaponType": "Memorial Staff"
+  },
+  {
+   "id": 1253017,
+   "name": "AbsoLab Celestial Light",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Celestial Light.png",
+   "weaponType": "Celestial Light"
+  },
+  {
+   "id": 1254025,
+   "name": "AbsoLab Spirit Walker Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Spirit Walker Fan.png",
+   "weaponType": "Fan"
+  },
+  {
+   "id": 1262017,
+   "name": "AbsoLab Psy-limiter",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Psy-limiter.png",
+   "weaponType": "Psy-limiter"
+  },
+  {
+   "id": 1282016,
+   "name": "AbsoLab Lucent Gauntlet",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Lucent Gauntlet.png",
+   "weaponType": "Lucent Gauntlet"
+  },
+  {
+   "id": 1372222,
+   "name": "AbsoLab Spellsong Wand",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Spellsong Wand.png",
+   "weaponType": "Wand"
+  },
+  {
+   "id": 1382259,
+   "name": "AbsoLab Spellsong Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Spellsong Staff.png",
+   "weaponType": "Staff"
+  },
+  {
+   "id": 1004424,
+   "name": "AbsoLab Archer Hood",
+   "slot": "hat",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Archer Hood.png"
+  },
+  {
+   "id": 1052888,
+   "name": "AbsoLab Archer Suit",
+   "slot": "top",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Archer Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073033,
+   "name": "AbsoLab Archer Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoes.png"
+  },
+  {
+   "id": 1082638,
+   "name": "AbsoLab Archer Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gloves.png"
+  },
+  {
+   "id": 1102795,
+   "name": "AbsoLab Archer Cape",
+   "slot": "cape",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Cape.png"
+  },
+  {
+   "id": 1152177,
+   "name": "AbsoLab Archer Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoulder.png"
+  },
+  {
+   "id": 1214017,
+   "name": "AbsoLab Whispershot",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Whispershot.png",
+   "weaponType": "Whispershot"
+  },
+  {
+   "id": 1452252,
+   "name": "AbsoLab Sureshot Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Sureshot Bow.png",
+   "weaponType": "Bow"
+  },
+  {
+   "id": 1462239,
+   "name": "AbsoLab Crossbow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Crossbow.png",
+   "weaponType": "Crossbow"
+  },
+  {
+   "id": 1522138,
+   "name": "AbsoLab Dual Bowguns",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Dual Bowguns.png",
+   "weaponType": "Dual Bowguns"
+  },
+  {
+   "id": 1592019,
+   "name": "AbsoLab Ancient Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Ancient Bow.png",
+   "weaponType": "Ancient Bow"
+  },
+  {
+   "id": 1004425,
+   "name": "AbsoLab Bandit Cap",
+   "slot": "hat",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Bandit Cap.png"
+  },
+  {
+   "id": 1052889,
+   "name": "AbsoLab Bandit Suit",
+   "slot": "top",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Bandit Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073034,
+   "name": "AbsoLab Bandit Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoes.png"
+  },
+  {
+   "id": 1082639,
+   "name": "AbsoLab Bandit Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gloves.png"
+  },
+  {
+   "id": 1102796,
+   "name": "AbsoLab Bandit Cape",
+   "slot": "cape",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Cape.png"
+  },
+  {
+   "id": 1152178,
+   "name": "AbsoLab Bandit Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoulder.png"
+  },
+  {
+   "id": 1242116,
+   "name": "AbsoLab Whip Blade",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Whip Blade.png",
+   "weaponType": "Whip Blade"
+  },
+  {
+   "id": 1272016,
+   "name": "AbsoLab Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Chain.png",
+   "weaponType": "Chain"
+  },
+  {
+   "id": 1292017,
+   "name": "AbsoLab Monster Ritual Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Monster Ritual Fan.png",
+   "weaponType": "Ritual Fan"
+  },
+  {
+   "id": 1332274,
+   "name": "AbsoLab Blade Lord",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Blade Lord.png",
+   "weaponType": "Dagger"
+  },
+  {
+   "id": 1362135,
+   "name": "AbsoLab Forked Cane",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Forked Cane.png",
+   "weaponType": "Cane"
+  },
+  {
+   "id": 1404017,
+   "name": "AbsoLab Chakram",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Chakram.png",
+   "weaponType": "Chakram"
+  },
+  {
+   "id": 1472261,
+   "name": "AbsoLab Revenge Guard",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Revenge Guard.png",
+   "weaponType": "Claw"
+  },
+  {
+   "id": 1004426,
+   "name": "AbsoLab Pirate Fedora",
+   "slot": "hat",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Pirate Fedora.png"
+  },
+  {
+   "id": 1052890,
+   "name": "AbsoLab Pirate Suit",
+   "slot": "top",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Pirate Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073035,
+   "name": "AbsoLab Pirate Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoes.png"
+  },
+  {
+   "id": 1082640,
+   "name": "AbsoLab Pirate Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Gloves.png"
+  },
+  {
+   "id": 1102797,
+   "name": "AbsoLab Pirate Cape",
+   "slot": "cape",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Cape.png"
+  },
+  {
+   "id": 1152179,
+   "name": "AbsoLab Pirate Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Shoulder.png"
+  },
+  {
+   "id": 1222109,
+   "name": "AbsoLab Soul Shooter",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Soul Shooter.png",
+   "weaponType": "Soul Shooter"
+  },
+  {
+   "id": 1403017,
+   "name": "AbsoLab Martial Brace",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Martial Brace.png",
+   "weaponType": "Martial Brace"
+  },
+  {
+   "id": 1482216,
+   "name": "AbsoLab Blast Knuckle",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Blast Knuckle.png",
+   "weaponType": "Knuckle"
+  },
+  {
+   "id": 1492231,
+   "name": "AbsoLab Point Gun",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Point Gun.png",
+   "weaponType": "Gun"
+  },
+  {
+   "id": 1532144,
+   "name": "AbsoLab Blast Cannon",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Blast Cannon.png",
+   "weaponType": "Hand Cannon"
+  },
+  {
+   "id": 1004808,
+   "name": "Arcane Umbra Knight Hat",
+   "slot": "hat",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Knight Hat.png"
+  },
+  {
+   "id": 1053063,
+   "name": "Arcane Umbra Knight Suit",
+   "slot": "top",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Knight Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073158,
+   "name": "Arcane Umbra Knight Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoes.png"
+  },
+  {
+   "id": 1082695,
+   "name": "Arcane Umbra Knight Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gloves.png"
+  },
+  {
+   "id": 1102940,
+   "name": "Arcane Umbra Knight Cape",
+   "slot": "cape",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cape.png"
+  },
+  {
+   "id": 1152196,
+   "name": "Arcane Umbra Knight Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoulder.png"
+  },
+  {
+   "id": 1213018,
+   "name": "Arcane Umbra Bladecaster",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Bladecaster.png",
+   "weaponType": "Bladecaster"
+  },
+  {
+   "id": 1215022,
+   "name": "Arcane Umbra Illusory Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Illusory Sword.png",
+   "weaponType": "Sword"
+  },
+  {
+   "id": 1232113,
+   "name": "Arcane Umbra Desperado",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Desperado.png",
+   "weaponType": "Desperado"
+  },
+  {
+   "id": 1302343,
+   "name": "Arcane Umbra Saber",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Saber.png",
+   "weaponType": "One-handed Sword"
+  },
+  {
+   "id": 1312203,
+   "name": "Arcane Umbra Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Axe.png",
+   "weaponType": "One-handed Axe"
+  },
+  {
+   "id": 1322255,
+   "name": "Arcane Umbra Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Hammer.png",
+   "weaponType": "One-handed Blunt Weapon"
+  },
+  {
+   "id": 1402259,
+   "name": "Arcane Umbra Two-handed Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Two-handed Sword.png",
+   "weaponType": "Two-handed Sword"
+  },
+  {
+   "id": 1412181,
+   "name": "Arcane Umbra Two-handed Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Two-handed Axe.png",
+   "weaponType": "Two-handed Axe"
+  },
+  {
+   "id": 1422189,
+   "name": "Arcane Umbra Two-handed Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Two-handed Hammer.png",
+   "weaponType": "Two-handed Blunt Weapon"
+  },
+  {
+   "id": 1432218,
+   "name": "Arcane Umbra Spear",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Spear.png",
+   "weaponType": "Spear"
+  },
+  {
+   "id": 1433022,
+   "name": "Arcane Umbra Gram",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gram.png",
+   "weaponType": "Gram"
+  },
+  {
+   "id": 1442274,
+   "name": "Arcane Umbra Polearm",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Polearm.png",
+   "weaponType": "Polearm"
+  },
+  {
+   "id": 1542117,
+   "name": "Arcane Umbra Katana",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Katana.png",
+   "weaponType": "Katana"
+  },
+  {
+   "id": 1582023,
+   "name": "Arcane Umbra Ellaha",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Ellaha.png",
+   "weaponType": "Arm Cannon"
+  },
+  {
+   "id": 1004809,
+   "name": "Arcane Umbra Mage Hat",
+   "slot": "hat",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Mage Hat.png"
+  },
+  {
+   "id": 1053064,
+   "name": "Arcane Umbra Mage Suit",
+   "slot": "top",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Mage Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073159,
+   "name": "Arcane Umbra Mage Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoes.png"
+  },
+  {
+   "id": 1082696,
+   "name": "Arcane Umbra Mage Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gloves.png"
+  },
+  {
+   "id": 1102941,
+   "name": "Arcane Umbra Mage Cape",
+   "slot": "cape",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cape.png"
+  },
+  {
+   "id": 1152197,
+   "name": "Arcane Umbra Mage Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoulder.png"
+  },
+  {
+   "id": 1212120,
+   "name": "Arcane Umbra Shining Rod",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shining Rod.png",
+   "weaponType": "Shining Rod"
+  },
+  {
+   "id": 1252098,
+   "name": "Arcane Umbra Memorial Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Memorial Staff.png",
+   "weaponType": "Memorial Staff"
+  },
+  {
+   "id": 1253018,
+   "name": "Arcane Umbra Celestial Light",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Celestial Light.png",
+   "weaponType": "Celestial Light"
+  },
+  {
+   "id": 1254026,
+   "name": "Arcane Umbra Spirit Walker Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Spirit Walker Fan.png",
+   "weaponType": "Fan"
+  },
+  {
+   "id": 1262039,
+   "name": "Arcane Umbra Psy-limiter",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Psy-limiter.png",
+   "weaponType": "Psy-limiter"
+  },
+  {
+   "id": 1282017,
+   "name": "Arcane Umbra Lucent Gauntlet",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Lucent Gauntlet.png",
+   "weaponType": "Lucent Gauntlet"
+  },
+  {
+   "id": 1372228,
+   "name": "Arcane Umbra Wand",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Wand.png",
+   "weaponType": "Wand"
+  },
+  {
+   "id": 1382265,
+   "name": "Arcane Umbra Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Staff.png",
+   "weaponType": "Staff"
+  },
+  {
+   "id": 1004810,
+   "name": "Arcane Umbra Archer Hat",
+   "slot": "hat",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Archer Hat.png"
+  },
+  {
+   "id": 1053065,
+   "name": "Arcane Umbra Archer Suit",
+   "slot": "top",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Archer Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073160,
+   "name": "Arcane Umbra Archer Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoes.png"
+  },
+  {
+   "id": 1082697,
+   "name": "Arcane Umbra Archer Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gloves.png"
+  },
+  {
+   "id": 1102942,
+   "name": "Arcane Umbra Archer Cape",
+   "slot": "cape",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cape.png"
+  },
+  {
+   "id": 1152198,
+   "name": "Arcane Umbra Archer Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoulder.png"
+  },
+  {
+   "id": 1214018,
+   "name": "Arcane Umbra Whispershot",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Whispershot.png",
+   "weaponType": "Whispershot"
+  },
+  {
+   "id": 1452257,
+   "name": "Arcane Umbra Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Bow.png",
+   "weaponType": "Bow"
+  },
+  {
+   "id": 1462243,
+   "name": "Arcane Umbra Crossbow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Crossbow.png",
+   "weaponType": "Crossbow"
+  },
+  {
+   "id": 1522143,
+   "name": "Arcane Umbra Dual Bowguns",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Dual Bowguns.png",
+   "weaponType": "Dual Bowguns"
+  },
+  {
+   "id": 1592020,
+   "name": "Arcane Umbra Ancient Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Ancient Bow.png",
+   "weaponType": "Ancient Bow"
+  },
+  {
+   "id": 1004811,
+   "name": "Arcane Umbra Thief Hat",
+   "slot": "hat",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Thief Hat.png"
+  },
+  {
+   "id": 1053066,
+   "name": "Arcane Umbra Thief Suit",
+   "slot": "top",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Thief  Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073161,
+   "name": "Arcane Umbra Thief Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoes.png"
+  },
+  {
+   "id": 1082698,
+   "name": "Arcane Umbra Thief Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gloves.png"
+  },
+  {
+   "id": 1102943,
+   "name": "Arcane Umbra Thief Cape",
+   "slot": "cape",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cape.png"
+  },
+  {
+   "id": 1152199,
+   "name": "Arcane Umbra Thief Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoulder.png"
+  },
+  {
+   "id": 1242122,
+   "name": "Arcane Umbra Energy Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Energy Chain.png",
+   "weaponType": "Whip Blade"
+  },
+  {
+   "id": 1272017,
+   "name": "Arcane Umbra Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Chain.png",
+   "weaponType": "Chain"
+  },
+  {
+   "id": 1292018,
+   "name": "Arcane Umbra Super Ritual Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Super Ritual Fan.png",
+   "weaponType": "Ritual Fan"
+  },
+  {
+   "id": 1332279,
+   "name": "Arcane Umbra Dagger",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Dagger.png",
+   "weaponType": "Dagger"
+  },
+  {
+   "id": 1362140,
+   "name": "Arcane Umbra Cane",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cane.png",
+   "weaponType": "Cane"
+  },
+  {
+   "id": 1404018,
+   "name": "Arcane Umbra Chakram",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Chakram.png",
+   "weaponType": "Chakram"
+  },
+  {
+   "id": 1472265,
+   "name": "Arcane Umbra Guards",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Guards.png",
+   "weaponType": "Claw"
+  },
+  {
+   "id": 1004812,
+   "name": "Arcane Umbra Pirate Hat",
+   "slot": "hat",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Pirate Hat.png"
+  },
+  {
+   "id": 1053067,
+   "name": "Arcane Umbra Pirate Suit",
+   "slot": "top",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Pirate Suit.png",
+   "overall": true
+  },
+  {
+   "id": 1073162,
+   "name": "Arcane Umbra Pirate Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoes.png"
+  },
+  {
+   "id": 1082699,
+   "name": "Arcane Umbra Pirate Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Gloves.png"
+  },
+  {
+   "id": 1102944,
+   "name": "Arcane Umbra Pirate Cape",
+   "slot": "cape",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Cape.png"
+  },
+  {
+   "id": 1152200,
+   "name": "Arcane Umbra Pirate Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Shoulder.png"
+  },
+  {
+   "id": 1222113,
+   "name": "Arcane Umbra Soul Shooter",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Soul Shooter.png",
+   "weaponType": "Soul Shooter"
+  },
+  {
+   "id": 1403018,
+   "name": "Arcane Umbra Martial Brace",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Martial Brace.png",
+   "weaponType": "Martial Brace"
+  },
+  {
+   "id": 1482221,
+   "name": "Arcane Umbra Knuckle",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Knuckle.png",
+   "weaponType": "Knuckle"
+  },
+  {
+   "id": 1492235,
+   "name": "Arcane Umbra Pistol",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Pistol.png",
+   "weaponType": "Gun"
+  },
+  {
+   "id": 1532150,
+   "name": "Arcane Umbra Siege Gun",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Siege Gun.png",
+   "weaponType": "Hand Cannon"
+  },
+  {
+   "id": 1005980,
+   "name": "Eternal Knight Helm",
+   "slot": "hat",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Knight Helm.png"
+  },
+  {
+   "id": 1042433,
+   "name": "Eternal Knight Armor",
+   "slot": "top",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Knight Armor.png"
+  },
+  {
+   "id": 1062285,
+   "name": "Eternal Knight Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Knight Pants.png"
+  },
+  {
+   "id": 1073629,
+   "name": "Eternal Knight Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoes.png"
+  },
+  {
+   "id": 1082760,
+   "name": "Eternal Knight Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Gloves.png"
+  },
+  {
+   "id": 1103433,
+   "name": "Eternal Knight Cape",
+   "slot": "cape",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Cape.png"
+  },
+  {
+   "id": 1152212,
+   "name": "Eternal Knight Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoulder.png"
+  },
+  {
+   "id": 1213022,
+   "name": "Genesis Bladecaster",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Bladecaster.png",
+   "weaponType": "Bladecaster",
+   "lucky": true
+  },
+  {
+   "id": 1215024,
+   "name": "Genesis Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Sword.png",
+   "weaponType": "Sword",
+   "lucky": true
+  },
+  {
+   "id": 1232122,
+   "name": "Genesis Desperado",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Desperado.png",
+   "weaponType": "Desperado",
+   "lucky": true
+  },
+  {
+   "id": 1302355,
+   "name": "Genesis Saber",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Saber.png",
+   "weaponType": "One-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1312213,
+   "name": "Genesis Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Axe.png",
+   "weaponType": "One-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1322264,
+   "name": "Genesis Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Hammer.png",
+   "weaponType": "One-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1402268,
+   "name": "Genesis Two-handed Sword",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Two-handed Sword.png",
+   "weaponType": "Two-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1412189,
+   "name": "Genesis Two-handed Axe",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Two-handed Axe.png",
+   "weaponType": "Two-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1422197,
+   "name": "Genesis Two-handed Hammer",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Two-handed Hammer.png",
+   "weaponType": "Two-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1432227,
+   "name": "Genesis Spear",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Spear.png",
+   "weaponType": "Spear",
+   "lucky": true
+  },
+  {
+   "id": 1433023,
+   "name": "Genesis Gram",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Gram.png",
+   "weaponType": "Gram",
+   "lucky": true
+  },
+  {
+   "id": 1442285,
+   "name": "Genesis Polearm",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Polearm.png",
+   "weaponType": "Polearm",
+   "lucky": true
+  },
+  {
+   "id": 1542128,
+   "name": "Genesis Katana",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Katana.png",
+   "weaponType": "Katana",
+   "lucky": true
+  },
+  {
+   "id": 1562010,
+   "name": "Genesis Lapis",
+   "slot": "secondary",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 200,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Genesis Lapis.png"
+  },
+  {
+   "id": 1572010,
+   "name": "Genesis Lazuli",
+   "slot": "weapon",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Lazuli.png",
+   "weaponType": "Long Sword",
+   "lucky": true
+  },
+  {
+   "id": 1582044,
+   "name": "Genesis Ellaha",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Ellaha.png",
+   "weaponType": "Arm Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1213053,
+   "name": "Destiny Bladecaster (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Bladecaster.png",
+   "weaponType": "Bladecaster",
+   "lucky": true
+  },
+  {
+   "id": 1215025,
+   "name": "Destiny Sword (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Sword.png",
+   "weaponType": "Sword",
+   "lucky": true
+  },
+  {
+   "id": 1232135,
+   "name": "Destiny Desperado (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Desperado.png",
+   "weaponType": "Desperado",
+   "lucky": true
+  },
+  {
+   "id": 1302373,
+   "name": "Destiny Saber (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Saber.png",
+   "weaponType": "One-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1312226,
+   "name": "Destiny Axe (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Axe.png",
+   "weaponType": "One-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1322279,
+   "name": "Destiny Hammer (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Hammer.png",
+   "weaponType": "One-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1402290,
+   "name": "Destiny Two-handed Sword (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Sword.png",
+   "weaponType": "Two-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1412197,
+   "name": "Destiny Two-handed Axe (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Axe.png",
+   "weaponType": "Two-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1422208,
+   "name": "Destiny Two-handed Hammer (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Hammer.png",
+   "weaponType": "Two-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1432240,
+   "name": "Destiny Spear (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Spear.png",
+   "weaponType": "Spear",
+   "lucky": true
+  },
+  {
+   "id": 1433025,
+   "name": "Destiny Gram (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Gram.png",
+   "weaponType": "Gram",
+   "lucky": true
+  },
+  {
+   "id": 1442299,
+   "name": "Destiny Polearm (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Polearm.png",
+   "weaponType": "Polearm",
+   "lucky": true
+  },
+  {
+   "id": 1542149,
+   "name": "Destiny Katana (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Katana.png",
+   "weaponType": "Katana",
+   "lucky": true
+  },
+  {
+   "id": 1562011,
+   "name": "Destiny Lapis (Stage 1)",
+   "slot": "secondary",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Destiny Lapis.png"
+  },
+  {
+   "id": 1572011,
+   "name": "Destiny Lazuli (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Lazuli.png",
+   "weaponType": "Long Sword",
+   "lucky": true
+  },
+  {
+   "id": 1582058,
+   "name": "Destiny Ellaha (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ellaha.png",
+   "weaponType": "Arm Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1213054,
+   "name": "Destiny Bladecaster (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Bladecaster (Stage 2).png",
+   "weaponType": "Bladecaster",
+   "lucky": true
+  },
+  {
+   "id": 1215041,
+   "name": "Destiny Sword (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Sword (Stage 2).png",
+   "weaponType": "Sword",
+   "lucky": true
+  },
+  {
+   "id": 1232136,
+   "name": "Destiny Desperado (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Desperado (Stage 2).png",
+   "weaponType": "Desperado",
+   "lucky": true
+  },
+  {
+   "id": 1302376,
+   "name": "Destiny Saber (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Saber (Stage 2).png",
+   "weaponType": "One-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1312227,
+   "name": "Destiny Axe (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Axe (Stage 2).png",
+   "weaponType": "One-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1322283,
+   "name": "Destiny Hammer (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Hammer (Stage 2).png",
+   "weaponType": "One-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1402295,
+   "name": "Destiny Two-handed Sword (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Sword (Stage 2).png",
+   "weaponType": "Two-handed Sword",
+   "lucky": true
+  },
+  {
+   "id": 1412198,
+   "name": "Destiny Two-handed Axe (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Axe (Stage 2).png",
+   "weaponType": "Two-handed Axe",
+   "lucky": true
+  },
+  {
+   "id": 1422210,
+   "name": "Destiny Two-handed Hammer (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Two-handed Hammer (Stage 2).png",
+   "weaponType": "Two-handed Blunt Weapon",
+   "lucky": true
+  },
+  {
+   "id": 1432242,
+   "name": "Destiny Spear (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Spear (Stage 2).png",
+   "weaponType": "Spear",
+   "lucky": true
+  },
+  {
+   "id": 1433026,
+   "name": "Destiny Gram (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Gram (Stage 2).png",
+   "weaponType": "Gram",
+   "lucky": true
+  },
+  {
+   "id": 1442301,
+   "name": "Destiny Polearm (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Polearm (Stage 2).png",
+   "weaponType": "Polearm",
+   "lucky": true
+  },
+  {
+   "id": 1542151,
+   "name": "Destiny Katana (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Katana (Stage 2).png",
+   "weaponType": "Katana",
+   "lucky": true
+  },
+  {
+   "id": 1562012,
+   "name": "Destiny Lapis (Stage 2)",
+   "slot": "secondary",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Destiny Lapis (Stage 2).png"
+  },
+  {
+   "id": 1572012,
+   "name": "Destiny Lazuli (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Lazuli (Stage 2).png",
+   "weaponType": "Long Sword",
+   "lucky": true
+  },
+  {
+   "id": 1582060,
+   "name": "Destiny Ellaha (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ellaha (Stage 2).png",
+   "weaponType": "Arm Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1005981,
+   "name": "Eternal Mage Hat",
+   "slot": "hat",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Mage Hat.png"
+  },
+  {
+   "id": 1042434,
+   "name": "Eternal Mage Robe",
+   "slot": "top",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Mage Robe.png"
+  },
+  {
+   "id": 1062286,
+   "name": "Eternal Mage Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Mage Pants.png"
+  },
+  {
+   "id": 1073630,
+   "name": "Eternal Mage Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoes.png"
+  },
+  {
+   "id": 1082761,
+   "name": "Eternal Mage Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Gloves.png"
+  },
+  {
+   "id": 1103434,
+   "name": "Eternal Mage Cape",
+   "slot": "cape",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Cape.png"
+  },
+  {
+   "id": 1152213,
+   "name": "Eternal Mage Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoulder.png"
+  },
+  {
+   "id": 1212129,
+   "name": "Genesis Shining Rod",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Shining Rod.png",
+   "weaponType": "Shining Rod",
+   "lucky": true
+  },
+  {
+   "id": 1252106,
+   "name": "Genesis Memorial Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Memorial Staff.png",
+   "weaponType": "Memorial Staff",
+   "lucky": true
+  },
+  {
+   "id": 1253021,
+   "name": "Genesis Celestial Light",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Celestial Light.png",
+   "weaponType": "Celestial Light",
+   "lucky": true
+  },
+  {
+   "id": 1254028,
+   "name": "Genesis Spirit Walker Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Spirit Walker Fan.png",
+   "weaponType": "Fan",
+   "lucky": true
+  },
+  {
+   "id": 1262051,
+   "name": "Genesis Psy-limiter",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Psy-limiter.png",
+   "weaponType": "Psy-limiter",
+   "lucky": true
+  },
+  {
+   "id": 1282040,
+   "name": "Genesis Lucent Gauntlet",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Lucent Gauntlet.png",
+   "weaponType": "Lucent Gauntlet",
+   "lucky": true
+  },
+  {
+   "id": 1372237,
+   "name": "Genesis Wand",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Wand.png",
+   "weaponType": "Wand",
+   "lucky": true
+  },
+  {
+   "id": 1382274,
+   "name": "Genesis Staff",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Staff.png",
+   "weaponType": "Staff",
+   "lucky": true
+  },
+  {
+   "id": 1212142,
+   "name": "Destiny Shining Rod (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Shining Rod.png",
+   "weaponType": "Shining Rod",
+   "lucky": true
+  },
+  {
+   "id": 1252129,
+   "name": "Destiny Memorial Staff (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Memorial Staff.png",
+   "weaponType": "Memorial Staff",
+   "lucky": true
+  },
+  {
+   "id": 1253029,
+   "name": "Destiny Celestial Light (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Celestial Light.png",
+   "weaponType": "Celestial Light",
+   "lucky": true
+  },
+  {
+   "id": 1254029,
+   "name": "Destiny Spirit Walker Fan (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Spirit Walker Fan.png",
+   "weaponType": "Fan",
+   "lucky": true
+  },
+  {
+   "id": 1262065,
+   "name": "Destiny Psy-limiter (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Psy-limiter.png",
+   "weaponType": "Psy-limiter",
+   "lucky": true
+  },
+  {
+   "id": 1282054,
+   "name": "Destiny Lucent Gauntlet (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Lucent Gauntlet.png",
+   "weaponType": "Lucent Gauntlet",
+   "lucky": true
+  },
+  {
+   "id": 1372251,
+   "name": "Destiny Wand (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Wand.png",
+   "weaponType": "Wand",
+   "lucky": true
+  },
+  {
+   "id": 1382287,
+   "name": "Destiny Staff (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Staff.png",
+   "weaponType": "Staff",
+   "lucky": true
+  },
+  {
+   "id": 1212145,
+   "name": "Destiny Shining Rod (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Shining Rod (Stage 2).png",
+   "weaponType": "Shining Rod",
+   "lucky": true
+  },
+  {
+   "id": 1252131,
+   "name": "Destiny Memorial Staff (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Memorial Staff (Stage 2).png",
+   "weaponType": "Memorial Staff",
+   "lucky": true
+  },
+  {
+   "id": 1253040,
+   "name": "Destiny Celestial Light (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Celestial Light.png",
+   "weaponType": "Celestial Light",
+   "lucky": true
+  },
+  {
+   "id": 1254090,
+   "name": "Destiny Spirit Walker Fan (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Spirit Walker Fan (Stage 2).png",
+   "weaponType": "Fan",
+   "lucky": true
+  },
+  {
+   "id": 1262066,
+   "name": "Destiny Psy-limiter (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Psy-limiter (Stage 2).png",
+   "weaponType": "Psy-limiter",
+   "lucky": true
+  },
+  {
+   "id": 1282056,
+   "name": "Destiny Lucent Gauntlet (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Lucent Gauntlet (Stage 2).png",
+   "weaponType": "Lucent Gauntlet",
+   "lucky": true
+  },
+  {
+   "id": 1372252,
+   "name": "Destiny Wand (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Wand (Stage 2).png",
+   "weaponType": "Wand",
+   "lucky": true
+  },
+  {
+   "id": 1382289,
+   "name": "Destiny Staff (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Staff (Stage 2).png",
+   "weaponType": "Staff",
+   "lucky": true
+  },
+  {
+   "id": 1005982,
+   "name": "Eternal Archer Hat",
+   "slot": "hat",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Archer Hat.png"
+  },
+  {
+   "id": 1042435,
+   "name": "Eternal Archer Hood",
+   "slot": "top",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Archer Hood.png"
+  },
+  {
+   "id": 1062287,
+   "name": "Eternal Archer Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Archer Pants.png"
+  },
+  {
+   "id": 1073631,
+   "name": "Eternal Archer Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoes.png"
+  },
+  {
+   "id": 1082762,
+   "name": "Eternal Archer Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Gloves.png"
+  },
+  {
+   "id": 1103435,
+   "name": "Eternal Archer Cape",
+   "slot": "cape",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Cape.png"
+  },
+  {
+   "id": 1152214,
+   "name": "Eternal Archer Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoulder.png"
+  },
+  {
+   "id": 1214022,
+   "name": "Genesis Whispershot",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Whispershot.png",
+   "weaponType": "Whispershot",
+   "lucky": true
+  },
+  {
+   "id": 1452266,
+   "name": "Genesis Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Bow.png",
+   "weaponType": "Bow",
+   "lucky": true
+  },
+  {
+   "id": 1462252,
+   "name": "Genesis Crossbow",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Crossbow.png",
+   "weaponType": "Crossbow",
+   "lucky": true
+  },
+  {
+   "id": 1522152,
+   "name": "Genesis Dual Bowguns",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Dual Bowguns.png",
+   "weaponType": "Dual Bowguns",
+   "lucky": true
+  },
+  {
+   "id": 1592022,
+   "name": "Genesis Ancient Bow",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Ancient Bow.png",
+   "weaponType": "Ancient Bow",
+   "lucky": true
+  },
+  {
+   "id": 1214049,
+   "name": "Destiny Whispershot (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Whispershot.png",
+   "weaponType": "Whispershot",
+   "lucky": true
+  },
+  {
+   "id": 1452285,
+   "name": "Destiny Bow (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Bow.png",
+   "weaponType": "Bow",
+   "lucky": true
+  },
+  {
+   "id": 1462268,
+   "name": "Destiny Crossbow (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Crossbow.png",
+   "weaponType": "Crossbow",
+   "lucky": true
+  },
+  {
+   "id": 1522164,
+   "name": "Destiny Dual Bowguns (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dual Bowguns.png",
+   "weaponType": "Dual Bowguns",
+   "lucky": true
+  },
+  {
+   "id": 1592049,
+   "name": "Destiny Ancient Bow (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ancient Bow.png",
+   "weaponType": "Ancient Bow",
+   "lucky": true
+  },
+  {
+   "id": 1214050,
+   "name": "Destiny Whispershot (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Whispershot (Stage 2).png",
+   "weaponType": "Whispershot",
+   "lucky": true
+  },
+  {
+   "id": 1452287,
+   "name": "Destiny Bow (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Bow (Stage 2).png",
+   "weaponType": "Bow",
+   "lucky": true
+  },
+  {
+   "id": 1462270,
+   "name": "Destiny Crossbow (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Crossbow (Stage 2).png",
+   "weaponType": "Crossbow",
+   "lucky": true
+  },
+  {
+   "id": 1522167,
+   "name": "Destiny Dual Bowguns (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dual Bowguns (Stage 2).png",
+   "weaponType": "Dual Bowguns",
+   "lucky": true
+  },
+  {
+   "id": 1592051,
+   "name": "Destiny Ancient Bow (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ancient Bow (Stage 2).png",
+   "weaponType": "Ancient Bow",
+   "lucky": true
+  },
+  {
+   "id": 1005983,
+   "name": "Eternal Thief Bandana",
+   "slot": "hat",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Thief Bandana.png"
+  },
+  {
+   "id": 1042436,
+   "name": "Eternal Thief Shirt",
+   "slot": "top",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Thief Shirt.png"
+  },
+  {
+   "id": 1062288,
+   "name": "Eternal Thief Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Thief Pants.png"
+  },
+  {
+   "id": 1073632,
+   "name": "Eternal Thief Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoes.png"
+  },
+  {
+   "id": 1082763,
+   "name": "Eternal Thief Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Gloves.png"
+  },
+  {
+   "id": 1103436,
+   "name": "Eternal Thief Cape",
+   "slot": "cape",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Cape.png"
+  },
+  {
+   "id": 1152215,
+   "name": "Eternal Thief Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoulder.png"
+  },
+  {
+   "id": 1242141,
+   "name": "Genesis Energy Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Energy Chain.png",
+   "weaponType": "Whip Blade",
+   "lucky": true
+  },
+  {
+   "id": 1272040,
+   "name": "Genesis Chain",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Chain.png",
+   "weaponType": "Chain",
+   "lucky": true
+  },
+  {
+   "id": 1292022,
+   "name": "Genesis Ritual Fan",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Ritual Fan.png",
+   "weaponType": "Ritual Fan",
+   "lucky": true
+  },
+  {
+   "id": 1332289,
+   "name": "Genesis Dagger",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Dagger.png",
+   "weaponType": "Dagger",
+   "lucky": true
+  },
+  {
+   "id": 1362149,
+   "name": "Genesis Cane",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Cane.png",
+   "weaponType": "Cane",
+   "lucky": true
+  },
+  {
+   "id": 1404022,
+   "name": "Genesis Eclipse",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Eclipse.png",
+   "weaponType": "Chakram",
+   "lucky": true
+  },
+  {
+   "id": 1472274,
+   "name": "Genesis Guards",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Guards.png",
+   "weaponType": "Claw",
+   "lucky": true
+  },
+  {
+   "id": 1242161,
+   "name": "Destiny Energy Chain (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Energy Chain.png",
+   "weaponType": "Whip Blade",
+   "lucky": true
+  },
+  {
+   "id": 1272054,
+   "name": "Destiny Chain (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Chain.png",
+   "weaponType": "Chain",
+   "lucky": true
+  },
+  {
+   "id": 1292050,
+   "name": "Destiny Ritual Fan (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ritual Fan.png",
+   "weaponType": "Ritual Fan",
+   "lucky": true
+  },
+  {
+   "id": 1332303,
+   "name": "Destiny Dagger (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dagger.png",
+   "weaponType": "Dagger",
+   "lucky": true
+  },
+  {
+   "id": 1362161,
+   "name": "Destiny Cane (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Cane.png",
+   "weaponType": "Cane",
+   "lucky": true
+  },
+  {
+   "id": 1404046,
+   "name": "Destiny Chakram (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Chakram.png",
+   "weaponType": "Chakram",
+   "lucky": true
+  },
+  {
+   "id": 1472288,
+   "name": "Destiny Guards (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Guards.png",
+   "weaponType": "Claw",
+   "lucky": true
+  },
+  {
+   "id": 1242163,
+   "name": "Destiny Energy Chain (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Energy Chain (Stage 2).png",
+   "weaponType": "Whip Blade",
+   "lucky": true
+  },
+  {
+   "id": 1272055,
+   "name": "Destiny Chain (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Chain (Stage 2).png",
+   "weaponType": "Chain",
+   "lucky": true
+  },
+  {
+   "id": 1292051,
+   "name": "Destiny Ritual Fan (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Ritual Fan (Stage 2).png",
+   "weaponType": "Ritual Fan",
+   "lucky": true
+  },
+  {
+   "id": 1332305,
+   "name": "Destiny Dagger (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dagger (Stage 2).png",
+   "weaponType": "Dagger",
+   "lucky": true
+  },
+  {
+   "id": 1362165,
+   "name": "Destiny Cane (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Cane (Stage 2).png",
+   "weaponType": "Cane",
+   "lucky": true
+  },
+  {
+   "id": 1404047,
+   "name": "Destiny Chakram (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Chakram (Stage 2).png",
+   "weaponType": "Chakram",
+   "lucky": true
+  },
+  {
+   "id": 1472290,
+   "name": "Destiny Guards (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Guards (Stage 2).png",
+   "weaponType": "Claw",
+   "lucky": true
+  },
+  {
+   "id": 1005984,
+   "name": "Eternal Pirate Hat",
+   "slot": "hat",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Pirate Hat.png"
+  },
+  {
+   "id": 1042437,
+   "name": "Eternal Pirate Coat",
+   "slot": "top",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Pirate Coat.png"
+  },
+  {
+   "id": 1062289,
+   "name": "Eternal Pirate Pants",
+   "slot": "bottom",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Pirate Pants.png"
+  },
+  {
+   "id": 1073633,
+   "name": "Eternal Pirate Shoes",
+   "slot": "shoes",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoes.png"
+  },
+  {
+   "id": 1082764,
+   "name": "Eternal Pirate Gloves",
+   "slot": "gloves",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Gloves.png"
+  },
+  {
+   "id": 1103437,
+   "name": "Eternal Pirate Cape",
+   "slot": "cape",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Cape.png"
+  },
+  {
+   "id": 1152216,
+   "name": "Eternal Pirate Shoulder",
+   "slot": "shoulder",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": "Eternal",
+   "group": "Eternal",
+   "file": "Eqp Eternal Shoulder.png"
+  },
+  {
+   "id": 1222122,
+   "name": "Genesis Soul Shooter",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Soul Shooter.png",
+   "weaponType": "Soul Shooter",
+   "lucky": true
+  },
+  {
+   "id": 1403022,
+   "name": "Genesis Martial Brace",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Martial Brace.png",
+   "weaponType": "Martial Brace",
+   "lucky": true
+  },
+  {
+   "id": 1482232,
+   "name": "Genesis Claw",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Claw.png",
+   "weaponType": "Knuckle",
+   "lucky": true
+  },
+  {
+   "id": 1492245,
+   "name": "Genesis Pistol",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Pistol.png",
+   "weaponType": "Gun",
+   "lucky": true
+  },
+  {
+   "id": 1532157,
+   "name": "Genesis Siege Gun",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Siege Gun.png",
+   "weaponType": "Hand Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1222135,
+   "name": "Destiny Soul Shooter (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Soul Shooter.png",
+   "weaponType": "Soul Shooter",
+   "lucky": true
+  },
+  {
+   "id": 1403052,
+   "name": "Destiny Martial Brace (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Martial Brace.png",
+   "weaponType": "Martial Brace",
+   "lucky": true
+  },
+  {
+   "id": 1482245,
+   "name": "Destiny Claw (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Claw.png",
+   "weaponType": "Knuckle",
+   "lucky": true
+  },
+  {
+   "id": 1492259,
+   "name": "Destiny Pistol (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Pistol.png",
+   "weaponType": "Gun",
+   "lucky": true
+  },
+  {
+   "id": 1532170,
+   "name": "Destiny Blast Cannon (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Blast Cannon.png",
+   "weaponType": "Hand Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1222136,
+   "name": "Destiny Soul Shooter (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Soul Shooter (Stage 2).png",
+   "weaponType": "Soul Shooter",
+   "lucky": true
+  },
+  {
+   "id": 1403054,
+   "name": "Destiny Martial Brace (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Martial Brace (Stage 2).png",
+   "weaponType": "Martial Brace",
+   "lucky": true
+  },
+  {
+   "id": 1482247,
+   "name": "Destiny Claw (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Claw (Stage 2).png",
+   "weaponType": "Knuckle",
+   "lucky": true
+  },
+  {
+   "id": 1492261,
+   "name": "Destiny Pistol (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Pistol (Stage 2).png",
+   "weaponType": "Gun",
+   "lucky": true
+  },
+  {
+   "id": 1532172,
+   "name": "Destiny Blast Cannon (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Blast Cannon (Stage 2).png",
+   "weaponType": "Hand Cannon",
+   "lucky": true
+  },
+  {
+   "id": 1012478,
+   "name": "Condensed Power Crystal",
+   "slot": "face",
+   "jobs": null,
+   "level": 110,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Condensed Power Crystal.png"
+  },
+  {
+   "id": 1022231,
+   "name": "Aquatic Letter Eye Accessory",
+   "slot": "eye",
+   "jobs": null,
+   "level": 100,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Aquatic Letter Eye Accessory.png"
+  },
+  {
+   "id": 1022232,
+   "name": "Black Bean Mark",
+   "slot": "eye",
+   "jobs": null,
+   "level": 135,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Black Bean Mark.png"
+  },
+  {
+   "id": 1022277,
+   "name": "Papulatus Mark",
+   "slot": "eye",
+   "jobs": null,
+   "level": 145,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Papulatus Mark.png"
+  },
+  {
+   "id": 1032241,
+   "name": "Dea Sidus Earring",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 130,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Dea Sidus Earring.png"
+  },
+  {
+   "id": 1032136,
+   "name": "Will o' the Wisps",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 130,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Will o' the Wisps.png"
+  },
+  {
+   "id": 1113149,
+   "name": "Silver Blossom Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Silver Blossom Ring.png"
+  },
+  {
+   "id": 1113282,
+   "name": "Noble Ifia's Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 120,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Noble Ifia's Ring.png"
+  },
+  {
+   "id": 1113313,
+   "name": "Guardian Angel Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 160,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Guardian Angel Ring.png"
+  },
+  {
+   "id": 1122000,
+   "name": "Horntail Necklace",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 120,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Horntail Necklace.png"
+  },
+  {
+   "id": 1122076,
+   "name": "Chaos Horntail Necklace",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 120,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Chaos Horntail Necklace.png"
+  },
+  {
+   "id": 1122254,
+   "name": "Mechanator Pendant",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 120,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Mechanator Pendant.png"
+  },
+  {
+   "id": 1122150,
+   "name": "Dominator Pendant",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 140,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Dominator Pendant.png"
+  },
+  {
+   "id": 1132272,
+   "name": "Golden Clover Belt",
+   "slot": "belt",
+   "jobs": null,
+   "level": 140,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Golden Clover Belt.png"
+  },
+  {
+   "id": 1132296,
+   "name": "Enraged Zakum Belt",
+   "slot": "belt",
+   "jobs": null,
+   "level": 150,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Enraged Zakum Belt.png"
+  },
+  {
+   "id": 1152170,
+   "name": "Royal Black Metal Shoulder",
+   "slot": "shoulder",
+   "jobs": null,
+   "level": 120,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Royal Black Metal Shoulder.png"
+  },
+  {
+   "id": 1162009,
+   "name": "Stone of Eternal Life",
+   "slot": "pocket",
+   "jobs": null,
+   "level": null,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Stone of Eternal Life.png"
+  },
+  {
+   "id": 1162025,
+   "name": "Pink Holy Cup",
+   "slot": "pocket",
+   "jobs": null,
+   "level": 140,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Pink Holy Cup.png"
+  },
+  {
+   "id": 1182087,
+   "name": "Crystal Ventus Badge",
+   "slot": "badge",
+   "jobs": null,
+   "level": 130,
+   "set": "Boss Accessory",
+   "group": "Boss Accessory",
+   "file": "Eqp Crystal Ventus Badge.png"
+  },
+  {
+   "id": 1672076,
+   "name": "Black Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 120,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Black Heart.png"
+  },
+  {
+   "id": 1012632,
+   "name": "Berserked",
+   "slot": "face",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Berserked.png"
+  },
+  {
+   "id": 1022278,
+   "name": "Magic Eyepatch",
+   "slot": "eye",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Magic Eyepatch.png"
+  },
+  {
+   "id": 1122430,
+   "name": "Source of Suffering",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Source of Suffering.png"
+  },
+  {
+   "id": 1162080,
+   "name": "Cursed Red Spellbook",
+   "slot": "pocket",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Cursed Red Spellbook.png"
+  },
+  {
+   "id": 1162081,
+   "name": "Cursed Blue Spellbook",
+   "slot": "pocket",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Cursed Blue Spellbook.png"
+  },
+  {
+   "id": 1162082,
+   "name": "Cursed Green Spellbook",
+   "slot": "pocket",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Cursed Green Spellbook.png"
+  },
+  {
+   "id": 1162083,
+   "name": "Cursed Yellow Spellbook",
+   "slot": "pocket",
+   "jobs": null,
+   "level": 160,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Cursed Yellow Spellbook.png"
+  },
+  {
+   "id": 1032316,
+   "name": "Commanding Force Earring",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Commanding Force Earring.png"
+  },
+  {
+   "id": 1113306,
+   "name": "Endless Terror",
+   "slot": "ring",
+   "jobs": null,
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Endless Terror.png"
+  },
+  {
+   "id": 1132308,
+   "name": "Dreamy Belt",
+   "slot": "belt",
+   "jobs": null,
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Dreamy Belt.png"
+  },
+  {
+   "id": 1182285,
+   "name": "Genesis Badge",
+   "slot": "badge",
+   "jobs": null,
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Genesis Badge.png"
+  },
+  {
+   "id": 1190555,
+   "name": "Mitra's Rage: Warrior",
+   "slot": "emblem",
+   "jobs": [
+    "Warrior"
+   ],
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Mitra's Rage Warrior.png"
+  },
+  {
+   "id": 1190556,
+   "name": "Mitra's Rage: Bowman",
+   "slot": "emblem",
+   "jobs": [
+    "Bowman"
+   ],
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Mitra's Rage Bowman.png"
+  },
+  {
+   "id": 1190559,
+   "name": "Mitra's Rage: Pirate",
+   "slot": "emblem",
+   "jobs": [
+    "Pirate"
+   ],
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Mitra's Rage Pirate.png"
+  },
+  {
+   "id": 1190557,
+   "name": "Mitra's Rage: Magician",
+   "slot": "emblem",
+   "jobs": [
+    "Magician"
+   ],
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Mitra's Rage Magician.png"
+  },
+  {
+   "id": 1190558,
+   "name": "Mitra's Rage: Thief",
+   "slot": "emblem",
+   "jobs": [
+    "Thief"
+   ],
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Mitra's Rage Thief.png"
+  },
+  {
+   "id": 1672095,
+   "name": "Total Control",
+   "slot": "heart",
+   "jobs": null,
+   "level": 200,
+   "set": "Pitched Boss",
+   "group": "Pitched Boss",
+   "file": "Eqp Total Control.png"
+  },
+  {
+   "id": 1122443,
+   "name": "Daybreak Pendant",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 140,
+   "set": "Dawn Boss",
+   "group": "Dawn Boss",
+   "file": "Eqp Daybreak Pendant.png"
+  },
+  {
+   "id": 1012757,
+   "name": "Twilight Mark",
+   "slot": "face",
+   "jobs": null,
+   "level": 140,
+   "set": "Dawn Boss",
+   "group": "Dawn Boss",
+   "file": "Eqp Twilight Mark.png"
+  },
+  {
+   "id": 1032330,
+   "name": "Estella Earrings",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 160,
+   "set": "Dawn Boss",
+   "group": "Dawn Boss",
+   "file": "Eqp Estella Earrings.png"
+  },
+  {
+   "id": 1113316,
+   "name": "Dawn Guardian Angel Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 160,
+   "set": "Dawn Boss",
+   "group": "Dawn Boss",
+   "file": "Eqp Guardian Angel Ring.png"
+  },
+  {
+   "id": 1012911,
+   "name": "Original Sin of Pride",
+   "slot": "face",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Original Sin of Pride.png"
+  },
+  {
+   "id": 1113341,
+   "name": "Whisper of the Source",
+   "slot": "ring",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Whisper of the Source.png"
+  },
+  {
+   "id": 1113360,
+   "name": "Blissful Nightmare",
+   "slot": "ring",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Blissful Nightmare.png"
+  },
+  {
+   "id": 1122447,
+   "name": "Oath of Death",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Oath of Death.png"
+  },
+  {
+   "id": 1143471,
+   "name": "Immortal Legacy",
+   "slot": "medal",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Immortal Legacy.png"
+  },
+  {
+   "id": 1032222,
+   "name": "Reinforced Gollux Earrings",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 140,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Reinforced Gollux Earrings.png"
+  },
+  {
+   "id": 1113074,
+   "name": "Reinforced Gollux Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 140,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Reinforced Gollux Ring.png"
+  },
+  {
+   "id": 1122266,
+   "name": "Reinforced Engraved Gollux Pendant",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 140,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Reinforced Engraved Gollux Pendant.png"
+  },
+  {
+   "id": 1132245,
+   "name": "Reinforced Engraved Gollux Belt",
+   "slot": "belt",
+   "jobs": null,
+   "level": 140,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Reinforced Engraved Gollux Belt.png"
+  },
+  {
+   "id": 1032223,
+   "name": "Superior Gollux Earrings",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 150,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Superior Gollux Earrings.png"
+  },
+  {
+   "id": 1113075,
+   "name": "Superior Gollux Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 150,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Superior Gollux Ring.png"
+  },
+  {
+   "id": 1122267,
+   "name": "Superior Engraved Gollux Pendant",
+   "slot": "pendant",
+   "jobs": null,
+   "level": 150,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Superior Engraved Gollux Pendant.png"
+  },
+  {
+   "id": 1132246,
+   "name": "Superior Engraved Gollux Belt",
+   "slot": "belt",
+   "jobs": null,
+   "level": 150,
+   "set": "Gollux",
+   "group": "Gollux",
+   "file": "Eqp Superior Engraved Gollux Belt.png"
+  },
+  {
+   "id": 1032200,
+   "name": "Meister Earring",
+   "slot": "earrings",
+   "jobs": null,
+   "level": 140,
+   "set": "Meister",
+   "group": "Meister",
+   "file": "Eqp Meister Earring.png"
+  },
+  {
+   "id": 1113055,
+   "name": "Meister Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 140,
+   "set": "Meister",
+   "group": "Meister",
+   "file": "Eqp Meister Ring.png"
+  },
+  {
+   "id": 1152154,
+   "name": "Meister Shoulder",
+   "slot": "shoulder",
+   "jobs": null,
+   "level": 140,
+   "set": "Meister",
+   "group": "Meister",
+   "file": "Eqp Meister Shoulder.png"
+  },
+  {
+   "id": 1132275,
+   "name": "Ayame's Treasure",
+   "slot": "belt",
+   "jobs": null,
+   "level": 140,
+   "set": null,
+   "group": "Princess No",
+   "file": "Eqp Ayame's Treasure.png"
+  },
+  {
+   "id": 1113155,
+   "name": "Kanna's Treasure",
+   "slot": "ring",
+   "jobs": null,
+   "level": 140,
+   "set": null,
+   "group": "Princess No",
+   "file": "Eqp Kanna's Treasure.png"
+  },
+  {
+   "id": 1113236,
+   "name": "Treasure Hunter John's Ring",
+   "slot": "ring",
+   "jobs": null,
+   "level": 125,
+   "set": null,
+   "group": "Other rings",
+   "file": "Eqp Treasure Hunter John's Ring.png"
+  },
+  {
+   "id": 1114311,
+   "name": "Heroic Tenebris Expedition Ring (Complete)",
+   "slot": "ring",
+   "jobs": null,
+   "level": 120,
+   "set": null,
+   "group": "Event rings",
+   "file": "Eqp Tenebris Expedition Ring.png"
+  },
+  {
+   "id": 1114322,
+   "name": "Heroic Awake Ring (Lv. 4)",
+   "slot": "ring",
+   "jobs": null,
+   "level": 120,
+   "set": null,
+   "group": "Event rings",
+   "file": "Eqp Awake Ring.png"
+  },
+  {
+   "id": 1114316,
+   "name": "Glory Guard Ring: Justicar",
+   "slot": "ring",
+   "jobs": null,
+   "level": 120,
+   "set": null,
+   "group": "Event rings",
+   "file": "Eqp Glory Guard Ring Justicar.png"
+  },
+  {
+   "id": 1190301,
+   "name": "Gold Maple Leaf Emblem",
+   "slot": "emblem",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Emblems",
+   "file": "Eqp Gold Maple Leaf Emblem.png"
+  },
+  {
+   "id": 1672099,
+   "name": "Plasma Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 130,
+   "set": null,
+   "group": "Hearts",
+   "file": "Eqp Plasma Heart.png"
+  },
+  {
+   "id": 1672073,
+   "name": "Fairy Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Hearts",
+   "file": "Eqp Fairy Heart.png"
+  },
+  {
+   "id": 1672040,
+   "name": "Titanium Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Hearts",
+   "file": "Eqp Titanium Heart.png"
+  },
+  {
+   "id": 1672077,
+   "name": "Liquid-Metal Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 120,
+   "set": null,
+   "group": "Hearts",
+   "file": "Eqp Liquid-Metal Heart.png"
+  },
+  {
+   "id": 1672069,
+   "name": "Outlaw Heart",
+   "slot": "heart",
+   "jobs": null,
+   "level": 150,
+   "set": null,
+   "group": "Hearts",
+   "file": "Eqp Outlaw Heart.png"
+  },
+  {
+   "id": 1142922,
+   "name": "Seven Day Monster Parker",
+   "slot": "medal",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Medals",
+   "file": "Eqp Seven Day Monster Parker.png"
+  },
+  {
+   "id": 1202305,
+   "name": "Guild Castle Blue Brooch",
+   "slot": "totem",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Guild totems",
+   "file": "Eqp Guild Castle Blue Brooch.png"
+  },
+  {
+   "id": 1202306,
+   "name": "Guild Castle Red Brooch",
+   "slot": "totem",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Guild totems",
+   "file": "Eqp Guild Castle Red Brooch.png"
+  },
+  {
+   "id": 1202307,
+   "name": "Guild Castle Green Brooch",
+   "slot": "totem",
+   "jobs": null,
+   "level": 100,
+   "set": null,
+   "group": "Guild totems",
+   "file": "Eqp Guild Castle Green Brooch.png"
+  },
+  {
+   "id": 1352207,
+   "name": "Frozen Medal",
+   "slot": "secondary",
+   "jobs": [
+    "Hero"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Medal.png"
+  },
+  {
+   "id": 1352217,
+   "name": "Frozen Rosary",
+   "slot": "secondary",
+   "jobs": [
+    "Paladin"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Rosary.png"
+  },
+  {
+   "id": 1352227,
+   "name": "Frozen Chain",
+   "slot": "secondary",
+   "jobs": [
+    "Dark Knight"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Chain.png"
+  },
+  {
+   "id": 1352237,
+   "name": "Frozen Rusty Book",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Fire/Poison"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Rusty Book.png"
+  },
+  {
+   "id": 1352247,
+   "name": "Frozen Metallic Book",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Ice/Lightning"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Metallic Book.png"
+  },
+  {
+   "id": 1352257,
+   "name": "Frozen White Gold Book",
+   "slot": "secondary",
+   "jobs": [
+    "Bishop"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen White Gold Book.png"
+  },
+  {
+   "id": 1352267,
+   "name": "Frozen Feather",
+   "slot": "secondary",
+   "jobs": [
+    "Bow Master"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Feather.png"
+  },
+  {
+   "id": 1352277,
+   "name": "Frozen True Shot",
+   "slot": "secondary",
+   "jobs": [
+    "Marksman"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen True Shot.png"
+  },
+  {
+   "id": 1353704,
+   "name": "Frozen Relic",
+   "slot": "secondary",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Relic.png"
+  },
+  {
+   "id": 1352297,
+   "name": "Frozen Death Sender Charm",
+   "slot": "secondary",
+   "jobs": [
+    "Night Lord"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Death Sender Charm.png"
+  },
+  {
+   "id": 1352287,
+   "name": "Frozen Shadow",
+   "slot": "secondary",
+   "jobs": [
+    "Shadower"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Shadow.png"
+  },
+  {
+   "id": 1342102,
+   "name": "Frozen Katara",
+   "slot": "secondary",
+   "jobs": [
+    "Dual Blade"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Onyx Maple Katara.png"
+  },
+  {
+   "id": 1352907,
+   "name": "Frozen Wrist Armor",
+   "slot": "secondary",
+   "jobs": [
+    "Buccaneer"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Wrist Armor.png"
+  },
+  {
+   "id": 1352917,
+   "name": "Frozen Falcon Eye",
+   "slot": "secondary",
+   "jobs": [
+    "Corsair"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Falcon Eye.png"
+  },
+  {
+   "id": 1352929,
+   "name": "Frozen Center Fire Bomb",
+   "slot": "secondary",
+   "jobs": [
+    "Cannoneer"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Center Fire Bomb.png"
+  },
+  {
+   "id": 1352976,
+   "name": "Frozen Ereve Brilliance",
+   "slot": "secondary",
+   "jobs": [
+    "Dawn Warrior",
+    "Blaze Wizard",
+    "Wind Archer",
+    "Night Walker",
+    "Thunder Breaker"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Ereve Brilliance.png"
+  },
+  {
+   "id": 1352936,
+   "name": "Frozen Dragon Mass",
+   "slot": "secondary",
+   "jobs": [
+    "Aran"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Dragon Mass.png"
+  },
+  {
+   "id": 1352946,
+   "name": "Frozen Dragon Master's Legacy",
+   "slot": "secondary",
+   "jobs": [
+    "Evan"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Dragon Master's Legacy.png"
+  },
+  {
+   "id": 1352010,
+   "name": "Frozen Magic Arrows",
+   "slot": "secondary",
+   "jobs": [
+    "Mercedes"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Magic Arrows.png"
+  },
+  {
+   "id": 1352110,
+   "name": "Carte Frozen",
+   "slot": "secondary",
+   "jobs": [
+    "Phantom"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Carte Frozen.png"
+  },
+  {
+   "id": 1353106,
+   "name": "Frozen Fox Marble",
+   "slot": "secondary",
+   "jobs": [
+    "Shade"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Fox Marble.png"
+  },
+  {
+   "id": 1352407,
+   "name": "Frozen Orb",
+   "slot": "secondary",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Orb.png"
+  },
+  {
+   "id": 1099013,
+   "name": "Frozen Force Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Slayer",
+    "Demon Avenger"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Force Shield.png"
+  },
+  {
+   "id": 1352958,
+   "name": "Frozen Maximizer Ball",
+   "slot": "secondary",
+   "jobs": [
+    "Battle Mage"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Maximizer Ball.png"
+  },
+  {
+   "id": 1352968,
+   "name": "Frozen Wild Heron",
+   "slot": "secondary",
+   "jobs": [
+    "Wild Hunter"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Wild Heron.png"
+  },
+  {
+   "id": 1352708,
+   "name": "Frozen Magnum",
+   "slot": "secondary",
+   "jobs": [
+    "Mechanic"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Magnum.png"
+  },
+  {
+   "id": 1353005,
+   "name": "Frozen Octo Core Controller",
+   "slot": "secondary",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Octo Core Controller.png"
+  },
+  {
+   "id": 1353404,
+   "name": "Frozen Charges",
+   "slot": "secondary",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Charges.png"
+  },
+  {
+   "id": 1352809,
+   "name": "Frozen Tiger Blade",
+   "slot": "secondary",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Tiger Blade.png"
+  },
+  {
+   "id": 1354305,
+   "name": "Frozen Talisman",
+   "slot": "secondary",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Talisman.png"
+  },
+  {
+   "id": 1098007,
+   "name": "Frozen Soul Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Mihile"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Soul Shield.png"
+  },
+  {
+   "id": 1352507,
+   "name": "Nova Frozen Essence",
+   "slot": "secondary",
+   "jobs": [
+    "Kaiser"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Nova Frozen Essence.png"
+  },
+  {
+   "id": 1354014,
+   "name": "Frozen D100 Weapon Belt",
+   "slot": "secondary",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen D100 Weapon Belt.png"
+  },
+  {
+   "id": 1353305,
+   "name": "Frozen Transmitter",
+   "slot": "secondary",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Transmitter.png"
+  },
+  {
+   "id": 1352607,
+   "name": "Frozen Soul Ring",
+   "slot": "secondary",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Soul Ring.png"
+  },
+  {
+   "id": 1353204,
+   "name": "Frozen Queen Chess Piece",
+   "slot": "secondary",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Queen Chess Piece.png"
+  },
+  {
+   "id": 1354004,
+   "name": "Frozen Shiny Bladebinder",
+   "slot": "secondary",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Shiny Bladebinder.png"
+  },
+  {
+   "id": 1353504,
+   "name": "Frozen Lucent Wings",
+   "slot": "secondary",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Lucent Wings.png"
+  },
+  {
+   "id": 1354034,
+   "name": "Frozen Infinite Hex Seeker",
+   "slot": "secondary",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Infinite Hex Seeker.png"
+  },
+  {
+   "id": 1353604,
+   "name": "Frozen Path",
+   "slot": "secondary",
+   "jobs": [
+    "Ark"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Path.png"
+  },
+  {
+   "id": 1354045,
+   "name": "Frozen Imugi Gem",
+   "slot": "secondary",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Imugi Gem.png"
+  },
+  {
+   "id": 1354024,
+   "name": "Frozen Four-Jade Ornament",
+   "slot": "secondary",
+   "jobs": [
+    "Lara"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Four-Jade Ornament.png"
+  },
+  {
+   "id": 1353804,
+   "name": "Frozen Fan Tassel",
+   "slot": "secondary",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Fan Tassel.png"
+  },
+  {
+   "id": 1352817,
+   "name": "Frozen Leaf",
+   "slot": "secondary",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Leaf.png"
+  },
+  {
+   "id": 1352864,
+   "name": "Frozen Brace Band",
+   "slot": "secondary",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Brace Band.png"
+  },
+  {
+   "id": 1352874,
+   "name": "Frozen Compass",
+   "slot": "secondary",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Compass.png"
+  },
+  {
+   "id": 1092125,
+   "name": "Astra Sacred Aegis",
+   "slot": "secondary",
+   "jobs": [
+    "Hero",
+    "Paladin"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Sacred Aegis.png"
+  },
+  {
+   "id": 1720002,
+   "name": "Astra Medallion",
+   "slot": "secondary",
+   "jobs": [
+    "Hero"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Medallion.png"
+  },
+  {
+   "id": 1720102,
+   "name": "Astra Rosary",
+   "slot": "secondary",
+   "jobs": [
+    "Paladin"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Rosary.png"
+  },
+  {
+   "id": 1720202,
+   "name": "Astra Chain",
+   "slot": "secondary",
+   "jobs": [
+    "Dark Knight"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Chain.png"
+  },
+  {
+   "id": 1092128,
+   "name": "Astra Arcane Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Fire/Poison",
+    "Arch Mage Ice/Lightning",
+    "Bishop"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Arcane Shield.png"
+  },
+  {
+   "id": 1720602,
+   "name": "Astra Feather",
+   "slot": "secondary",
+   "jobs": [
+    "Bow Master"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Feather.png"
+  },
+  {
+   "id": 1720702,
+   "name": "Astra Bullseye",
+   "slot": "secondary",
+   "jobs": [
+    "Marksman"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Bullseye.png"
+  },
+  {
+   "id": 1720802,
+   "name": "Astra Relic",
+   "slot": "secondary",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Relic.png"
+  },
+  {
+   "id": 1720902,
+   "name": "Astra Charm",
+   "slot": "secondary",
+   "jobs": [
+    "Night Lord"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Charm.png"
+  },
+  {
+   "id": 1092131,
+   "name": "Astra Bane Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Shadower"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Bane Shield.png"
+  },
+  {
+   "id": 1342127,
+   "name": "Astra Katara",
+   "slot": "secondary",
+   "jobs": [
+    "Dual Blade"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Katara.png"
+  },
+  {
+   "id": 1721102,
+   "name": "Astra Wrist Band",
+   "slot": "secondary",
+   "jobs": [
+    "Buccaneer"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Wrist Band.png"
+  },
+  {
+   "id": 1721202,
+   "name": "Astra Raven Eye",
+   "slot": "secondary",
+   "jobs": [
+    "Corsair"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Raven Eye.png"
+  },
+  {
+   "id": 1721302,
+   "name": "Astra Incendiary",
+   "slot": "secondary",
+   "jobs": [
+    "Cannoneer"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Incendiary.png"
+  },
+  {
+   "id": 1092134,
+   "name": "Astra Topaz Aegis",
+   "slot": "secondary",
+   "jobs": [
+    "Dawn Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Topaz Aegis.png"
+  },
+  {
+   "id": 1721402,
+   "name": "Astra Topaz",
+   "slot": "secondary",
+   "jobs": [
+    "Dawn Warrior"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Topaz.png"
+  },
+  {
+   "id": 1092137,
+   "name": "Astra Ruby Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Blaze Wizard"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Ruby Shield.png"
+  },
+  {
+   "id": 1721602,
+   "name": "Astra Emerald",
+   "slot": "secondary",
+   "jobs": [
+    "Wind Archer"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Emerald.png"
+  },
+  {
+   "id": 1721702,
+   "name": "Astra Obsidian",
+   "slot": "secondary",
+   "jobs": [
+    "Night Walker"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Obsidian.png"
+  },
+  {
+   "id": 1721802,
+   "name": "Astra Sapphire",
+   "slot": "secondary",
+   "jobs": [
+    "Thunder Breaker"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Sapphire.png"
+  },
+  {
+   "id": 1721902,
+   "name": "Astra White Tiger Pendulum",
+   "slot": "secondary",
+   "jobs": [
+    "Aran"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra White Tiger Pendulum.png"
+  },
+  {
+   "id": 1092140,
+   "name": "Astra Honor Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Evan"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Honor Shield.png"
+  },
+  {
+   "id": 1722102,
+   "name": "Astra Magic Arrows",
+   "slot": "secondary",
+   "jobs": [
+    "Mercedes"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Magic Arrows.png"
+  },
+  {
+   "id": 1722202,
+   "name": "Astra Carte",
+   "slot": "secondary",
+   "jobs": [
+    "Phantom"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Carte.png"
+  },
+  {
+   "id": 1722402,
+   "name": "Astra Fox Marble",
+   "slot": "secondary",
+   "jobs": [
+    "Shade"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Fox Marble.png"
+  },
+  {
+   "id": 1722302,
+   "name": "Astra Orb",
+   "slot": "secondary",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Orb.png"
+  },
+  {
+   "id": 1099034,
+   "name": "Astra Force Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Slayer"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Force Shield.png"
+  },
+  {
+   "id": 1099028,
+   "name": "Astra Force Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Force Shield.png"
+  },
+  {
+   "id": 1092143,
+   "name": "Astra Umbral Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Battle Mage"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Umbral Shield.png"
+  },
+  {
+   "id": 1722802,
+   "name": "Astra Wild Tusk",
+   "slot": "secondary",
+   "jobs": [
+    "Wild Hunter"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Wild Tusk.png"
+  },
+  {
+   "id": 1722902,
+   "name": "Astra Magnum",
+   "slot": "secondary",
+   "jobs": [
+    "Mechanic"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Magnum.png"
+  },
+  {
+   "id": 1723002,
+   "name": "Astra Deca Core Controller",
+   "slot": "secondary",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Deca Core Controller.png"
+  },
+  {
+   "id": 1723102,
+   "name": "Astra Charges",
+   "slot": "secondary",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Charges.png"
+  },
+  {
+   "id": 1725002,
+   "name": "Astra Kodachi",
+   "slot": "secondary",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Kodachi.png"
+  },
+  {
+   "id": 1354312,
+   "name": "Astra Talisman",
+   "slot": "secondary",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Talisman.png"
+  },
+  {
+   "id": 1098014,
+   "name": "Astra Soul Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Mihile"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Soul Shield.png"
+  },
+  {
+   "id": 1723302,
+   "name": "Astra Nova Essence",
+   "slot": "secondary",
+   "jobs": [
+    "Kaiser"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Nova Essence.png"
+  },
+  {
+   "id": 1723402,
+   "name": "Astra Weapon Belt",
+   "slot": "secondary",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Weapon Belt.png"
+  },
+  {
+   "id": 1723502,
+   "name": "Astra Transmitter",
+   "slot": "secondary",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Transmitter.png"
+  },
+  {
+   "id": 1723602,
+   "name": "Astra Soul Ring",
+   "slot": "secondary",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Soul Ring.png"
+  },
+  {
+   "id": 1723702,
+   "name": "Astra Hourglass",
+   "slot": "secondary",
+   "jobs": [
+    "Zero"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Hourglass.png"
+  },
+  {
+   "id": 1723802,
+   "name": "Astra King Chess Piece",
+   "slot": "secondary",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra King Chess Piece.png"
+  },
+  {
+   "id": 1723902,
+   "name": "Astra Bladebinder",
+   "slot": "secondary",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Bladebinder.png"
+  },
+  {
+   "id": 1724002,
+   "name": "Astra Lucent Wings",
+   "slot": "secondary",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Lucent Wings.png"
+  },
+  {
+   "id": 1724102,
+   "name": "Astra Hex Seeker",
+   "slot": "secondary",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Hex Seeker.png"
+  },
+  {
+   "id": 1724202,
+   "name": "Astra Path",
+   "slot": "secondary",
+   "jobs": [
+    "Ark"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Path.png"
+  },
+  {
+   "id": 1724302,
+   "name": "Astra Imugi Gem",
+   "slot": "secondary",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Imugi Gem.png"
+  },
+  {
+   "id": 1724402,
+   "name": "Astra Four-Jade Ornament",
+   "slot": "secondary",
+   "jobs": [
+    "Lara"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Four-Jade Ornament.png"
+  },
+  {
+   "id": 1724502,
+   "name": "Astra Diamond Fan Tassel",
+   "slot": "secondary",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Diamond Fan Tassel.png"
+  },
+  {
+   "id": 1092146,
+   "name": "Astra Leaf Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Leaf Shield.png"
+  },
+  {
+   "id": 1725202,
+   "name": "Astra Brace Band",
+   "slot": "secondary",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Brace Band.png"
+  },
+  {
+   "id": 1725402,
+   "name": "Astra Keir",
+   "slot": "secondary",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Keir.png"
+  },
+  {
+   "id": 1725302,
+   "name": "Astra Compass",
+   "slot": "secondary",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Astra Compass.png"
+  },
+  {
+   "id": 1352202,
+   "name": "Virtues Medallion",
+   "slot": "secondary",
+   "jobs": [
+    "Hero"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Virtues Medallion.png"
+  },
+  {
+   "id": 1352212,
+   "name": "Sacred Rosary",
+   "slot": "secondary",
+   "jobs": [
+    "Paladin"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Sacred Rosary.png"
+  },
+  {
+   "id": 1352222,
+   "name": "Berserk Chain",
+   "slot": "secondary",
+   "jobs": [
+    "Dark Knight"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Berserk Chain.png"
+  },
+  {
+   "id": 1352232,
+   "name": "Rusty Book <Epode>",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Fire/Poison"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Rusty Book (Epode).png"
+  },
+  {
+   "id": 1352242,
+   "name": "Metallic Blue Book <Epode>",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Ice/Lightning"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Metallic Blue Book (Epode).png"
+  },
+  {
+   "id": 1352252,
+   "name": "White Gold Book <Epode>",
+   "slot": "secondary",
+   "jobs": [
+    "Bishop"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp White Gold Book (Epode).png"
+  },
+  {
+   "id": 1352262,
+   "name": "Blasted Feather",
+   "slot": "secondary",
+   "jobs": [
+    "Bow Master"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Blasted Feather.png"
+  },
+  {
+   "id": 1352272,
+   "name": "True Shot",
+   "slot": "secondary",
+   "jobs": [
+    "Marksman"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp True Shot.png"
+  },
+  {
+   "id": 1352282,
+   "name": "Slashing Shadow",
+   "slot": "secondary",
+   "jobs": [
+    "Shadower"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Slashing Shadow.png"
+  },
+  {
+   "id": 1352292,
+   "name": "Death Sender Charm",
+   "slot": "secondary",
+   "jobs": [
+    "Night Lord"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Death Sender Charm.png"
+  },
+  {
+   "id": 1352902,
+   "name": "Wrist Armor",
+   "slot": "secondary",
+   "jobs": [
+    "Buccaneer"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Wrist Armor.png"
+  },
+  {
+   "id": 1352912,
+   "name": "Falcon Eye",
+   "slot": "secondary",
+   "jobs": [
+    "Corsair"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Falcon Eye.png"
+  },
+  {
+   "id": 1352922,
+   "name": "Center Fire Bomb",
+   "slot": "secondary",
+   "jobs": [
+    "Cannoneer"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Center Fire Bomb.png"
+  },
+  {
+   "id": 1352932,
+   "name": "Dragon Mass",
+   "slot": "secondary",
+   "jobs": [
+    "Aran"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Dragon Mass.png"
+  },
+  {
+   "id": 1352942,
+   "name": "Dragon Master's Legacy",
+   "slot": "secondary",
+   "jobs": [
+    "Evan"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Dragon Master's Legacy.png"
+  },
+  {
+   "id": 1352003,
+   "name": "Infinite Magic Arrows",
+   "slot": "secondary",
+   "jobs": [
+    "Mercedes"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Infinite Magic Arrows.png"
+  },
+  {
+   "id": 1352103,
+   "name": "Carte Finale",
+   "slot": "secondary",
+   "jobs": [
+    "Phantom"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Carte Finale.png"
+  },
+  {
+   "id": 1353103,
+   "name": "Golden Fox Marble",
+   "slot": "secondary",
+   "jobs": [
+    "Shade"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Golden Fox Marble.png"
+  },
+  {
+   "id": 1352403,
+   "name": "Karma Orb",
+   "slot": "secondary",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Karma Orb.png"
+  },
+  {
+   "id": 1099004,
+   "name": "Force Shield of Extremes",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Slayer"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Force Shield of Extremes.png"
+  },
+  {
+   "id": 1099009,
+   "name": "Force Shield of Extremes",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Force Shield of Extremes.png"
+  },
+  {
+   "id": 1353403,
+   "name": "Masterwork Charges",
+   "slot": "secondary",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Masterwork Charges.png"
+  },
+  {
+   "id": 1352952,
+   "name": "Maximizer Ball",
+   "slot": "secondary",
+   "jobs": [
+    "Battle Mage"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Maximizer Ball.png"
+  },
+  {
+   "id": 1352962,
+   "name": "Wild Heron",
+   "slot": "secondary",
+   "jobs": [
+    "Wild Hunter"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Wild Heron.png"
+  },
+  {
+   "id": 1353004,
+   "name": "Octa Core Controller",
+   "slot": "secondary",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Octa Core Controller.png"
+  },
+  {
+   "id": 1352703,
+   "name": "Eternal Magnum",
+   "slot": "secondary",
+   "jobs": [
+    "Mechanic"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Eternal Magnum.png"
+  },
+  {
+   "id": 1098003,
+   "name": "Soul Shield of Justice",
+   "slot": "secondary",
+   "jobs": [
+    "Mihile"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Soul Shield of Justice.png"
+  },
+  {
+   "id": 1352972,
+   "name": "Ereve Brilliance",
+   "slot": "secondary",
+   "jobs": [
+    "Dawn Warrior",
+    "Blaze Wizard",
+    "Wind Archer",
+    "Night Walker",
+    "Thunder Breaker"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Ereve Brilliance.png"
+  },
+  {
+   "id": 1352503,
+   "name": "Nova Truth Essence",
+   "slot": "secondary",
+   "jobs": [
+    "Kaiser"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Nova Truth Essence.png"
+  },
+  {
+   "id": 1353303,
+   "name": "Transmitter Type-A",
+   "slot": "secondary",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Transmitter Type-A.png"
+  },
+  {
+   "id": 1352604,
+   "name": "Green Soul Ring",
+   "slot": "secondary",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Green Soul Ring.png"
+  },
+  {
+   "id": 1353203,
+   "name": "Queen Chess Piece",
+   "slot": "secondary",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Queen Chess Piece.png"
+  },
+  {
+   "id": 1353503,
+   "name": "Glory Lucent Wings",
+   "slot": "secondary",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Glory Lucent Wings.png"
+  },
+  {
+   "id": 1353603,
+   "name": "Ultimate Path",
+   "slot": "secondary",
+   "jobs": [
+    "Ark"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Ultimate Path.png"
+  },
+  {
+   "id": 1353703,
+   "name": "Perfect Relic",
+   "slot": "secondary",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Perfect Relic.png"
+  },
+  {
+   "id": 1353803,
+   "name": "Moonstone Fan Tassel",
+   "slot": "secondary",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Moonstone Fan Tassel.png"
+  },
+  {
+   "id": 1354003,
+   "name": "Noble Bladebinder",
+   "slot": "secondary",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Noble Bladebinder.png"
+  },
+  {
+   "id": 1354013,
+   "name": "D100 Custom Weapon Belt",
+   "slot": "secondary",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp D100 Custom Weapon Belt.png"
+  },
+  {
+   "id": 1354023,
+   "name": "Radiant Four-Jade Ornament",
+   "slot": "secondary",
+   "jobs": [
+    "Lara"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Radiant Four-Jade Ornament.png"
+  },
+  {
+   "id": 1354033,
+   "name": "Infinite Hex Seeker",
+   "slot": "secondary",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Infinite Hex Seeker.png"
+  },
+  {
+   "id": 1354043,
+   "name": "Violet Imugi Gem",
+   "slot": "secondary",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Violet Imugi Gem.png"
+  },
+  {
+   "id": 1352803,
+   "name": "Fire Phoenix Blade",
+   "slot": "secondary",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Fire Phoenix Blade.png"
+  },
+  {
+   "id": 1352841,
+   "name": "Golden Pearl Leaf",
+   "slot": "secondary",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Golden Pearl Leaf.png"
+  },
+  {
+   "id": 1352863,
+   "name": "Boundless Brace Band",
+   "slot": "secondary",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Boundless Brace Band.png"
+  },
+  {
+   "id": 1352873,
+   "name": "Oort Compass",
+   "slot": "secondary",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Oort Compass.png"
+  },
+  {
+   "id": 1354303,
+   "name": "Shikigami Talisman",
+   "slot": "secondary",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Shikigami Talisman.png"
+  },
+  {
+   "id": 1352883,
+   "name": "Imper Keir",
+   "slot": "secondary",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Imper Keir.png"
+  },
+  {
+   "id": 1352009,
+   "name": "Princess No's Accursed Arrow",
+   "slot": "secondary",
+   "jobs": [
+    "Mercedes"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Accursed Arrow.png"
+  },
+  {
+   "id": 1352957,
+   "name": "Princess No's Accursed Marble",
+   "slot": "secondary",
+   "jobs": [
+    "Battle Mage"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Accursed Marble.png"
+  },
+  {
+   "id": 1099011,
+   "name": "Princess No's Accursed Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Slayer"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Accursed Shield.png"
+  },
+  {
+   "id": 1099012,
+   "name": "Princess No's Accursed Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Demon Avenger"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Accursed Shield.png"
+  },
+  {
+   "id": 1352967,
+   "name": "Princess No's Arrowhead",
+   "slot": "secondary",
+   "jobs": [
+    "Wild Hunter"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Arrowhead.png"
+  },
+  {
+   "id": 1352867,
+   "name": "Princess No's Brace Band",
+   "slot": "secondary",
+   "jobs": [
+    "Mo Xuan"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Brace Band.png"
+  },
+  {
+   "id": 1352109,
+   "name": "Princess No's Carte",
+   "slot": "secondary",
+   "jobs": [
+    "Phantom"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Carte.png"
+  },
+  {
+   "id": 1352296,
+   "name": "Princess No's Charm",
+   "slot": "secondary",
+   "jobs": [
+    "Night Lord"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Charm.png"
+  },
+  {
+   "id": 1352878,
+   "name": "Princess No's Compass",
+   "slot": "secondary",
+   "jobs": [
+    "Sia Astelle"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Compass.png"
+  },
+  {
+   "id": 1353006,
+   "name": "Princess No's Controller",
+   "slot": "secondary",
+   "jobs": [
+    "Xenon"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Controller.png"
+  },
+  {
+   "id": 1352246,
+   "name": "Princess No's Damp Book",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Ice/Lightning"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Damp Book.png"
+  },
+  {
+   "id": 1352506,
+   "name": "Princess No's Dragon Essence",
+   "slot": "secondary",
+   "jobs": [
+    "Kaiser"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Dragon Essence.png"
+  },
+  {
+   "id": 1352945,
+   "name": "Princess No's Dragon Legacy",
+   "slot": "secondary",
+   "jobs": [
+    "Evan"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Dragon Legacy.png"
+  },
+  {
+   "id": 1352916,
+   "name": "Princess No's Falcon Eye",
+   "slot": "secondary",
+   "jobs": [
+    "Corsair"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Falcon Eye.png"
+  },
+  {
+   "id": 1353807,
+   "name": "Princess No's Fan Tassel",
+   "slot": "secondary",
+   "jobs": [
+    "Hoyoung"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Fan Tassel.png"
+  },
+  {
+   "id": 1352266,
+   "name": "Princess No's Feather",
+   "slot": "secondary",
+   "jobs": [
+    "Bow Master"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Feather.png"
+  },
+  {
+   "id": 1352928,
+   "name": "Princess No's Fire Bomb",
+   "slot": "secondary",
+   "jobs": [
+    "Cannoneer"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Fire Bomb.png"
+  },
+  {
+   "id": 1352236,
+   "name": "Princess No's Flaming Book",
+   "slot": "secondary",
+   "jobs": [
+    "Arch Mage Fire/Poison"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Flaming Book.png"
+  },
+  {
+   "id": 1352975,
+   "name": "Princess No's Floral Jewel",
+   "slot": "secondary",
+   "jobs": [
+    "Dawn Warrior",
+    "Blaze Wizard",
+    "Wind Archer",
+    "Night Walker",
+    "Thunder Breaker"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Floral Jewel.png"
+  },
+  {
+   "id": 1352935,
+   "name": "Princess No's Flower Ballast",
+   "slot": "secondary",
+   "jobs": [
+    "Aran"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Flower Ballast.png"
+  },
+  {
+   "id": 1352226,
+   "name": "Princess No's Flower Chain",
+   "slot": "secondary",
+   "jobs": [
+    "Dark Knight"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Flower Chain.png"
+  },
+  {
+   "id": 1353105,
+   "name": "Princess No's Fox Marble",
+   "slot": "secondary",
+   "jobs": [
+    "Shade"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Fox Marble.png"
+  },
+  {
+   "id": 1352256,
+   "name": "Princess No's Golden Book",
+   "slot": "secondary",
+   "jobs": [
+    "Bishop"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Golden Book.png"
+  },
+  {
+   "id": 1354007,
+   "name": "Princess No's Immortal Bladebinder",
+   "slot": "secondary",
+   "jobs": [
+    "Adele"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Immortal Bladebinder.png"
+  },
+  {
+   "id": 1354027,
+   "name": "Princess No's Immortal Four-Jade Ornament",
+   "slot": "secondary",
+   "jobs": [
+    "Lara"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Immortal Four-Jade Ornament.png"
+  },
+  {
+   "id": 1354037,
+   "name": "Princess No's Immortal Hex Seeker",
+   "slot": "secondary",
+   "jobs": [
+    "Khali"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Immortal Hex Seeker.png"
+  },
+  {
+   "id": 1353707,
+   "name": "Princess No's Immortal Relic",
+   "slot": "secondary",
+   "jobs": [
+    "Pathfinder"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Immortal Relic.png"
+  },
+  {
+   "id": 1354017,
+   "name": "Princess No's Immortal Weapon Belt",
+   "slot": "secondary",
+   "jobs": [
+    "Kain"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Immortal Weapon Belt.png"
+  },
+  {
+   "id": 1354049,
+   "name": "Princess No's Imugi Gem",
+   "slot": "secondary",
+   "jobs": [
+    "Ren"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Imugi Gem.png"
+  },
+  {
+   "id": 1352888,
+   "name": "Princess No's Keir",
+   "slot": "secondary",
+   "jobs": [
+    "Erel Light"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Keir.png"
+  },
+  {
+   "id": 1352815,
+   "name": "Princess No's Leaf",
+   "slot": "secondary",
+   "jobs": [
+    "Lynn"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Leaf.png"
+  },
+  {
+   "id": 1353505,
+   "name": "Princess No's Lucent Wings",
+   "slot": "secondary",
+   "jobs": [
+    "Illium"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Lucent Wings.png"
+  },
+  {
+   "id": 1352707,
+   "name": "Princess No's Magnum",
+   "slot": "secondary",
+   "jobs": [
+    "Mechanic"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Magnum.png"
+  },
+  {
+   "id": 1352206,
+   "name": "Princess No's Medal",
+   "slot": "secondary",
+   "jobs": [
+    "Hero"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Medal.png"
+  },
+  {
+   "id": 1353405,
+   "name": "Princess No's Megaton Charges",
+   "slot": "secondary",
+   "jobs": [
+    "Blaster"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Megaton Charges.png"
+  },
+  {
+   "id": 1353205,
+   "name": "Princess No's Oriental King Chess Piece",
+   "slot": "secondary",
+   "jobs": [
+    "Kinesis"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Oriental King Chess Piece.png"
+  },
+  {
+   "id": 1353606,
+   "name": "Princess No's Path",
+   "slot": "secondary",
+   "jobs": [
+    "Ark"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Path.png"
+  },
+  {
+   "id": 1352095,
+   "name": "Princess No's Poisoned Sword",
+   "slot": "secondary",
+   "jobs": [
+    "Dual Blade"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Poisoned Sword.png"
+  },
+  {
+   "id": 1352286,
+   "name": "Princess No's Purple Shadow",
+   "slot": "secondary",
+   "jobs": [
+    "Shadower"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Purple Shadow.png"
+  },
+  {
+   "id": 1352216,
+   "name": "Princess No's Rosary",
+   "slot": "secondary",
+   "jobs": [
+    "Paladin"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Rosary.png"
+  },
+  {
+   "id": 1352906,
+   "name": "Princess No's Skull Armor",
+   "slot": "secondary",
+   "jobs": [
+    "Buccaneer"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Skull Armor.png"
+  },
+  {
+   "id": 1352406,
+   "name": "Princess No's Soul Orb",
+   "slot": "secondary",
+   "jobs": [
+    "Luminous"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Soul Orb.png"
+  },
+  {
+   "id": 1352606,
+   "name": "Princess No's Soul Ring",
+   "slot": "secondary",
+   "jobs": [
+    "Angelic Buster"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Soul Ring.png"
+  },
+  {
+   "id": 1098006,
+   "name": "Princess No's Soul Shield",
+   "slot": "secondary",
+   "jobs": [
+    "Mihile"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Soul Shield.png"
+  },
+  {
+   "id": 1354307,
+   "name": "Princess No's Talisman",
+   "slot": "secondary",
+   "jobs": [
+    "Kanna"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Talisman.png"
+  },
+  {
+   "id": 1353306,
+   "name": "Princess No's Transmitter",
+   "slot": "secondary",
+   "jobs": [
+    "Cadena"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Transmitter.png"
+  },
+  {
+   "id": 1352807,
+   "name": "Princess No's Wakizashi",
+   "slot": "secondary",
+   "jobs": [
+    "Hayato"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Wakizashi.png"
+  },
+  {
+   "id": 1352276,
+   "name": "Princess No's Wreath",
+   "slot": "secondary",
+   "jobs": [
+    "Marksman"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Wreath.png"
+  },
+  {
+   "id": 1113098,
+   "name": "Ring of Restraint Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Ring of Restraint.png",
+   "key": "1113098-3",
+   "oz": {
+    "kind": "active",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113098,
+   "name": "Ring of Restraint Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Ring of Restraint.png",
+   "key": "1113098-4",
+   "oz": {
+    "kind": "active",
+    "level": 4
+   }
+  },
+  {
+   "id": 1113098,
+   "name": "Ring of Restraint Lv. 5",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Ring of Restraint.png",
+   "key": "1113098-5",
+   "oz": {
+    "kind": "active",
+    "level": 5
+   }
+  },
+  {
+   "id": 1113098,
+   "name": "Ring of Restraint Lv. 6",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Ring of Restraint.png",
+   "key": "1113098-6",
+   "oz": {
+    "kind": "active",
+    "level": 6
+   }
+  },
+  {
+   "id": 1113329,
+   "name": "Continuous Ring Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Continuous Ring.png",
+   "key": "1113329-3",
+   "oz": {
+    "kind": "active",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113329,
+   "name": "Continuous Ring Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Continuous Ring.png",
+   "key": "1113329-4",
+   "oz": {
+    "kind": "active",
+    "level": 4
+   }
+  },
+  {
+   "id": 1113329,
+   "name": "Continuous Ring Lv. 5",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Continuous Ring.png",
+   "key": "1113329-5",
+   "oz": {
+    "kind": "active",
+    "level": 5
+   }
+  },
+  {
+   "id": 1113329,
+   "name": "Continuous Ring Lv. 6",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Continuous Ring.png",
+   "key": "1113329-6",
+   "oz": {
+    "kind": "active",
+    "level": 6
+   }
+  },
+  {
+   "id": 1113113,
+   "name": "Weapon Jump S Ring Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113113-3",
+   "oz": {
+    "kind": "passive",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113113,
+   "name": "Weapon Jump S Ring Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113113-4",
+   "oz": {
+    "kind": "passive",
+    "level": 4
+   }
+  },
+  {
+   "id": 1113114,
+   "name": "Weapon Jump D Ring Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113114-3",
+   "oz": {
+    "kind": "passive",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113114,
+   "name": "Weapon Jump D Ring Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113114-4",
+   "oz": {
+    "kind": "passive",
+    "level": 4
+   }
+  },
+  {
+   "id": 1113115,
+   "name": "Weapon Jump I Ring Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113115-3",
+   "oz": {
+    "kind": "passive",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113115,
+   "name": "Weapon Jump I Ring Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113115-4",
+   "oz": {
+    "kind": "passive",
+    "level": 4
+   }
+  },
+  {
+   "id": 1113116,
+   "name": "Weapon Jump L Ring Lv. 3",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113116-3",
+   "oz": {
+    "kind": "passive",
+    "level": 3
+   }
+  },
+  {
+   "id": 1113116,
+   "name": "Weapon Jump L Ring Lv. 4",
+   "slot": "ring",
+   "jobs": null,
+   "level": 110,
+   "set": null,
+   "group": "Oz rings",
+   "file": "Eqp Weapon Jump Ring.png",
+   "key": "1113116-4",
+   "oz": {
+    "kind": "passive",
+    "level": 4
+   }
+  }
+ ]
+}

@@ -2,13 +2,13 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.4.0)
+## The app (as of v1.5.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
-- **Top:** Home, Bosses, Checklist, Symbols, then a TBD tab (a placeholder for a feature still to be decided).
+- **Top:** Home, Bosses, Checklist, Symbols and Gear.
 - **Bottom:** the EXP table and Themes.
 
-Each tab has its own address (`/`, `/bosses`, `/checklist`, `/symbols`, `/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
+Each tab has its own address (`/`, `/bosses`, `/checklist`, `/symbols`, `/gear`, `/exp-table`, `/themes`). An unknown address goes to Home. (`/tbd/1` to `/tbd/4` still show the old "still to be decided" placeholder; nothing links there.) Pages are made of separate sections with small corners, so the theme's background shows between them.
 
 ## Home: characters
 
@@ -105,6 +105,24 @@ A **calculator** for each character's Arcane and Sacred symbols (layout A, as th
 - **The Force forecast** across the bottom: the tab's Force day by day from today until every unlocked symbol is maxed (up to two years), with the top as a dashed line.
 - **Rates are averaged over the week** (5 days of 40 is 28.6 a day; weekly clears add 80 each); the forecast advances day by day at that average.
 - **The maths** (`client/src/lib/symbols.ts`) runs on the costs the server sends; **the costs** are worked out on the server from the game's formulas (`server/src/calc/symbols.ts`, `gameFigures/symbols.ts`, as of v.271), in whole tenths: in ordinary decimals 13.2 − 3 is 10.19999…, which would make Cernium's Lv. 5 cost 331,400,000 instead of the game's 331,500,000 (7 of the 194 rows would be off that way).
+
+## Gear: equipped items
+
+Each character's equipped items, in **the game's own equipment window** (5 columns × 6 rows, with its gaps), for now only which item is in each slot: potential, Star Force and flames are planned for v2.0.0.
+- **Character tabs** at the top; **all the game's slots**, including pocket, badge, medal, emblem, secondary, heart and android, with **the three totems** under the window. **Click a slot** to see its list on the right, scrolling, in groups (Root Abyss, AbsoLab, …, Oz rings, Event rings), each item with its icon, level and set; then **None**, and **Other item** with a typed name (up to 60 characters) for anything not listed. Saved at once (one save at a time, in order); a refused save goes back and shows the server's message.
+- **Only the character's own class's items**, plus items any class can wear; weapons also by the job's weapon types (Night Walker: claws; Hero: two-handed and one-handed swords and axes). A job the list doesn't know yet (one added to the game later) is offered every item, with a note.
+- **The rules:**
+  - **One special skill (Oz) ring** in the four ring slots; the others are greyed out in the other ring slots (it can be swapped in its own slot).
+  - **The passive ring slot** (v.271): a Ring of Restraint or Continuous Ring at **Lv. 4+** in a ring slot shows a small **+** in that slot's top-left corner. It takes a Weapon Jump ring, or a Continuous Ring when the active one isn't the Continuous Ring. If the opener is taken off, the passive ring stays saved, shown faded on the first ring slot, and doesn't count until the slot reopens (nor while it's the same Continuous Ring as a new active one).
+  - **An overall covers the bottom:** a saved bottom stays saved but greyed out (striped, not clickable) and isn't counted; with a normal top it counts again without re-equipping.
+- **Set counts** under the window, biggest first: pieces per set, leaving out what isn't counted. **A lucky item** (a Genesis or Destiny weapon) adds one to each armor set (Root Abyss, AbsoLab, Arcane Umbra, Eternal) with 3+ pieces, shown as "+1 lucky (Genesis …)". The weapon slot holds one weapon, so a set's own weapon can't be in at the same time; lucky weapons aren't Eternal pieces as well (the wiki lists them on the Eternal pages). Set bonuses come with v2.0.0.
+- **The rules live in two places on purpose:** the server refuses what can't be equipped (wrong slot, wrong class, a second Oz ring, a closed passive slot, the Continuous Ring twice); `client/src/lib/gear.ts` works out what the page shows (lists, what counts, set counts).
+- **The item list** is a file, `server/src/gameFigures/gear-items.json` (633 entries; each Oz ring level is its own entry, keyed `<id>-<level>`), with each job's branches and weapon types. It's built by hand with `node scripts/gear-data.mjs` from the MapleStory Wiki (the GMS wiki), to re-run after a GMS patch:
+  - **What's listed** (decided with the owner, 2026-10-23): armor and weapons of Root Abyss (Royal hat, Eagle Eye top, Trixter bottom; Fafnir weapons), AbsoLab, Arcane Umbra, Eternal; Genesis and Destiny (Stage 1 and 2) weapons; the Boss Accessory, Pitched, Dawn and Brilliant sets; Reinforced and Superior Gollux; Meister earring, ring and shoulder; Gold Maple Leaf Emblem and Mitra's Rage; Ayame's and Kanna's Treasure; Treasure Hunter John's Ring; the finished event rings (Heroic Tenebris Expedition Ring (Complete), Heroic Awake Ring (Lv. 4), Glory Guard Ring: Justicar); the Oz rings Restraint and Continuous Lv. 3–6 and Weapon Jump S/D/I/L Lv. 3–4; seven hearts (Total Control, Black, Plasma, Fairy, Titanium, Liquid-Metal, Outlaw); the Seven Day Monster Parker and Immortal Legacy medals; the three Guild Castle Brooch totems. Each job's four secondaries: the Lv. 100 one Neville sells (580,000 meso), the Frozen one, the Princess No one, the Astra one (its final stage). The android slot has no list.
+  - **The GMS check:** an item is kept only if the wiki has **its own page** for it. Set pages also list Korean-only items that have none (the Brilliant set's "Sanguinary Spirit"), and **set pages' ids and types have slips** (AbsoLab's Bandit and Pirate Suits sharing an id, a fan typed "Chain", an id "1254p26"), so the id, picture, level, job and type come from each item's own page. Where two pages give the same id (Liquid-Metal Heart's page has Fairy Heart's), the set page's id is used if free, or else the id maplestory.io's old GMS data (v.211) has for that exact name. maplestory.io can't be the check itself: its newest real GMS data is v.211, so it doesn't know newer items (Oath of Death).
+  - **Known gaps, from the game itself:** Dual Blade has 3 secondaries (Neville sells no Lv. 100 katara), Erel Light 3 (newer than the Frozen box); Dawn Warrior, Hero and Paladin have 5 (two Astra choices: one with a shield, depending on the weapon); Zero has only its Genesis and Destiny weapons (the Lapis are its secondaries). Beast Tamer isn't in the job table: Beast Tamers were converted into Lynn.
+  - The ids are the wiki's and only serve as keys and icon names; a saved item a later list no longer has shows as "no longer listed".
+- **Icons** (Nexon's art) are downloaded by hand with `node scripts/gear-icons.mjs` into the data folder's `item-icons/` (`<id>.png`), **never in git**, like the boss banners: shared by the real app and the dev copy, copied into the QA copy. The app itself never contacts the wiki. An item without a downloaded icon shows "no icon". The server tells browsers they may keep an icon for 30 days (an id's picture doesn't change).
 
 ## The EXP table tab
 
@@ -232,6 +250,8 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`PUT /api/checklist/:id/plan`** `{ tasks }`: replaces the plan; an unknown task (or one not on the character's world) is a 400 naming it. **`PUT /api/checklist/:id/ticks/:task`** `{ done }`: a task not in the plan is a 409; a limit used up by others is a 409 naming them ("Monster Park is already done by Aa and Bb (2 per world)."). Checked and saved in one transaction.
 - **`POST /api/checklist/tasks`**, **`PUT /api/checklist/tasks/:id`**, **`DELETE /api/checklist/tasks/:id`:** the owner's own tasks. Name 1–40 characters (trimmed), a known category, reset, worlds and limit, a day only for weekly ones (and then required), a count of 1–50 (stored as 1 per character).
 - **`/api/symbols?world=45`:** `{ patch, symbols, characters }`: every symbol with its kind, Grand or not, symbols a day and per weekly clear, top level, selector, each level's cost (`steps`: symbols and meso from L to L+1) and Force at each level; the world's characters with the symbols they entered (`{ level, held, days, weekly }`).
+- **`/api/gear?world=45`:** `{ generated, slots, items, jobs, characters }`: the window's slots (key, label, kind), every listed item (key, name, slot kind, jobs, level, set, group, icon address or null, and weapon type, overall, lucky, Oz kind and level where they apply), each job's branches and weapon types, and the world's characters with `knownJob`, the keys of the items each `fits`, and what's `equipped` per slot (`{ item }` or `{ other }`).
+- **`PUT /api/gear/:id/:slot`** `{ item }`, `{ other }` or `{ clear: true }` (exactly one): puts a listed item in, a typed one, or empties the slot. Refused with a 400 saying why (wrong slot, another class's item, unknown item, not a passive ring), a 409 for a second Oz ring in the ring slots or a closed passive slot; 404 for an unknown slot or character.
 - **`PUT /api/symbols/:id/:symbol`** `{ level, held, days, weekly }`: saves one symbol as typed. Refused with a 400 saying why: a level above the symbol's top ("Cernium goes up to Lv. 11"), more held than the level takes ("Cernium Lv. 9 holds at most 908 symbols"), held at level 0 or the top, weekly clears on a Sacred symbol. 404 for an unknown symbol or character.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
@@ -264,7 +284,7 @@ Every setting is in `server/src/config.ts`, read from environment variables (or 
 | Data folder | `MIKU_DATA_DIR` | `~/Library/Application Support/MikuTracker` |
 | Which database | `MIKU_DATABASE` | `real` (`miku.db`); `dev` picks `dev.db` |
 | Database (overrides both) | `DATABASE_URL` | `file:<data folder>/miku.db` |
-| Backups / theme art / boss art / avatars | `BACKUP_DIR`, `THEME_ART_DIR`, `BOSS_ART_DIR`, `AVATAR_DIR` | `<data folder>/backups`, `/theme-art`, `/boss-art`, `/avatars` |
+| Backups / theme art / boss art / item icons / avatars | `BACKUP_DIR`, `THEME_ART_DIR`, `BOSS_ART_DIR`, `ITEM_ICON_DIR`, `AVATAR_DIR` | `<data folder>/backups`, `/theme-art`, `/boss-art`, `/item-icons`, `/avatars` |
 | Address and port | `HOST`, `PORT` | `127.0.0.1`, `4750` |
 | Backups, daily refresh | `MIKU_BACKUPS`, `MIKU_REFRESH` | `on` (`off` for the dev copy) |
 | Nexon's rankings data | `NEXON_RANKINGS_URL` | `https://www.nexon.com/api/maplestory/no-auth/ranking/v2/na` |
@@ -330,6 +350,7 @@ Tables:
 - **`BossPlan`:** a boss a character does, with the difficulty and party size: one row per character and boss. Kept until the plan changes.
 - **`ChecklistTask`:** the owner's own tasks (name, category, reset, day, worlds, limit). **`ChecklistPlan`:** a task a character does (a preset's id or "custom-<id>"). **`ChecklistTick`:** a task done in one period (the UTC day, "week-" and the week's first day, or "once"); unique per character, task and period; kept for a history later.
 - **`SymbolState`:** one symbol of a character in the calculator, as typed: level, symbols held, days a week, weekly clears. Unique per character and symbol.
+- **`GearSlot`:** what a character has in one slot of the gear window: a listed item's key, or a typed name. Unique per character and slot; an empty slot has no row. Deleted with the character.
 - **`BossClear`:** a boss ticked as cleared in one boss week (named by its first day, a Thursday) or, for Black Mage, one month ("2026-11"), with the difficulty and party at the time. A new week simply has none yet, so nothing is cleared at the reset, and past weeks are kept for a boss history later. Unique per character, boss and period.
 
 Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks, its checklist plan and ticks, and its symbols.

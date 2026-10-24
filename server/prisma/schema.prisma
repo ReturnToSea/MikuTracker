@@ -48,6 +48,7 @@ model Character {
   checklistPlans ChecklistPlan[]
   checklistTicks ChecklistTick[]
   symbols        SymbolState[]
+  gear           GearSlot[]
 
   @@unique([ownerId, worldId, nameKey])
   @@index([ownerId, worldId, sortOrder])
@@ -197,4 +198,19 @@ model SymbolState {
   weekly      Int
 
   @@unique([characterId, symbol])
+}
+
+// What a character has equipped in one slot of the gear tab's window ("hat", "ring1", "ringP" for
+// the passive special skill ring, "totem2", …): a listed item (its key in
+// src/gameFigures/gear-items.json: the id, or "<id>-<level>" for an Oz ring level), or an unlisted
+// one by the name typed. An empty slot has no row.
+model GearSlot {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  slot        String
+  item        String? // a listed item's key
+  other       String? // an unlisted item's name, as typed
+
+  @@unique([characterId, slot])
 }

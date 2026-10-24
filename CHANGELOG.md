@@ -2,6 +2,29 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.5.0 (2026-10-24): the gear tab (equipped items)
+
+- **The Gear tab** (in place of the last TBD tab): each character's equipped items in **the game's own equipment window**, all its slots plus the three totems. Click a slot for its list (scrolling, in groups, each item with its icon, level and set), None, or **Other item** with a typed name. Stars, potential and flames are for v2.0.0.
+  - **Only the character's class's items**, weapons by the job's weapon types. A job the list doesn't know yet is offered every item, with a note.
+  - **The rules the owner set:** one special skill (Oz) ring in the ring slots; a Ring of Restraint or Continuous Ring Lv. 4+ shows a **+** for the passive ring slot (Weapon Jump, or the Continuous Ring when it isn't the active one), and a passive ring whose slot closes stays saved, faded, uncounted; **an overall greys out a saved bottom** without unequipping it.
+  - **Set counts**, with a lucky Genesis or Destiny weapon's **+1** for each armor set with 3+ pieces.
+- **The item list** (633 entries, every job's weapons and secondaries) is built by hand from the MapleStory Wiki with `scripts/gear-data.mjs`, to re-run after a GMS patch; **icons** are downloaded by hand into the data folder's `item-icons/` with `scripts/gear-icons.mjs` (never in git; the app never contacts the wiki).
+  - **Changed from the plan:** the plan said to confirm items in maplestory.io's GMS data, but its newest real GMS data is v.211, so it didn't know items like Oath of Death. The GMS check is now: **the item has its own page on the GMS wiki** (the Korean-only "Sanguinary Spirit" has none, and is left out). Ids, pictures, levels, jobs and types come from each item's own page, because the set pages had slips (AbsoLab's Bandit and Pirate Suits sharing an id, a fan typed "Chain", an id "1254p26"). Three items' own pages gave another item's id (Royal Wanderer Hat, Eternal Pirate Coat, Liquid-Metal Heart); those use the set page's id or, for Liquid-Metal Heart, the one in maplestory.io's old GMS data (1672077).
+  - **Small choices made along the way:** the Astra secondary is listed at its final stage (like the finished event rings); items with an untradable and a tradable version list the first; lucky weapons aren't also counted as Eternal pieces (the wiki lists them on the Eternal pages; counting both would count them twice); Beast Tamer isn't in the job table (Beast Tamers were converted into Lynn).
+  - **Gaps that come from the game:** Dual Blade has 3 secondaries (Neville sells no Lv. 100 katara) and Erel Light 3 (newer than the Frozen box); Dawn Warrior, Hero and Paladin have 5 (two Astra choices); Zero has only its Genesis and Destiny weapons.
+- **From the review pass** (10 findings; 7 addressed):
+  - A name typed in "Other item" but not used stayed in the box when switching slots, so "Use" could save it in the wrong slot.
+  - A bottom under an overall couldn't be selected, so it couldn't be emptied without taking the overall off. It's still greyed out and uncounted, but can be picked now.
+  - The server accepted a typed name in the passive ring slot (the page never offers one); it's refused now.
+  - A job named like a built-in property ("constructor") would have crashed the board.
+  - Each item group scrolled on its own inside the list.
+  - The board checked the disk once per item for icons, and the page looked items up slowly on every render.
+  - **Not changed:** the Oz rules are written on both the server (what's refused) and the page (what's shown), as with the other tabs, each side tested; Oz ring levels share one icon (the wiki has one per ring); icons are cached by browsers for 30 days (an item's picture doesn't change).
+- **Tests:** 504 server and 290 app tests, in California time and UTC, including facts the item list must always hold (unique keys, every job can fill its weapon and secondary slots, the owner's picks are there and the Korean-only item isn't, Ren's and Night Walker's four secondaries). Full mutation testing: 100% (server and shared, and the app's logic). `qa:check`: 205/205, with 24 new checks for the Gear tab (Kanna's six fans and four secondaries, the overall, the lucky +1, the passive ring slot, typed items, saving, bad requests, a narrow window).
+  - **Found by mutation testing:** missing checks for a character's passive slot opened by another character's ring, rings that aren't special skill rings beside the opener, the save hook (instant display, one at a time, reloads), each armor set's lucky bonus, and two test files that read the item list on load (a broken list showed as "nothing failed"). A name check was simplified.
+  - **Planted bugs** in the page (overall, the +, Oz rings off, typed names, the faded passive ring, and the three review fixes): all caught.
+  - **My mistakes along the way:** a first generator run that trusted maplestory.io (it dropped real items like Oath of Death and the Frozen secondaries); job text cut at the ")" in "Arch Mage (Fire, Poison)"; a click-through check that counted every slot instead of the empty ones; and page tests that didn't wait for the board, or used a fake server that forgot saves.
+
 ## v1.4.0 (2026-10-24): the symbol calculator
 
 - **The Symbols tab** (in place of the next TBD tab), the layout the owner described: character tabs; an Arcane / Sacred switch with a card per symbol (level, symbols held, days a week, weekly clears); the tab's Force and when everything is maxed with the meso to go; each symbol's time to max; a selector coupon box with **two suggestions** (everything maxed soonest, and the most Force soonest); and a Force forecast graph.

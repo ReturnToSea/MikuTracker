@@ -40,6 +40,15 @@ export const SymbolIcon = () => (
   </svg>
 );
 
+// A helmet: the gear tab.
+export const GearIcon = () => (
+  <svg {...common}>
+    <path d="M4 15a8 8 0 0 1 16 0v3H4z" />
+    <path d="M12 7v5" />
+    <path d="M4 15h6l2 3 2-3h6" />
+  </svg>
+);
+
 export const TbdIcon = () => (
   <svg {...common}>
     <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />

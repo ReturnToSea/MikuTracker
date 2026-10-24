@@ -1,10 +1,11 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, SettingsInput, SymbolInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, GearInput, SettingsInput, SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
+import { withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -16,6 +17,7 @@ export const keys = {
   bosses: (world: number) => ["bosses", world],
   checklist: (world: number) => ["checklist", world],
   symbols: (world: number) => ["symbols", world],
+  gear: (world: number) => ["gear", world],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -37,6 +39,7 @@ export function useRefreshStatus() {
       void qc.invalidateQueries({ queryKey: ["bosses"] });
       void qc.invalidateQueries({ queryKey: ["checklist"] });
       void qc.invalidateQueries({ queryKey: ["symbols"] });
+      void qc.invalidateQueries({ queryKey: ["gear"] });
     }
     seen.current = finished;
   }, [finished, qc]);
@@ -148,5 +151,24 @@ export function useSaveSymbol(world: number) {
       qc.setQueryData<SymbolsBoard>(keys.symbols(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, symbols: { ...c.symbols, [symbol]: state } } : c)) });
     },
     onSettled: () => qc.invalidateQueries({ queryKey: keys.symbols(world) }),
+  });
+}
+
+// The gear tab of a world.
+export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
+
+// Putting an item in a slot (or a typed one, or emptying it): shown at once, sent one at a time in
+// order, then the board loads again (so a refused item goes back to what's saved).
+export function useSaveGear(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "gear" },
+    mutationFn: ({ id, slot, input }: { id: number; slot: string; input: GearInput }) => api<void>(`/gear/${id}/${slot}`, { method: "PUT", body: input }),
+    onMutate: async ({ id, slot, input }) => {
+      await qc.cancelQueries({ queryKey: keys.gear(world) });
+      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, equipped: withGear(c.equipped, slot, input) } : c)) });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
   });
 }

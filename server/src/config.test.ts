@@ -18,6 +18,7 @@ describe("defaults", () => {
       backupDir: `${REAL}/backups`,
       themeArtDir: `${REAL}/theme-art`,
       bossArtDir: `${REAL}/boss-art`,
+      itemIconDir: `${REAL}/item-icons`,
       avatarDir: `${REAL}/avatars`,
       host: "127.0.0.1",
       port: 4750,
@@ -32,20 +33,21 @@ describe("defaults", () => {
 describe("overrides", () => {
   it("MIKU_DATA_DIR moves the database, backups, theme art and boss art with it", () => {
     const c = load({ MIKU_DATA_DIR: "/data" });
-    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.bossArtDir, c.avatarDir]).toEqual([
+    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.bossArtDir, c.itemIconDir, c.avatarDir]).toEqual([
       "/data",
       "file:/data/miku.db",
       "/data/miku.db",
       "/data/backups",
       "/data/theme-art",
       "/data/boss-art",
+      "/data/item-icons",
       "/data/avatars",
     ]);
   });
 
   it("each folder and the database can be set on its own", () => {
-    const c = load({ DATABASE_URL: "file:/elsewhere/dev.db", BACKUP_DIR: "/b", THEME_ART_DIR: "/art", BOSS_ART_DIR: "/bosses", AVATAR_DIR: "/av" });
-    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.bossArtDir, c.avatarDir]).toEqual([REAL, "file:/elsewhere/dev.db", "/elsewhere/dev.db", "/b", "/art", "/bosses", "/av"]);
+    const c = load({ DATABASE_URL: "file:/elsewhere/dev.db", BACKUP_DIR: "/b", THEME_ART_DIR: "/art", BOSS_ART_DIR: "/bosses", ITEM_ICON_DIR: "/icons", AVATAR_DIR: "/av" });
+    expect([c.dataDir, c.databaseUrl, c.databaseFile, c.backupDir, c.themeArtDir, c.bossArtDir, c.itemIconDir, c.avatarDir]).toEqual([REAL, "file:/elsewhere/dev.db", "/elsewhere/dev.db", "/b", "/art", "/bosses", "/icons", "/av"]);
   });
 
   it("MIKU_DATABASE=dev picks the development database next to the real one, with its own backups and avatars (theme art and boss art shared)", () => {
@@ -56,6 +58,7 @@ describe("overrides", () => {
       avatarDir: `${REAL}/dev-avatars`,
       themeArtDir: `${REAL}/theme-art`,
       bossArtDir: `${REAL}/boss-art`,
+      itemIconDir: `${REAL}/item-icons`,
     });
     expect(load({ MIKU_DATABASE: "dev", BACKUP_DIR: "/b", AVATAR_DIR: "/av" })).toMatchObject({ backupDir: "/b", avatarDir: "/av" });
     // decided by the database file itself, however it was chosen
@@ -74,7 +77,7 @@ describe("overrides", () => {
   });
 
   it("empty values count as not set", () => {
-    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", BOSS_ART_DIR: "", AVATAR_DIR: "", HOST: "", NEXON_RANKINGS_URL: "" })).toEqual(load());
+    expect(load({ MIKU_DATA_DIR: "", MIKU_DATABASE: "", DATABASE_URL: "", BACKUP_DIR: "", THEME_ART_DIR: "", BOSS_ART_DIR: "", ITEM_ICON_DIR: "", AVATAR_DIR: "", HOST: "", NEXON_RANKINGS_URL: "" })).toEqual(load());
   });
 
   it("the port, and the other addresses that only reach this Mac", () => {
@@ -158,7 +161,7 @@ describe("test runs can never reach the real data", () => {
     expect(() => testRun({ DATABASE_URL: `file:${REAL}/old/copy.db` })).toThrow("Tests may not use anything inside the real data folder");
   });
 
-  it.each(["MIKU_DATA_DIR", "BACKUP_DIR", "THEME_ART_DIR", "BOSS_ART_DIR", "AVATAR_DIR"])("refuses %s inside the real data folder", (name) => {
+  it.each(["MIKU_DATA_DIR", "BACKUP_DIR", "THEME_ART_DIR", "BOSS_ART_DIR", "ITEM_ICON_DIR", "AVATAR_DIR"])("refuses %s inside the real data folder", (name) => {
     expect(() => testRun({ DATABASE_URL: "file:/tmp/t/test.db", [name]: `${REAL}/x` })).toThrow(`Tests may not use anything inside the real data folder (${REAL}/x`);
   });
 

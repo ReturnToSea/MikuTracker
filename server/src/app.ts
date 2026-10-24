@@ -9,6 +9,7 @@ import { bossesRouter } from "./routes/bosses";
 import { charactersRouter } from "./routes/characters";
 import { checklistRouter } from "./routes/checklist";
 import { expTableRouter } from "./routes/expTable";
+import { gearRouter } from "./routes/gear";
 import { refreshRouter } from "./routes/refresh";
 import { searchRouter } from "./routes/search";
 import { settingsRouter } from "./routes/settings";
@@ -57,15 +58,18 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/bosses", bossesRouter);
   app.use("/api/checklist", checklistRouter);
   app.use("/api/symbols", symbolsRouter);
+  app.use("/api/gear", gearRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });
   });
 
-  // Theme art and boss art from the data folder, and the built app (any other address gets the app's page,
+  // Theme art, boss art and item icons from the data folder, and the built app (any other address gets the app's page,
   // which then shows the right tab).
   app.use("/theme-art", express.static(getConfig().themeArtDir));
   app.use("/boss-art", express.static(getConfig().bossArtDir));
+  // Item icons are named after the item, which never changes its picture: browsers may keep them.
+  app.use("/item-icons", express.static(getConfig().itemIconDir, { maxAge: "30d" }));
   // Avatar files are named after their contents, so a file never changes: browsers may keep it.
   app.use("/avatars", express.static(getConfig().avatarDir, { immutable: true, maxAge: "365d" }));
   if (existsSync(clientDist)) {

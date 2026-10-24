@@ -13,6 +13,7 @@ export interface Config {
   backupDir: string;
   themeArtDir: string;
   bossArtDir: string; // the bosses' pictures (<boss id>.png), never in git
+  itemIconDir: string; // the gear tab's item icons (<item id>.png), never in git
   avatarDir: string; // character avatars, each named after its contents
   host: string;
   port: number;
@@ -100,12 +101,13 @@ export function loadConfig(env: Env = process.env, home: string = env.HOME || os
   if (!databaseUrl.startsWith("file:")) throw new Error(`Only SQLite databases ("file:…") are supported for now (DATABASE_URL is "${databaseUrl}")`);
   const databaseFile = path.resolve(databaseUrl.slice("file:".length));
   // The development database gets its own backups and avatars: clearing out avatars no character
-  // uses, or old backups, must never touch the real app's files. Theme art and boss art are shared.
+  // uses, or old backups, must never touch the real app's files. Theme art, boss art and item icons are shared.
   const own = path.basename(databaseFile) === "dev.db" ? "dev-" : "";
   const folders = {
     backupDir: path.resolve(env.BACKUP_DIR || path.join(dataDir, `${own}backups`)),
     themeArtDir: path.resolve(env.THEME_ART_DIR || path.join(dataDir, "theme-art")),
     bossArtDir: path.resolve(env.BOSS_ART_DIR || path.join(dataDir, "boss-art")),
+    itemIconDir: path.resolve(env.ITEM_ICON_DIR || path.join(dataDir, "item-icons")),
     avatarDir: path.resolve(env.AVATAR_DIR || path.join(dataDir, `${own}avatars`)),
   };
   // A test run may not reach the real data folder at all: not its database, nor any folder.

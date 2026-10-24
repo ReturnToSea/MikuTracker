@@ -46,13 +46,13 @@ try {
 
   // ---------- the rail and pages ----------
   await go("/");
-  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/4", "TBD"], ["Bosses", "/bosses", null], ["Checklist", "/checklist", null], ["Symbols", "/symbols", null], ["Home", "/", null]]) {
+  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["Gear", "/gear", null], ["Bosses", "/bosses", null], ["Checklist", "/checklist", null], ["Symbols", "/symbols", null], ["Home", "/", null]]) {
     await page.locator(".rail a", { hasText: label }).first().click();
     await page.waitForFunction((l) => document.querySelector(".rail a.active")?.textContent?.includes(l), label, { timeout: 3000 }).catch(() => {});
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "one TBD tab, after Bosses, Checklist and Symbols", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 1 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols"));
+  check("Rail", "no TBD tab left: Gear comes after Bosses, Checklist and Symbols", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("Gear"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -461,6 +461,82 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
 
+  // ---------- the Gear tab (v1.5.0) ----------
+  const slotBtn = (name) => page.getByRole("region", { name: "Equipment window" }).getByRole("button", { name });
+  const listBtn = (name) => page.getByRole("region", { name: / slot$/ }).getByRole("button", { name });
+  const setsText = () => page.getByLabel("Sets").innerText();
+  await go("/gear");
+  check("Gear", "a tab per character, MikuBeam (Kanna) first, every slot empty", (await page.getByRole("tab").count()) === 2 && (await text('.ctab[aria-selected="true"] b')) === "MikuBeam" && (await page.locator(".gear-slot").count()) === 28 && (await page.locator('.gear-slot[aria-label$=": empty"]').count()) === 28);
+  check("Gear", "the hat list is the Magician's: Mage Crown, no Bandit Cap", (await listBtn(/AbsoLab Mage Crown/).count()) === 1 && (await listBtn(/AbsoLab Bandit Cap/).count()) === 0);
+  await listBtn(/AbsoLab Mage Crown/).click();
+  await settle();
+  check("Gear", "picking an item puts it in the slot", (await slotBtn(/^Hat: AbsoLab Mage Crown/).count()) === 1);
+  const iconOk = await slotBtn(/^Hat:/).locator("img").evaluate((img) => img.complete && img.naturalWidth > 0).catch(() => null);
+  check("Gear", "its icon loads from the data folder (when the icons were downloaded)", iconOk !== false, String(iconOk));
+  await slotBtn(/^Weapon:/).click();
+  const weapons = await page.getByRole("region", { name: "Weapon slot" }).locator(".gear-item b").allInnerTexts();
+  check("Gear", "Kanna's weapons: the six fans (Fafnir, AbsoLab, Arcane Umbra, Genesis, Destiny ×2)", weapons.length === 6 && weapons.every((w) => /Fan/.test(w)), weapons.join(", "));
+  await slotBtn(/^Secondary:/).click();
+  const secondaries = (await page.getByRole("region", { name: "Secondary slot" }).locator(".gear-item b").allInnerTexts()).sort().join(", ");
+  check("Gear", "Kanna's four secondaries: shop, Frozen, Princess No, Astra", secondaries === "Astra Talisman, Frozen Talisman, Princess No's Talisman, Shikigami Talisman", secondaries);
+  // AbsoLab hat, overall, shoes, plus a bottom that the overall covers
+  await slotBtn(/^Bottom:/).click();
+  await listBtn(/Eternal Mage Pants/).click();
+  await slotBtn(/^Top:/).click();
+  await listBtn(/AbsoLab Mage Suit/).click();
+  await slotBtn(/^Shoes:/).click();
+  await listBtn(/AbsoLab Mage Shoes/).click();
+  await settle();
+  const covered = slotBtn(/^Bottom: Eternal Mage Pants \(not counted/);
+  check("Gear", "an overall greys out the saved bottom, which stays saved", (await covered.count()) === 1 && /covered/.test((await covered.getAttribute("class")) ?? ""));
+  await covered.click();
+  check("Gear", "the covered bottom can still be picked (to empty it), and says it isn't counted", (await text(".gear-panel h2")) === "Bottom" && /overall covers the bottom/.test((await text(".gear-panel p")) ?? ""));
+  let sets = await setsText();
+  check("Gear", "set counts: AbsoLab 3, the covered Eternal bottom not counted", /AbsoLab\s+3/.test(sets) && !/Eternal/.test(sets), sets.replace(/\n/g, " | "));
+  await slotBtn(/^Weapon:/).click();
+  await listBtn(/Genesis Spirit Walker Fan/).click();
+  await settle();
+  sets = await setsText();
+  check("Gear", "a Genesis weapon adds +1 lucky to AbsoLab (3 pieces → 4)", /AbsoLab \+1 lucky \(Genesis Spirit Walker Fan\)\s+4/.test(sets), sets.replace(/\n/g, " | "));
+  // the special skill rings
+  await slotBtn(/^Ring: empty/).first().click();
+  await listBtn(/Ring of Restraint Lv\. 4/).click();
+  await settle();
+  check("Gear", "a Lv. 4 Ring of Restraint shows the + for the passive ring slot", (await slotBtn("Passive ring: empty").count()) === 1);
+  await slotBtn("Passive ring: empty").click();
+  const passives = await page.getByRole("region", { name: "Passive ring slot" }).locator(".gear-item b").allInnerTexts();
+  check("Gear", "the passive slot lists the Weapon Jump rings and the Continuous Ring, not Restraint", passives.some((p) => /Weapon Jump I Ring Lv\. 4/.test(p)) && passives.some((p) => /Continuous Ring/.test(p)) && !passives.some((p) => /Restraint/.test(p)), passives.join(", "));
+  await listBtn(/Weapon Jump I Ring Lv\. 4/).click();
+  await settle();
+  await slotBtn(/^Ring: empty/).first().click();
+  check("Gear", "the other ring slots have the special skill rings off", await listBtn(/Continuous Ring Lv\. 5/).isDisabled());
+  await slotBtn(/^Ring: Ring of Restraint/).click();
+  await listBtn("None").first().click();
+  await settle();
+  check("Gear", "taking the opener off keeps the passive ring, faded", (await slotBtn(/^Passive ring, kept but not counted: Weapon Jump I Ring Lv\. 4/).count()) === 1);
+  await slotBtn(/^Pocket:/).click();
+  await page.getByRole("textbox", { name: "Other item" }).fill("Pink Holy Cup (event)");
+  await page.getByRole("button", { name: "Use", exact: true }).click();
+  await settle();
+  check("Gear", "an unlisted item by its typed name", (await slotBtn(/^Pocket: Pink Holy Cup \(event\)/).count()) === 1);
+  await go("/gear");
+  check("Gear", "everything is saved: still there after reloading", (await slotBtn(/^Hat: AbsoLab Mage Crown/).count()) === 1 && (await slotBtn(/^Pocket: Pink Holy Cup/).count()) === 1 && (await slotBtn(/^Passive ring, kept/).count()) === 1);
+  await shot("10-gear");
+  await page.locator(".ctab", { hasText: "LeekSpin" }).click();
+  await settle();
+  check("Gear", "LeekSpin (Bishop) has nothing on, and the Magician's list", (await slotBtn(/^Hat: empty/).count()) === 1 && (await listBtn(/AbsoLab Mage Crown/).count()) === 1);
+  for (const [what, method, where, body, status] of [
+    ["gear: bad world", "GET", "/gear?world=3", undefined, 400],
+    ["gear: unknown slot", "PUT", `/gear/${miku.id}/tail`, { item: "1122447" }, 404],
+    ["gear: another class's item", "PUT", `/gear/${miku.id}/hat`, { item: "1003800" }, 400],
+    ["gear: an item in the wrong slot", "PUT", `/gear/${miku.id}/hat`, { item: "1122447" }, 400],
+    ["gear: the passive ring slot while closed", "PUT", `/gear/${miku.id}/ringP`, { item: "1113116-4" }, 409],
+    ["gear: an item and a typed name at once", "PUT", `/gear/${miku.id}/hat`, { item: "1122447", other: "x" }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));
@@ -585,6 +661,8 @@ try {
   await shot("05-narrow");
   await go("/symbols");
   check("Layout", "the Symbols tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await go("/gear");
+  check("Layout", "the Gear tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/bosses");

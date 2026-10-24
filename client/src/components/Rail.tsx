@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
-import { BossIcon, ChecklistIcon, HomeIcon, SymbolIcon, TableIcon, TbdIcon, ThemesIcon } from "./icons";
+import { BossIcon, ChecklistIcon, GearIcon, HomeIcon, SymbolIcon, TableIcon, ThemesIcon } from "./icons";
 
 export interface Tab {
   path: string;
@@ -8,14 +8,14 @@ export interface Tab {
   icon: ReactNode;
 }
 
-// Home, the features, and the ones still to be decided at the top; the reference pages at the bottom.
+// Home and the features at the top; the reference pages at the bottom.
 export const TOP_TABS: Tab[] = [
   // Stryker disable next-line StringLiteral: the rail sits outside the page routes, so an empty link also means the root
   { path: "/", label: "Home", icon: <HomeIcon /> },
   { path: "/bosses", label: "Bosses", icon: <BossIcon /> },
   { path: "/checklist", label: "Checklist", icon: <ChecklistIcon /> },
   { path: "/symbols", label: "Symbols", icon: <SymbolIcon /> },
-  { path: "/tbd/4", label: "TBD", icon: <TbdIcon /> },
+  { path: "/gear", label: "Gear", icon: <GearIcon /> },
 ];
 export const BOTTOM_TABS: Tab[] = [
   { path: "/exp-table", label: "EXP table", icon: <TableIcon /> },

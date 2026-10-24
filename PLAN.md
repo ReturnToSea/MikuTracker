@@ -154,35 +154,9 @@ How it works is in DESIGN.md ("Checklist"). **Still to check:** Flag Race's Thur
 ### v1.4.0: Symbol calculator — done
 How it works is in DESIGN.md ("Symbols"); the costs, Force and symbols a day are in `server/src/gameFigures/symbols.ts` with their sources. **Still to check in the game:** Vanishing Journey and Chu Chu Island giving 40 a day (we assume their story quest is done), and the weekly content's 3 clears a week of 80 (from the wiki).
 
-### v1.5.0: Gear tab (equipped items)
-**Decided 2026-10-23:** this version is **only choosing each roster character's equipped items**. Potential, Star Force and flames move to v2.0.0.
-- **The game's own equipment window layout**, for the selected character (character tabs at the top, like the other tabs). **All the game's slots**, including pocket, badge, medal, emblem, secondary, heart, android and the totems.
-- **Clicking a slot opens a list of items for it, scrolling vertically.** Only gear that makes sense, not the game's thousands of items: **accessories from the boss accessory set up** (Boss, Pitched, Dawn, Brilliant sets and the like), **armor and weapons from Root Abyss (CRA) up** (CRA, AbsoLab, Arcane Umbra, Eternal; Fafnir, AbsoLab, Arcane Umbra, Genesis, Destiny weapons), **the event rings** (Tenebris Expedition, Glory Guard: Justicar, Awake), and **Treasure Hunter John's Ring**. The research checks the current meta so nothing used is missing; the owner confirms the full list before building.
-- **Rings:** the three event rings (Tenebris Expedition, Glory Guard: Justicar, Awake; Nexon's "1-of-3 Event Ring Selector Coupon" offers exactly these), Treasure Hunter John's Ring, and the important Oz (seed) rings: **Ring of Restraint, Continuous Ring, Weapon Jump Ring** (decided 2026-10-23).
-- **Android:** left blank (no list). **Medal:** none, the Seven Day Monster Parker Medal, or the Brilliant Boss medal (Immortal Legacy, Lv. 250). **Heart:** every heart that's still relevant (only a handful). **Totems:** only the guild ones for now: Guild Castle Blue, Red and Green Brooch (Lv. 100, all stats +7, attack +7; the wiki lists them as obtainable but doesn't say where; to check in game that they're the guild shop's).
-- **Only the character's own class's items** (from its job), plus items any class can wear.
-- **"Other item"** with a typed name, for anything equipped that isn't listed.
-- **Set counts** next to the window ("Arcane Umbra 5/7", "Pitched Boss 6/9"); the set bonus stats come with v2.0.0.
-- **Item icons** (Nexon's art) downloaded once into the data folder, like the boss banners, never in git; the app itself never contacts the source.
-- **No copying gear between characters** (gear can't be traded in the game).
-- **Item data source:** item names and ids from the MapleStory Wiki's pages (their tables carry the ids) and Nexon's patch notes; icons and class requirements from maplestory.io's GMS data (v.270) by id. maplestory.io's search misses some items (e.g. Ren's swords, Mitra's Rage), so it's not the list's source; an item it has no icon for shows without one. Not masonym.dev's files (no license), and never extracting the game's files ourselves.
-- **Weapons by job:** each job's weapon type (e.g. Ren: Sword, with an Imugi Gem secondary, from v.264's notes; Night Walker: Claw), from the wiki and patch notes; the weapon list shows that type's CRA (Fafnir), AbsoLab, Arcane Umbra, Genesis and Destiny weapons. **Secondaries** by job likewise.
-- **The lists (mocked up 2026-10-23, then reviewed by the owner; final):**
-  - **Armor:** Root Abyss (Royal hat, Eagle Eye top, Trixter bottom), AbsoLab, Arcane Umbra, Eternal (8 pieces at Lv. 250: hat, top, bottom, shoes, gloves, cape, shoulder).
-  - **Weapons:** the job's weapon type in Fafnir, AbsoLab, Arcane Umbra, Genesis and Destiny. **Genesis and Destiny weapons are lucky items** (wiki, "JokerToSetItem"): one counts as a piece of every set that includes a weapon and has 3+ pieces equipped, unless that set's own weapon is equipped; only one lucky item counts. (v.265/v.267 also apply it to the Ignitia Set, an event set we don't list.)
-  - **Secondaries, per job:** the Lv. 100 one sold by Neville (580,000 meso), the Frozen one, the Princess No one, and the Astra Secondary Weapon (v.270). E.g. Ren: Violet / Frozen / Princess No's / Astra Imugi Gem; Night Walker: Ereve Brilliance, Frozen Ereve Brilliance, Princess No's Floral Jewel, Astra Obsidian. All from the wiki's per-job tables (Frozen Secondary Weapon Box, Astra Secondary Weapon, Princess No's pages).
-  - **Accessories:** the Boss Accessory set (incl. Will o' the Wisps), Pitched, Dawn and Brilliant (Original Sin of Pride, Oath of Death, Whisper of the Source, Blissful Nightmare, Immortal Legacy) sets; Reinforced and Superior Gollux; Meister earring, ring and shoulder; Gold Maple Leaf Emblem and Mitra's Rage; **Ayame's Treasure** (Princess No's belt, Lv. 140) and **Kanna's Treasure** (ring, Lv. 140); not Hayato's Treasure.
-  - **Rings:** Treasure Hunter John's Ring; the event rings in their finished versions only (Heroic Tenebris Expedition Ring (Complete), Heroic Awake Ring (Lv. 4), Glory Guard Ring: Justicar); an **"Oz rings" group**: Ring of Restraint Lv. 3, 4, 5, 6, Continuous Ring Lv. 3, 4, 5, 6, Weapon Jump S/D/I/L Lv. 3, 4 (passive rings max at Lv. 4 since v.271).
-  - **Hearts:** Total Control, Black Heart, Plasma, Fairy, Titanium, Liquid-Metal, Outlaw (not Lidium: a bad item, per the owner). **Medals:** Seven Day Monster Parker, Immortal Legacy. **Totems:** the three Guild Castle Brooches. **Android:** empty.
-  - No Challenger-world versions; one entry per item where the game data has near-duplicates.
-  - **Every listed item must be confirmed to exist in GMS** (maplestory.io's GMS data or Nexon's patch notes), not the wiki alone: the wiki's Brilliant Boss Set page listed a "Sanguinary Spirit" that isn't a GMS item.
-  - **Icons:** every item has one: maplestory.io's by id, or the wiki's item image where maplestory.io lacks the item (e.g. Ren's swords, Mitra's Rage, the secondaries).
-- **Rules in the window:**
-  - **One special skill (Oz) ring** in the four ring slots; once one is equipped, the others are greyed out in the other slots.
-  - **The passive ring slot** (v.271): a Ring of Restraint or Continuous Ring **Lv. 4+** shows a small **+** in its slot's top-left corner to equip a passive ring: Weapon Jump, or the Continuous Ring (not the one that opened the slot). Using the active ring also triggers the passive. If the slot closes, the passive ring stays saved but faded and isn't counted until it reopens.
-  - **An overall covers the bottom:** the bottom stays saved but greyed out and isn't counted (stats or sets) while an overall is on; switching to a normal top makes it count again without re-equipping.
-  - **Set counts** include the lucky weapon ("+1 lucky") and leave out anything not counted.
-- The mockups and the gathered data are in `tempdata/gear-research/` (never committed).
+### v1.5.0: Gear tab (equipped items) — done
+How it works, what's listed and how the list is checked are in DESIGN.md ("Gear"). **Still to check in the game:** that the Guild Castle Brooches are the guild shop's totems.
+
 ### v2.0.0: Gear details, then upgrades from saved gear
 Planned 2026-10-23, to build after this batch (a lot of work and testing):
 - **v2.0.0, gear details:** under the equipment window, a row of the equipped items' icons; click one to set its **potential** and **Star Force**, and its **flames** from a **grid of every flame the item can roll**: stats down the side (e.g. DEX, all stat %, DEX+STR), tiers across the top; click up to 4 to add, then save.

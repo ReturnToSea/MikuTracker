@@ -105,6 +105,20 @@ export const symbolInput = z.strictObject({
 });
 export type SymbolInput = z.infer<typeof symbolInput>;
 
+// The gear tab of a world: /api/gear?world=45
+export const gearQuery = z.strictObject({ world: worldId });
+
+// What goes in one slot of the equipment window: a listed item (by its key), an unlisted one by
+// name, or nothing. Whether the item fits the slot and the character is checked by the server.
+export const gearInput = z
+  .strictObject({
+    item: z.string().regex(/^\d{7}(-\d)?$/, { message: "Unknown item" }).optional(),
+    other: z.string().trim().min(1, { message: "Type the item's name" }).max(60).optional(),
+    clear: z.literal(true).optional(),
+  })
+  .refine((v) => [v.item, v.other, v.clear].filter((x) => x !== undefined).length === 1, { message: "Choose an item, type one, or empty the slot" });
+export type GearInput = z.infer<typeof gearInput>;
+
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({
   world: worldId,
