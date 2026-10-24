@@ -12,7 +12,7 @@ export interface DetailItem {
   starMin: number;
   starMax: number;
   flames: "boss" | "normal" | null; // null: it can't have flames
-  typed?: true; // a typed "Other item": its own stats aren't known
+  type?: string; // its equipment type ("Katara", "Shield", …): kataras and Zero's Lapis star like weapons
 }
 
 export type MainStat = "str" | "dex" | "int" | "luk";
@@ -31,7 +31,8 @@ export interface Gains {
 }
 export const noGains = (): Gains => ({ str: 0, dex: 0, int: 0, luk: 0, hp: 0, mp: 0, att: 0, matt: 0, speed: 0, jump: 0 });
 
-// Class stats by branch (StrategyWiki: a job's primary and secondary stats; Thief items don't get STR).
+// Class stats by branch: what Star Force raises ("only class-relevant stats": the wiki; masonym gives
+// all four to an item any class wears). A job's primary and secondary stats.
 const BRANCH_STATS: Record<string, MainStat[]> = { Warrior: ["str", "dex"], Magician: ["int", "luk"], Bowman: ["dex", "str"], Thief: ["luk", "dex"], Pirate: ["str", "dex"] };
 export function classStatsOf(branches: string[] | null): MainStat[] {
   if (!branches || branches.length === 0) return [...MAIN_STATS];
@@ -39,8 +40,16 @@ export function classStatsOf(branches: string[] | null): MainStat[] {
   return MAIN_STATS.filter((s) => set.has(s));
 }
 
-const isWeaponLike = (slot: string) => slot === "weapon" || slot === "secondary"; // secondaries: masonym (unconfirmed)
+// Which items gain stars like weapons: weapons, and the secondaries that are weapon-like: kataras
+// (Nexon's Astra notice: the Astra Blade follows the Arcane Umbra katara's rule) and Zero's Lapis
+// (heavy swords). Every other secondary gains like armor (Nexon: Astra secondaries as Lv. 200 armor).
+// (Those two types only ever appear on secondaries.)
+const WEAPON_LIKE_SECONDARIES = new Set<string | undefined>(["Katara", "Heavy Sword"]);
+const isWeaponLike = (item: DetailItem) => item.slot === "weapon" || WEAPON_LIKE_SECONDARIES.has(item.type);
 const NO_STAR_HP = new Set(["gloves", "shoes", "face", "eye"]);
+
+// An item level's bracket of 16★+ figures (none below Lv. 128).
+const bracketOf = (level: number) => BRACKETS.findLast((b) => level >= b.from);
 
 // The stars an item can be set to: from its minimum (22 on Genesis and Destiny weapons) to its limit.
 export const starRange = (item: DetailItem): [number, number] => [Math.min(item.starMin, item.starMax), item.starMax];
@@ -48,10 +57,8 @@ export const starRange = (item: DetailItem): [number, number] => [Math.min(item.
 // What `stars` stars add in all.
 export function starGains(item: DetailItem, stars: number): Gains {
   const out = noGains();
-  const weapon = isWeaponLike(item.slot);
-  // 16★–22★ add the stats the item shows (a typed item's aren't known: its class stats)
-  const shown = item.typed ? item.classStats : MAIN_STATS.filter((s) => (item.stats[s] ?? 0) > 0);
-  const bracket = [...BRACKETS].reverse().find((b) => item.level >= b.from);
+  const weapon = isWeaponLike(item);
+  const bracket = bracketOf(item.level);
   let att = item.stats.att ?? 0;
   let matt = item.stats.matt ?? 0;
   for (let star = 1; star <= stars; star += 1) {
@@ -82,7 +89,7 @@ export function starGains(item: DetailItem, stars: number): Gains {
         if ((item.stats.matt ?? 0) > 0) out.matt += 1;
       }
     } else if (bracket) {
-      if (star <= 22) for (const s of shown) out[s] += bracket.stat;
+      if (star <= 22) for (const s of item.classStats) out[s] += bracket.stat;
       const table = weapon ? bracket.weaponAtt : bracket.armorAtt;
       const add = table[star - 16] ?? 0;
       // weapons: only an attack they have (the wiki); armor and accessories: both
@@ -93,16 +100,20 @@ export function starGains(item: DetailItem, stars: number): Gains {
   return out;
 }
 
-// Whether a weapon star's figure isn't confirmed by any source (masonym's guesses).
-export function starUnconfirmed(item: DetailItem, star: number): boolean {
-  return star >= (unconfirmedFrom(item) ?? Infinity);
+// What the page notes about an item's star figures, from the star where it applies (only notes the
+// item can reach): the weapon figures nobody has seen, and shoes' speed, where the sources differ by 1.
+export interface StarNote {
+  from: number;
+  text: string;
 }
-
-// The first star whose figure no source confirms, if the item can reach it (else null).
-export function unconfirmedFrom(item: DetailItem): number | null {
-  if (!isWeaponLike(item.slot)) return null;
-  const from = [...BRACKETS].reverse().find((b) => item.level >= b.from)?.weaponUnconfirmedFrom ?? Infinity;
-  return from <= item.starMax ? from : null;
+export function starNotes(item: DetailItem): StarNote[] {
+  // (a note that doesn't apply starts at "never" and is filtered out with the ones the item can't reach)
+  const weapon = (isWeaponLike(item) ? bracketOf(item.level)?.weaponUnconfirmedFrom : undefined) ?? Infinity;
+  const shoes = item.slot === "shoes" ? EARLY.shoesSpeedDisputedFrom : Infinity;
+  return [
+    { from: weapon, text: `From ${weapon}★ this weapon's attack isn't known from any source (nobody stars it that far): masonym's estimate.` },
+    { from: shoes, text: `Speed and jump from ${shoes}★: masonym says +2 a star from 11★, the wiki from 12★ (a difference of 1).` },
+  ].filter((n) => n.from <= item.starMax);
 }
 
 // A typed "Other item"'s star limit: by its level, none for the kinds of item that can't take stars.
@@ -119,7 +130,7 @@ export function flameGrid(item: DetailItem): FlameRow[] {
   const weapon = item.slot === "weapon";
   const [low, high] = flameTiers(item.flames === "boss");
   // a weapon's attack and magic attack flames are a share of its own; one it doesn't have uses the
-  // other (unconfirmed: no source says)
+  // other (the owner: a physical weapon's magic attack flame is the same as its attack flame)
   const att = item.stats.att || item.stats.matt || 0;
   const matt = item.stats.matt || item.stats.att || 0;
   const step: (stat: FlameStat, tier: number) => number = (stat, tier) => {

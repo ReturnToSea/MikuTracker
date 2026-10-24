@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { type GearDetailsInput, type GearInput, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
-import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, otherStarLimit, starGains, starRange, unconfirmedFrom } from "../calc/gearDetails";
+import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, otherStarLimit, type StarNote, starGains, starNotes, starRange } from "../calc/gearDetails";
 import { getConfig } from "../config";
 import { db } from "../db";
 import { FLAME_KINDS, fits, GEAR_SLOTS, type GearItem, type GearJob, gearFile, itemKey, POTENTIAL_KINDS, RING_SLOTS } from "../gameFigures/gear";
@@ -144,7 +144,7 @@ export async function saveStatValues(ownerId: string, characterId: number, input
 // What can be set on an item: its star range and what each star count adds, its flame grid, the
 // potential lines it can roll per rank, and its Exceptional Hammers.
 export interface DetailOptions {
-  stars: { min: number; max: number; gains: Gains[]; unconfirmedFrom: number | null }; // gains[n]: n stars in all
+  stars: { min: number; max: number; gains: Gains[]; notes: StarNote[] }; // gains[n]: n stars in all
   flames: FlameRow[]; // empty: it can't have flames
   potential: Partial<Record<string, { line: string; chance: number }[][]>> | null; // per rank, the 3 lines' options
   hammers: GearItem["hammers"] | null;
@@ -155,18 +155,18 @@ export interface DetailOptions {
 function detailItem(item: GearItem): DetailItem {
   const { jobs } = gearFile();
   const branches = item.jobs?.flatMap((j) => (Object.hasOwn(jobs, j) ? jobs[j]!.branches : [j])) ?? null;
-  return { slot: item.slot, level: item.level ?? 0, stats: item.stats ?? {}, classStats: classStatsOf(branches), starMin: item.starMin ?? 0, starMax: item.starMax ?? 0, flames: item.flames ?? null };
+  return { slot: item.slot, level: item.level ?? 0, stats: item.stats ?? {}, classStats: classStatsOf(branches), starMin: item.starMin ?? 0, starMax: item.starMax ?? 0, flames: item.flames ?? null, type: item.type };
 }
 
 // A typed "Other item", from what the player said it is.
 function otherItem(other: NonNullable<GearDetailsInput["other"]>): DetailItem {
-  return { slot: other.kind, level: other.level, stats: { att: other.att, matt: other.matt }, classStats: classStatsOf(null), starMin: 0, starMax: otherStarLimit(other.kind, other.level), flames: FLAME_KINDS.has(other.kind) ? (other.boss ? "boss" : "normal") : null, typed: true };
+  return { slot: other.kind, level: other.level, stats: { att: other.att, matt: other.matt }, classStats: classStatsOf(null), starMin: 0, starMax: otherStarLimit(other.kind, other.level), flames: FLAME_KINDS.has(other.kind) ? (other.boss ? "boss" : "normal") : null };
 }
 
 function optionsFor(di: DetailItem, potentialPart: string | null, hammers: GearItem["hammers"] | null): DetailOptions {
   const [min, max] = starRange(di);
   return {
-    stars: { min, max, gains: Array.from({ length: max + 1 }, (_, n) => starGains(di, n)), unconfirmedFrom: unconfirmedFrom(di) },
+    stars: { min, max, gains: Array.from({ length: max + 1 }, (_, n) => starGains(di, n)), notes: starNotes(di) },
     flames: flameGrid(di),
     potential: potentialPart ? potentialOptions(potentialPart, di.level) : null,
     hammers,

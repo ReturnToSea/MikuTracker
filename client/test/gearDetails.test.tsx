@@ -7,7 +7,7 @@ import { blankDetails, clickStar, draftOf, fitDraft, isDirty, lineChoices, summa
 // HP 100 per tier at tiers 3–7; two potential ranks.
 const g = (n: number) => ({ str: 2 * n, dex: 0, int: 0, luk: 0, hp: 0, mp: 0, att: n, matt: 0, speed: 0, jump: 0 });
 const OPTIONS: DetailOptions = {
-  stars: { min: 0, max: 5, gains: [0, 1, 2, 3, 4, 5].map(g), unconfirmedFrom: null },
+  stars: { min: 0, max: 5, gains: [0, 1, 2, 3, 4, 5].map(g), notes: [] },
   flames: [
     { stat: "STR", values: [null, null, 30, 40, 50, 60, 70] },
     { stat: "STR+DEX", values: [null, null, 15, 20, 25, 30, 35] },
@@ -173,7 +173,7 @@ async function show(c: GearCharacter, routes: Record<string, unknown> = {}) {
   const s = fakeServer({
     ...BASE_ROUTES,
     "GET /gear": () => saved,
-    "GET /gear/options": (_: unknown, path: string) => (path.includes("1000002") ? { ...OPTIONS, stars: { min: 0, max: 0, gains: [g(0)], unconfirmedFrom: null }, potential: null } : OPTIONS),
+    "GET /gear/options": (_: unknown, path: string) => (path.includes("1000002") ? { ...OPTIONS, stars: { min: 0, max: 0, gains: [g(0)], notes: [] }, potential: null } : OPTIONS),
     "PUT /gear/:id/hat/details": (body: GearCharacter["details"][string]) => {
       saved = { ...saved, characters: saved.characters.map((x) => ({ ...x, details: { ...x.details, hat: body } })) };
       return undefined;
@@ -286,7 +286,7 @@ describe("the details editor", () => {
   });
 
   it("fixed stars (Genesis weapons) are shown, not picked; a minimum above 0 has no 0★ button", async () => {
-    const fixed = { ...OPTIONS, stars: { min: 3, max: 3, gains: [0, 1, 2, 3].map(g), unconfirmedFrom: null } };
+    const fixed = { ...OPTIONS, stars: { min: 3, max: 3, gains: [0, 1, 2, 3].map(g), notes: [] } };
     await show(char(), { "GET /gear/options": fixed });
     await userEvent.click(icons().getByRole("button", { name: "Test Hat" }));
     expect(await editor().findByText(/3★, fixed \(can't be enhanced\)\. Adds STR \+6, ATT \+3\./)).toBeTruthy();
@@ -295,14 +295,17 @@ describe("the details editor", () => {
   });
 
   it("stars below the minimum can't be picked; unconfirmed figures say so", async () => {
-    const ranged = { ...OPTIONS, stars: { min: 2, max: 5, gains: [0, 1, 2, 3, 4, 5].map(g), unconfirmedFrom: 4 } };
+    const ranged = { ...OPTIONS, stars: { min: 2, max: 5, gains: [0, 1, 2, 3, 4, 5].map(g), notes: [{ from: 4, text: "From 4★ a note." }, { from: 5, text: "From 5★ another." }] } };
     await show(char(), { "GET /gear/options": ranged });
     await userEvent.click(icons().getByRole("button", { name: "Test Hat" }));
     expect((await editor().findByRole("button", { name: "1 stars" })).hasAttribute("disabled")).toBe(true);
     expect(editor().queryByRole("button", { name: "0★" })).toBeNull();
-    expect(editor().queryByText(/aren't confirmed/)).toBeNull();
+    expect(editor().queryByText(/a note/)).toBeNull();
     await userEvent.click(editor().getByRole("button", { name: "4 stars" }));
-    expect(editor().getByText("From 4★ this weapon's figures aren't confirmed by any source yet.")).toBeTruthy();
+    expect(editor().getByText("From 4★ a note.")).toBeTruthy();
+    expect(editor().queryByText("From 5★ another.")).toBeNull(); // each note from its own star
+    await userEvent.click(editor().getByRole("button", { name: "5 stars" }));
+    expect(editor().getByText("From 5★ another.")).toBeTruthy();
   });
 
   it("swapping the item in the window drops the old item's details at once", async () => {
@@ -327,7 +330,7 @@ describe("the details editor", () => {
   });
 
   it("typed gloves have attack boxes too; a typed item's draft is fitted when its level changes", async () => {
-    const two = { ...OPTIONS, stars: { min: 0, max: 2, gains: [0, 1, 2].map(g), unconfirmedFrom: null } };
+    const two = { ...OPTIONS, stars: { min: 0, max: 2, gains: [0, 1, 2].map(g), notes: [] } };
     await show(char({ equipped: { gloves: { other: "Event Gloves" } } }), { "GET /gear/options": (_: unknown, path: string) => (path.includes("level=100&") ? two : OPTIONS), "PUT /gear/:id/gloves/details": undefined });
     await userEvent.type(editor().getByRole("spinbutton", { name: "Item level" }), "140");
     expect(editor().getByRole("spinbutton", { name: "Weapon attack" })).toBeTruthy();
@@ -336,6 +339,18 @@ describe("the details editor", () => {
     await userEvent.type(editor().getByRole("spinbutton", { name: "Item level" }), "100");
     await waitFor(() => expect(editor().getAllByRole("button", { name: /stars$/ })).toHaveLength(2));
     expect(editor().getByText(/^2★$/)).toBeTruthy();
+  });
+
+  it("a saved star count below the item's minimum is flagged too (items that now come with 22★)", async () => {
+    const fixed = { ...OPTIONS, stars: { min: 3, max: 5, gains: [0, 1, 2, 3, 4, 5].map(g), notes: [] } };
+    await show(char({ details: { hat: { stars: 1, flames: {}, potential: null, hammers: 0 } } }), { "GET /gear/options": fixed });
+    await userEvent.click(icons().getByRole("button", { name: "Test Hat" }));
+    expect(await screen.findByText("Saved with 1★, but this item comes with 3★.")).toBeTruthy();
+  });
+
+  it("a typed secondary says it gains stars like armor", async () => {
+    await show(char({ equipped: { secondary: { other: "Event Jewel" } } }));
+    expect(editor().getByText(/a typed secondary gains stars like armor/)).toBeTruthy();
   });
 
   it("a saved star count above the item's limit is flagged, not changed", async () => {

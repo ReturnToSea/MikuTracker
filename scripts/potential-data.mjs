@@ -4,7 +4,7 @@
 // their chance, in English. By hand, after a patch. Never part of the app or its tests.
 //
 // GMS differs from Korea in one known way: GMS items from Lv. 151 get the values Korea gives from
-// Lv. 201 (a GMS bug report on Nexon's forum, StrategyWiki's "(GMS) 151+" rows, and the wiki's
+// Lv. 201 (a GMS bug report on Nexon's forum, brendonmay's cubing calculator, and the wiki's
 // level table). The app applies that when it picks a level range (server/src/gameFigures/potential.ts).
 // Lines it can't translate are listed, never guessed.
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";

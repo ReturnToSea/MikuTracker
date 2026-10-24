@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { classStatsOf, type DetailItem, flameGrid, otherStarLimit, starGains, starRange, starUnconfirmed, unconfirmedFrom } from "./gearDetails";
+import { classStatsOf, type DetailItem, flameGrid, otherStarLimit, starGains, starNotes, starRange } from "./gearDetails";
+
+// Where an item's "weapon attack unknown" note starts (null: none), and whether a star is past it.
+const unconfirmedFrom = (it: DetailItem) => starNotes(it).find((n) => n.text.includes("isn't known"))?.from ?? null;
+const starUnconfirmed = (it: DetailItem, star: number) => star >= (unconfirmedFrom(it) ?? Infinity);
 
 // Numbers worked out by hand from the wiki's tables (Star Force Enhancement/Stat Tables, Bonus
 // Stats/Stat Tables), step by step, not by running the same code.
@@ -32,18 +36,16 @@ describe("starGains: armor", () => {
     expect([128, 137, 138, 150, 160, 199, 200, 249, 250].map(at16)).toEqual([[7, 7], [7, 7], [9, 8], [11, 9], [13, 10], [13, 10], [15, 12], [15, 12], [17, 14]]);
   });
 
-  it("an accessory any class wears gets all four stats; the 16★+ stats go to the stats it shows", () => {
+  it("every star adds the item's class stats: all four on an item any class wears (the wiki; masonym)", () => {
     const pendant = item({ slot: "pendant", stats: { str: 15, dex: 15, int: 15, luk: 15, att: 5 }, classStats: classStatsOf(null) });
     expect(starGains(pendant, 17)).toMatchObject({ str: 70, dex: 70, int: 70, luk: 70 }); // 40 + 2 × 15
     const strOnly = item({ stats: { str: 10 }, classStats: classStatsOf(null) });
-    expect(starGains(strOnly, 16)).toMatchObject({ str: 55, dex: 40, int: 40, luk: 40 }); // 40, +15 only to STR
-  });
-
-  it("a typed item (own stats unknown): 16★–22★ go to its class stats; a listed item showing none gets none", () => {
-    const typed = item({ stats: {}, classStats: classStatsOf(null), typed: true });
-    expect(starGains(typed, 17)).toMatchObject({ str: 70, dex: 70, int: 70, luk: 70 }); // 40 + 2 × 15
-    const heart = item({ slot: "heart", stats: {}, classStats: classStatsOf(null) }); // a heart showing only HP
-    expect(starGains(heart, 17)).toMatchObject({ str: 40, dex: 40, int: 40, luk: 40 });
+    expect(starGains(strOnly, 16)).toMatchObject({ str: 55, dex: 55, int: 55, luk: 55 });
+    // an item showing no main stat (a heart with only HP) still gets them: masonym gives all four to everything
+    const heart = item({ slot: "heart", level: 160, stats: {}, classStats: classStatsOf(null) });
+    expect(starGains(heart, 17)).toMatchObject({ str: 66, dex: 66, int: 66, luk: 66 }); // 40 + 2 × 13
+    const warrior = item({ stats: {}, classStats: classStatsOf(["Warrior"]) });
+    expect(starGains(warrior, 16)).toMatchObject({ str: 55, dex: 55, int: 0, luk: 0 });
   });
 
   it("gloves with only magic attack get magic attack; gloves with neither get none", () => {
@@ -89,13 +91,27 @@ describe("starGains: weapons", () => {
     expect(starRange(genesis)).toEqual([22, 22]);
   });
 
-  it("weapon 17★ in the first brackets is one more than 16★ (masonym and StrategyWiki)", () => {
+  it("weapon 17★ in the first brackets is one more than 16★ (masonym; a Korean table for Fafnir)", () => {
     const step = (level: number, star: number) => {
       const w = item({ slot: "weapon", level, stats: { str: 1, att: 100 } });
       return starGains(w, star).att - starGains(w, star - 1).att;
     };
     expect([128, 138, 150, 160, 200].map((l) => [step(l, 16), step(l, 17)])).toEqual([[6, 7], [7, 8], [8, 9], [9, 9], [13, 13]]);
     expect([step(200, 23), step(200, 25), step(250, 23)]).toEqual([34, 36, 36]);
+  });
+
+  it("every weapon bracket's 16★+ attack and stats, as NamuWiki's table gives them", () => {
+    const steps = (level: number, to: number) => {
+      const w = item({ slot: "weapon", level, stats: { att: 100 }, classStats: ["str"] });
+      return Array.from({ length: to - 15 }, (_, i) => [starGains(w, 16 + i).att - starGains(w, 15 + i).att, starGains(w, 16 + i).str - starGains(w, 15 + i).str]);
+    };
+    // [attack, stat] for each star from 16★ (NamuWiki: 130, 140, 150, 160, 200 and 250 weapons)
+    expect(steps(130, 20)).toEqual([[6, 7], [7, 7], [7, 7], [8, 7], [9, 7]]);
+    expect(steps(140, 25)).toEqual([[7, 9], [8, 9], [8, 9], [9, 9], [10, 9], [11, 9], [12, 9], [30, 0], [31, 0], [32, 0]]);
+    expect(steps(150, 25)).toEqual([[8, 11], [9, 11], [9, 11], [10, 11], [11, 11], [12, 11], [13, 11], [31, 0], [32, 0], [33, 0]]);
+    expect(steps(160, 25)).toEqual([[9, 13], [9, 13], [10, 13], [11, 13], [12, 13], [13, 13], [14, 13], [32, 0], [33, 0], [34, 0]]);
+    expect(steps(200, 30)).toEqual([[13, 15], [13, 15], [14, 15], [14, 15], [15, 15], [16, 15], [17, 15], [34, 0], [35, 0], [36, 0], [37, 0], [38, 0], [39, 0], [40, 0], [41, 0]]);
+    expect(steps(250, 22)).toEqual([[16, 17], [16, 17], [17, 17], [17, 17], [18, 17], [19, 17], [20, 17]]);
   });
 
   it("magic weapons: magic attack compounds (base 100 → +15 at 5★), then each bracket's figure", () => {
@@ -105,11 +121,17 @@ describe("starGains: weapons", () => {
     expect(at(16) - at(15)).toBe(8); // Lv. 150–159 weapons' 16★
   });
 
-  it("secondary weapons use the weapon figures (masonym; unconfirmed): HP and MP, compounding attack", () => {
-    const secondary = item({ slot: "secondary", level: 200, stats: { str: 20, att: 7 } });
-    // 7 → 8 → 9 → 10 → 11 → 12 (each 1 + ⌊2% of under 50⌋ = 1)
-    expect(starGains(secondary, 5)).toMatchObject({ att: 5, hp: 35, mp: 35 });
-    expect(starUnconfirmed(secondary, 26)).toBe(true);
+  it("secondaries gain like armor (Nexon: Astra secondaries as Lv. 200 armor); kataras and Zero's Lapis like weapons", () => {
+    const gem = item({ slot: "secondary", level: 200, type: "Imugi Gem", stats: { str: 20, dex: 20, att: 7 } });
+    // armor: HP but no MP, no compounding attack below 16★; Lv. 200 armor's 16★–30★ attack (106 at 22★)
+    expect(starGains(gem, 5)).toMatchObject({ att: 0, hp: 40, mp: 0 });
+    expect(starGains(gem, 22)).toMatchObject({ att: 106, matt: 106, str: 145 });
+    expect(starUnconfirmed(gem, 30)).toBe(false);
+    const katara = item({ slot: "secondary", level: 160, type: "Katara", stats: { luk: 20, att: 100 } });
+    expect(starGains(katara, 5)).toMatchObject({ att: 15, hp: 35, mp: 35 }); // the weapon figures
+    expect(starUnconfirmed(katara, 26)).toBe(true);
+    const lapis = item({ slot: "secondary", level: 200, type: "Heavy Sword", stats: { str: 100, att: 100 } });
+    expect(starGains(lapis, 5).att).toBe(15);
   });
 
   it("magic weapons gain magic attack, physical ones attack", () => {
@@ -118,15 +140,21 @@ describe("starGains: weapons", () => {
     expect(starGains(staff, 16).matt).toBeGreaterThan(0);
   });
 
-  it("unconfirmed figures: weapons from 26★ (and every Lv. 250 weapon star from 16★)", () => {
-    const w = item({ slot: "weapon" });
-    expect([starUnconfirmed(w, 25), starUnconfirmed(w, 26), starUnconfirmed(hat, 30)]).toEqual([false, true, false]);
-    expect([starUnconfirmed(item({ slot: "weapon", level: 250 }), 15), starUnconfirmed(item({ slot: "weapon", level: 250 }), 16)]).toEqual([false, true]);
+  it("unconfirmed figures: Lv. 138–199 weapons from 26★, Lv. 250 weapons from 23★; Lv. 200–249 all confirmed", () => {
+    const w = item({ slot: "weapon", level: 160 });
+    expect([starUnconfirmed(w, 25), starUnconfirmed(w, 26), starUnconfirmed(hat, 30), starUnconfirmed(item({ slot: "weapon" }), 30)]).toEqual([false, true, false, false]);
+    expect([starUnconfirmed(item({ slot: "weapon", level: 250 }), 22), starUnconfirmed(item({ slot: "weapon", level: 250 }), 23)]).toEqual([false, true]);
     expect(starUnconfirmed(item({ slot: "weapon", level: 128 }), 20)).toBe(false);
     expect(starUnconfirmed(item({ slot: "weapon", level: 120 }), 15)).toBe(false); // below every bracket
     // the first unconfirmed star, if the item can reach it
-    expect([unconfirmedFrom(item({ slot: "weapon" })), unconfirmedFrom(item({ slot: "weapon", level: 250, starMax: 25 })), unconfirmedFrom(item({ slot: "weapon", starMax: 26 })), unconfirmedFrom(item({ slot: "weapon", starMax: 25 })), unconfirmedFrom(item({ slot: "weapon", starMax: 22 }))]).toEqual([26, 16, 26, null, null]);
+    expect([unconfirmedFrom(item({ slot: "weapon", level: 160 })), unconfirmedFrom(item({ slot: "weapon", level: 250, starMax: 25 })), unconfirmedFrom(item({ slot: "weapon", level: 160, starMax: 26 })), unconfirmedFrom(item({ slot: "weapon", level: 160, starMax: 25 })), unconfirmedFrom(item({ slot: "weapon", level: 250, starMax: 22 })), unconfirmedFrom(item({ slot: "weapon" }))]).toEqual([26, 23, 26, null, null, null]);
     expect([unconfirmedFrom(hat), unconfirmedFrom(item({ slot: "weapon", level: 120, starMax: 15 }))]).toEqual([null, null]);
+    expect(unconfirmedFrom(item({ level: 160 }))).toBeNull(); // armor: its figures are all known, even where the same level's weapons' aren't
+    // shoes: their speed note from 11★ (masonym +2 from 11★, the wiki from 12★), only if they reach it
+    expect(starNotes(item({ slot: "shoes" }))).toEqual([{ from: 11, text: "Speed and jump from 11★: masonym says +2 a star from 11★, the wiki from 12★ (a difference of 1)." }]);
+    expect(starNotes(item({ slot: "shoes", level: 100, starMax: 8 }))).toEqual([]);
+    expect(starNotes(item({ slot: "weapon", level: 160 }))).toEqual([{ from: 26, text: "From 26★ this weapon's attack isn't known from any source (nobody stars it that far): masonym's estimate." }]);
+    expect(starNotes(hat)).toEqual([]);
   });
 });
 

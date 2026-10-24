@@ -238,7 +238,7 @@ const details = async (id: number) => (await board()).characters.find((c: { id: 
 describe("GET /api/gear/options", () => {
   it("a listed item: its star range with what each count adds, its flame grid, potential and hammers", async () => {
     const o = (await ok(api().get(`/api/gear/options?item=${AU_KNIGHT_HAT}`))).body;
-    expect([o.stars.min, o.stars.max, o.stars.gains.length, o.stars.unconfirmedFrom]).toEqual([0, 30, 31, null]);
+    expect([o.stars.min, o.stars.max, o.stars.gains.length, o.stars.notes]).toEqual([0, 30, 31, []]);
     expect(o.stars.gains[22]).toEqual({ str: 145, dex: 145, int: 0, luk: 0, hp: 260, mp: 0, att: 106, matt: 106, speed: 0, jump: 0 });
     expect(o.flames.find((r: { stat: string }) => r.stat === "STR").values).toEqual([null, null, 33, 44, 55, 66, 77]);
     expect(o.hammers).toBeNull();
@@ -247,14 +247,21 @@ describe("GET /api/gear/options", () => {
     expect([medal.stars.max, medal.potential, medal.hammers.count, medal.flames.length > 0]).toEqual([0, null, 3, true]);
     const genesis = (await ok(api().get(`/api/gear/options?item=${GENESIS_GUARDS}`))).body;
     expect([genesis.stars.min, genesis.stars.max]).toEqual([22, 22]);
+    // its own ATT 172, by hand: 15 compounding steps (+4 ×7, then +5 ×8) = 68, then 16★–22★ 102 = 170
+    expect([genesis.stars.gains[22].att, genesis.stars.gains[22].matt]).toEqual([170, 0]);
   });
 
-  it("where unconfirmed weapon figures start: Lv. 200 weapons at 26★, Lv. 250 (Destiny) at 16★", async () => {
+  it("where unconfirmed weapon figures start: Lv. 160 weapons at 26★, Lv. 250 (Destiny) at 23★; Lv. 200 none", async () => {
     const items = gearFile().items;
     const key = (name: string) => String(items.find((i) => i.name === name)!.id);
     const arcane = (await ok(api().get(`/api/gear/options?item=${key("Arcane Umbra Illusory Sword")}`))).body;
+    const absolab = (await ok(api().get(`/api/gear/options?item=${key("AbsoLab Furious Sword")}`))).body;
     const destiny = (await ok(api().get(`/api/gear/options?item=${key("Destiny Sword (Stage 2)")}`))).body;
-    expect([arcane.stars.unconfirmedFrom, destiny.stars.unconfirmedFrom, destiny.stars.min, destiny.stars.max]).toEqual([26, 16, 22, 25]);
+    const noteFrom = (o: { stars: { notes: { from: number }[] } }) => o.stars.notes[0]?.from ?? null;
+    expect([noteFrom(arcane), noteFrom(absolab), noteFrom(destiny), destiny.stars.min, destiny.stars.max]).toEqual([null, 26, 23, 22, 25]);
+    // Zero's Lapis (secondaries) come with 22★ like the Genesis and Destiny weapons
+    const lapis = await Promise.all(["Genesis Lapis", "Destiny Lapis (Stage 1)", "Destiny Lapis (Stage 2)"].map(async (n) => (await ok(api().get(`/api/gear/options?item=${key(n)}`))).body.stars));
+    expect(lapis.map((s) => [s.min, s.max])).toEqual([[22, 22], [22, 22], [22, 25]]);
   });
 
   it("a typed boss weapon: tiers 3–7, its attack flame from the attack given", async () => {

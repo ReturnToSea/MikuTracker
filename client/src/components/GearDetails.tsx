@@ -114,6 +114,7 @@ export function DetailsEditor({ board, c, slot, items, saving, onSave }: { board
   const whatBox = typed && (
     <div className="what-box" role="group" aria-label="What the typed item is">
       <span className="small muted">What is it?</span>
+      {kind === "secondary" && <span className="tiny muted">(a typed secondary gains stars like armor, as most do; a katara would gain like a weapon)</span>}
       <label className="small">
         Level{" "}
         <input className="text-input count" type="number" min={0} max={300} aria-label="Item level" value={what?.level ?? ""} onChange={(ev) => set({ other: { kind, level: Math.max(0, Math.min(300, Math.floor(Number(ev.target.value) || 0))), boss: what?.boss ?? false, att: what?.att ?? 0, matt: what?.matt ?? 0 } })} />
@@ -170,7 +171,12 @@ export function DetailsEditor({ board, c, slot, items, saving, onSave }: { board
             )}
           </div>
           {saved && saved.stars > max && <p className="warning small">Saved with {saved.stars}★, but this item now goes to {max}★.</p>}
-          {o.stars.unconfirmedFrom !== null && draft.stars >= o.stars.unconfirmedFrom && <p className="tiny muted">From {o.stars.unconfirmedFrom}★ this weapon's figures aren't confirmed by any source yet.</p>}
+          {saved && saved.stars < min && <p className="warning small">Saved with {saved.stars}★, but this item comes with {min}★.</p>}
+          {o.stars.notes.filter((n) => draft.stars >= n.from).map((n) => (
+            <p key={n.from} className="tiny muted">
+              {n.text}
+            </p>
+          ))}
         </>
       )}
       {o.hammers && (

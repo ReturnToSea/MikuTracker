@@ -21,7 +21,8 @@ export function potentialFile(): PotentialFile {
 
 // Nexon's level range for a GMS item level. Nexon Korea has a range for every 10 levels up to 119
 // (each tenth level on its own), then 120–200 and 201–250. GMS gives items from Lv. 151 the values
-// Korea gives from Lv. 201 (a GMS bug report on Nexon's forum, StrategyWiki's "(GMS) 151+" rows).
+// Korea gives from Lv. 201 (a GMS bug report on Nexon's forum and the wiki's level table both say from
+// Lv. 151; brendonmay's cubing calculator raises from Lv. 160).
 export function nexonLevel(level: number): number {
   if (level >= 151) return 201;
   // Stryker disable next-line EqualityOperator: Lv. 120 is a tenth level too, which gives 120 either way
@@ -48,7 +49,7 @@ export function potentialOptions(part: string, level: number): Partial<Record<Ra
   const ranks = near === undefined ? {} : parts[part]![String(near)]!;
   // GMS's step for items from Lv. 151 where Korea has no Lv. 201+ table for that kind (belts, earrings,
   // emblems, overalls, secondaries, hearts…): Korea's lower table with +1% on the lines the step
-  // raises (StrategyWiki's "(GMS) 151+" rows; brendonmay's cubing calculator does the same from Lv. 160).
+  // raises: exactly the lines Korea's own tables raise by 1% from Lv. 120–200 to 201+ (weapons, hats).
   const step = want === 201 && near !== 201;
   const shown = (line: string) => (step ? line.replace(GMS_STEP, (_, stat: string, v: string) => `${stat} +${Number(v) + 1}%`) : line);
   return Object.fromEntries(Object.entries(ranks).map(([rank, table]) => [rank, tables[table]!.map((p) => p.map(([i, c]) => ({ line: shown(lines[i]!), chance: c / 10000 })))]));

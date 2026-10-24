@@ -5504,7 +5504,7 @@
     "boss": 30,
     "ied": 20
    },
-   "starMax": 0,
+   "starMax": 22,
    "starMin": 22,
    "flames": "boss",
    "potential": "weapon"
@@ -5581,7 +5581,8 @@
     "boss": 30,
     "ied": 20
    },
-   "starMax": 0,
+   "starMax": 22,
+   "starMin": 22,
    "potential": "secondary"
   },
   {
@@ -5605,7 +5606,7 @@
     "boss": 30,
     "ied": 20
    },
-   "starMax": 0,
+   "starMax": 22,
    "starMin": 22,
    "flames": "boss",
    "potential": "weapon"
@@ -5995,6 +5996,7 @@
     "ied": 20
    },
    "starMax": 22,
+   "starMin": 22,
    "potential": "secondary"
   },
   {
@@ -6408,6 +6410,7 @@
     "ied": 20
    },
    "starMax": 25,
+   "starMin": 22,
    "potential": "secondary"
   },
   {
@@ -8158,7 +8161,7 @@
     "boss": 30,
     "ied": 20
    },
-   "starMax": 0,
+   "starMax": 22,
    "starMin": 22,
    "flames": "boss",
    "potential": "weapon"

@@ -309,7 +309,9 @@ for (const w of wanted) {
     const type = WEAPON_TYPE[box.type] ?? box.type;
     const lucky = w.luckyName && slot === "weapon";
     // v2.0.0 details: stars, flames, potential and hammers this item can take.
-    const ownStars = box.starForce === "" ? 0 : Number(box.starForce) || 0;
+    const genesisOrDestiny = /^(Genesis|Destiny) /.test(show) && (slot === "weapon" || type === "Heavy Sword");
+    const ownStars = /^Genesis /.test(show) && genesisOrDestiny ? 22 : box.starForce === "" ? 0 : Number(box.starForce) || 0;
+    if (/^(Genesis|Destiny) /.test(show) && slot !== "badge" && ownStars === 0) report.push(`a Genesis or Destiny item without stars (check its type): ${show} (${box.type})`);
     const oz = Boolean(w.oz);
     if (ownStars && box.level && ownStars !== levelStarLimit(box.level) && !/^(Genesis|Destiny|Astra) /.test(show)) report.push(`star limit differs from the level rule: ${show} (Lv. ${box.level}) ${ownStars}★, the rule says ${levelStarLimit(box.level)}★`);
     const canFlame = FLAME_SLOTS.has(slot) || box.name === "Immortal Legacy";
@@ -317,9 +319,10 @@ for (const w of wanted) {
     const details = {
       stats: readStats(box.stats),
       starMax: ownStars,
-      // Genesis and Destiny weapons come with 22★ and can't go below it (Genesis can't be enhanced at all:
-      // its own limit is 22 too; Destiny's second stage goes to 25).
-      starMin: /^(Genesis|Destiny) /.test(show) && slot === "weapon" ? 22 : undefined,
+      // Genesis and Destiny weapons (Zero's Lapis too, a secondary) come with 22★ and can't go below it;
+      // Genesis can't be enhanced at all (its limit is 22; the wiki gives Genesis Lapis none); Destiny's
+      // second stage goes to 25.
+      starMin: genesisOrDestiny ? 22 : undefined,
       flames: canFlame ? (box.tags.includes("BossReward") || BOSS_FLAMES_TOO.has(box.name) ? "boss" : "normal") : undefined,
       potential: potential ?? undefined,
       hammers: HAMMERS[box.name],

@@ -159,7 +159,7 @@ How it works, what's listed and how the list is checked are in DESIGN.md ("Gear"
 
 ### v2.x: gear details, then the best upgrade per meso
 Planned 2026-10-24 with the owner, one version per step, each building on the last:
-- **v2.0.0, gear details — done.** How it works, the figures and their sources are in DESIGN.md ("Gear details"). **Still to confirm** (no source has them yet): weapon Star Force from 26★ and Lv. 250 weapons (masonym's guesses), whether secondaries use the weapon table, a weapon's flame for an attack it doesn't have, and whether GMS's HP%/MP%/DEF% potential lines also take the 151+ step.
+- **v2.0.0, gear details — done.** How it works, the figures and their sources are in DESIGN.md ("Gear details"). **Still to confirm** (no readable source yet): Lv. 138–199 weapons from 26★ and Lv. 250 (Destiny Stage 2) weapons from 23★ (unknown everywhere: nobody stars them that far; masonym's estimates, marked on the page); shoes' speed +2 from 11★ or 12★ (masonym and the wiki disagree; a 12★+ pair of shoes in game would settle it).
   - **Stat values, typed in per character** (owner, 2026-10-24), defaults from mafhcow's flame calculator: 1 ATT = 2.44, 1% All Stat = 12.21, secondary ratio 0.08, 1% Boss/Damage = 10.12, 1 HP = 0.014, 0.785% final damage per 100 flame score. Used from v2.1.0 on.
 - **v2.1.0, flame score:** each item's flame score from the stat values, and the final damage it gives (via "% FD per 100 flame score").
 - **Each system all the way through, cost included** (decided 2026-10-24: upgrades aren't 100%, so final damage alone doesn't say whether an upgrade is worth it):
@@ -201,6 +201,7 @@ Everything needed only when the app moves off this Mac (decided 2026-10-23). Not
 - **More totems and rental equipment** (noted 2026-10-23, from the gear tab's planning): add the other totems (e.g. the weekly farmable temporary ones and rental ones) and rental gear to the gear lists.
 - **Familiars tab** (noted 2026-10-24, from planning v2's stats): each character's familiars, their potential and badges, so their stats count toward the character's stats instead of "everything else".
 - **Export everything (JSON):** low priority. Once gear, stats and checklists are entered by hand, that typing is the most valuable data in the app; backups protect it, and an export would be a second safety net.
+- **Shoes' Star Force speed (very low priority, noted 2026-10-24):** whether shoes get +2 speed and jump per star from 11★ (masonym, what the app uses) or from 12★ (the wiki). A pair of shoes at 12★+ in game would settle it; it only ever changes speed and jump by 1.
 
 ## Risks
 

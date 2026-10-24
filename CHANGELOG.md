@@ -2,6 +2,32 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.0.1 (2026-10-24): Star Force fixes after the owner's review
+
+- **Secondaries' stars use the armor figures**, not the weapon figures: Nexon Korea's Astra notice says Astra secondaries gain like Lv. 200 armor (v2.0.0 followed masonym's choice). Kataras (the Astra Blade follows the Arcane Umbra katara's rule) and Zero's Lapis still gain like weapons. An Astra secondary at 22★ now adds ATT +106 (Lv. 200 armor), not the weapon figures.
+- **Every star adds the item's class stats** ("only class-relevant stats": the wiki; masonym agrees). v2.0.0 gave 16★–22★ only to the stats an item shows, a rule that came from StrategyWiki alone.
+- **StrategyWiki is no longer a source** (the owner: too outdated to rely on). What it backed now stands on other sources: 17★ weapons at Lv. 128–159 (masonym and a Korean weapon table: Fafnir 16★ +8, 17★ +9), and GMS's Lv. 151+ potential step (a GMS bug report on Nexon's forum, the wiki, brendonmay's calculator). Shoes' +2 speed from 11★ is now unconfirmed (masonym against the wiki).
+- **Decided with the owner:** Destiny Stage 1 is fixed at 22★ (Nexon's patch note); Stage 2 goes to 25★ (the wiki and NamuWiki; nobody on Heroic has one yet, so assumed true). A physical weapon's Magic ATT flame is the same as its ATT flame (as the grid already showed).
+- **NamuWiki's weapon table** (pasted by the owner) confirms every weapon figure we had for 16★–25★, settles 17★ at Lv. 128–159 (+7/+8/+9; the wiki was wrong), and confirms Lv. 200–249 weapons' 26★–30★ (+37 … +41) and Lv. 250 weapons' 16★–22★ (both had been masonym's guesses). Korea's star figures match GMS's sources everywhere they overlap.
+- **Still unknown anywhere:** Lv. 138–199 weapons from 26★ and Lv. 250 weapons from 23★ (nobody stars those that far; masonym's estimates stay, marked on the page).
+- **From the review pass** (7 findings; 6 addressed):
+  - Zero's Lapis (secondaries) could be set below 22★, and Genesis Lapis showed no stars at all; they now come with 22★ like the Genesis and Destiny weapons.
+  - Shoes' disputed +2 speed from 11★ wasn't flagged on the page; it is now, like the unknown weapon figures ("this item's figures aren't confirmed").
+  - Items showing no main stat (hearts) had no test for getting class stats from stars; one now pins it.
+  - The potential step's crit rate and damage lines lost their source with StrategyWiki; Nexon's own tables back them (Korea raises exactly those lines by 1% from Lv. 120–200 to 201+), and the notes now say so consistently.
+  - The bracket lookup was written twice.
+  - **Not changed:** a typed katara gains like armor, since a typed item has no type to say "katara" (rare; noted as a limit).
+- **From a second review pass** (the owner's call: each review finds new things; 9 findings, 7 addressed):
+  - The shoes' note said every star from 11★ was "not confirmed by any source", which overstated it; the page now says exactly what's disputed (speed and jump from 11★, a difference of 1), and the unknown weapon figures get their own wording. The server sends these notes with each item.
+  - A Lapis or Genesis item saved below its new 22★ minimum (possible before this version) is now flagged ("Saved with 10★, but this item comes with 22★"), like the existing above-limit note.
+  - The generator now checks the Lapis type after fixing wiki typos, and reports any Genesis or Destiny item left without stars, so the Lapis bug can't quietly come back.
+  - A typed secondary now says it gains stars like armor (a katara would gain like a weapon).
+  - A test-only helper was removed, and the bracket lookup no longer copies the list on each call.
+  - Non-Astra kodachis and bladebinders are taken to gain like armor, a gap no source covers (noted in DESIGN.md).
+  - **Not changed:** a weapon showing one main stat still gains both its class stats from stars (the wiki's "class stats", and masonym gives all four).
+- **Mutation testing rule changed** (the owner, 2026-10-24): before each version, only the files whose code changed; a full run only for a major version or when something shared changed (test setup, configs, widely used helpers). CLAUDE.md and the mutation-audit skill say so.
+- **Tests:** 583 server and 321 app tests, including NamuWiki's weapon table for every bracket and the Genesis Guards' fixed 22★ worked out by hand (ATT +170 from its own 172). Mutation testing of the changed code: 100%. `qa:check`: 222/222.
+
 ## v2.0.0 (2026-10-24): gear details (stars, potential, flames, hammers)
 
 - **Under the gear window** (layout A of 5 mockups): a row of every equipped item's icon, and an editor for the picked item, with Save / Cancel; clicking another item drops unsaved changes without asking (the owner's choice).
