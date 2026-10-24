@@ -64,6 +64,15 @@ button { cursor: pointer; }
 .tab svg { width: 22px; height: 22px; }
 .tab:hover { color: var(--text); background: var(--accent-soft); }
 .tab.active { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.tab.open { color: var(--text); }
+.tab .caret { font-size: 0.8em; }
+/* a group's pages (Gear: Equipment, Flames), under it while one is open */
+.rail-group { display: flex; flex-direction: column; gap: 2px; }
+.rail-pages { display: none; flex-direction: column; gap: 2px; margin: 0 0 4px 3px; padding: 2px 0 2px 3px; border-left: 2px solid var(--border); }
+.rail-group.inside .rail-pages { display: flex; }
+.rail-page { padding: 6px 4px; border-radius: calc(var(--radius) * 0.6); color: var(--text-muted); font-size: 0.72em; text-decoration: none; }
+.rail-page:hover { color: var(--text); background: var(--accent-soft); }
+.rail-page.active { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 
 @media (max-width: 760px) {
   .app { padding-left: 0; padding-bottom: 76px; }
@@ -76,6 +85,18 @@ button { cursor: pointer; }
   }
   .rail-brand, .rail-spacer { display: none; }
   .tab { flex: 1 0 64px; }
+  /* a group: the tab looks open while inside it; its pages pop up above the bar when the tab is pressed
+     (fixed, since the scrolling bar would clip them) */
+  .rail-group { flex: 1 0 64px; }
+  .rail-group > .tab { flex: 1; }
+  .rail-group.inside > .tab { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .rail-group.inside .rail-pages { display: none; }
+  .rail-group.menu .rail-pages {
+    display: flex; position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%); z-index: 30;
+    min-width: 150px; margin: 0; padding: 6px; border: var(--border-width) solid var(--border); border-radius: var(--radius);
+    background: var(--surface-2); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  .rail-group.menu .rail-page { font-size: 0.9em; padding: 8px 10px; }
 }
 
 /* Separate sections on the page, so the background shows between them */
@@ -434,6 +455,7 @@ p.block.error { padding: 12px 24px; }
 .text-input { padding: 7px 10px; border: var(--border-width) solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
 .text-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .text-input.count { width: 56px; padding: 4px 6px; }
+.stat-values .text-input.count { width: 74px; }
 select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--border-width) solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
 
 /* Symbols tab */
@@ -511,6 +533,14 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .gear-icon.nothing { opacity: 0.45; }
 .gear-icon .slot-text { font-size: 9px; line-height: 1.1; overflow: hidden; max-height: 3.3em; }
 .icon-stars { position: absolute; top: 1px; right: 3px; font-size: 9px; font-weight: 700; color: var(--line); }
+/* each icon's flame score under it, coloured by how close it is to its best */
+.gear-icon-cell { display: grid; justify-items: center; gap: 2px; }
+.icon-score { font-size: 11px; font-weight: 700; line-height: 1; }
+.icon-score.hi { color: var(--good); }
+.icon-score.mid { color: var(--line); }
+.icon-score.lo { color: var(--danger); }
+.score-pill { display: inline-flex; gap: 4px; align-items: baseline; padding: 2px 10px; border: var(--border-width) solid var(--border); border-radius: 999px; background: var(--surface-2); }
+.score-pill b { color: var(--line); }
 .details { display: grid; gap: 10px; margin-bottom: 16px; }
 .details h3 { margin: 4px 0 0; font-size: 0.95em; }
 .details-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -553,3 +583,42 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .stat-values p { margin: 0; }
 .value-grid { display: grid; grid-template-columns: max-content 80px auto; gap: 6px 8px; align-items: center; }
 .value-grid label { display: contents; }
+
+/* The Flames page (v2.1.0) */
+.flame-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 6px; }
+.flame-cell { display: grid; justify-items: center; gap: 3px; width: 76px; }
+.flame-cell .tag { height: 13px; font-size: 10px; color: var(--line); }
+.flame-cell .above { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.flame-cell .below { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.flame-cell.cheapest .above { color: var(--line); }
+.flame-cell.cheapest .gear-icon { border-color: var(--line); }
+.flame-split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.flame-split .row { margin-top: 10px; }
+.flame-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.flame-tile { padding: 10px 12px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.flame-tile.wide { grid-column: 1 / -1; }
+.flame-tile .big { font-size: 1.45em; font-weight: 700; }
+.chance-row { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px; margin-top: 6px; }
+.chance-track { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.chance-track i { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.flame-chart { position: relative; margin-top: 10px; }
+.flame-chart svg { display: block; width: 100%; height: auto; }
+.flame-chart .grid-line { stroke: var(--border); stroke-width: 1; opacity: 0.6; }
+.flame-chart .axis { fill: var(--text-muted); font-size: 11px; }
+.flame-chart .better-zone { fill: var(--accent-soft); opacity: 0.5; }
+.flame-chart .area.worse { fill: var(--text-muted); opacity: 0.3; }
+.flame-chart .area.better { fill: var(--accent); opacity: 0.35; }
+.flame-chart .series { fill: none; stroke-width: 1.5; }
+.flame-chart .series.worse { stroke: var(--text-muted); }
+.flame-chart .series.better { stroke: var(--accent); }
+.flame-chart .current { stroke: var(--line); stroke-width: 2; stroke-dasharray: 4 3; }
+.flame-chart .current-label { fill: var(--line); font-size: 11px; }
+.flame-chart .cross { stroke: var(--text-muted); stroke-width: 1; }
+.flame-chart .dot { fill: var(--text); stroke: var(--surface-2); stroke-width: 2; }
+.chart-tip { position: absolute; transform: translate(-50%, calc(-100% - 10px)); pointer-events: none; padding: 6px 9px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); font-size: 12px; white-space: nowrap; }
+.flame-targets { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.flame-targets th { text-align: left; font-weight: 400; font-size: 0.8em; color: var(--text-muted); padding: 6px 8px; }
+.flame-targets td { padding: 6px 8px; border-top: var(--border-width) solid var(--border); }
+.flame-targets .item-icon { width: 36px; height: 36px; }
+.good { color: var(--good); font-weight: 700; }
+@media (max-width: 900px) { .flame-split { grid-template-columns: minmax(0, 1fr); } }

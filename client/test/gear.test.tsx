@@ -44,7 +44,7 @@ const ITEMS = [HAT, ROYAL, SUIT, SHIRT, PANTS, SHOES, GLOVES, GENESIS, CLAW, SWO
 // Built by hand (not with byKey, which is tested on its own below).
 const items = new Map(ITEMS.map((i) => [i.key, i]));
 
-const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, details: {}, statValues: { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 }, ...extra });
+const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, details: {}, statValues: { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 }, ...extra });
 const board = (characters: GearCharacter[]): GearBoard => ({ generated: "2026-10-23", slots: SLOTS, items: ITEMS, jobs: { "Night Walker": { branches: ["Thief"], weapons: ["Claw"] } }, characters });
 const on = (...pairs: [string, GearItemView | string][]): Equipped => Object.fromEntries(pairs.map(([slot, x]) => [slot, typeof x === "string" ? { other: x } : { item: x.key }]));
 
@@ -171,6 +171,8 @@ describe("the gear rules", () => {
 });
 
 // The fake server keeps what's saved, as the real one does, so the reload after a save shows it.
+// The Flames board for these tests: nothing flameable (the scores have their own tests).
+const NO_FLAMES = { known: true, price: 3_000_000, budget: 10_000_000_000, items: [] };
 function show(b: GearBoard, routes: Record<string, unknown> = {}) {
   let saved = b;
   const put = (body: Record<string, string | boolean>, path: string) => {
@@ -188,7 +190,7 @@ function show(b: GearBoard, routes: Record<string, unknown> = {}) {
     };
     return undefined;
   };
-  const s = fakeServer({ ...BASE_ROUTES, "GET /gear": () => saved, "PUT /gear/:id/hat": put, "PUT /gear/:id/ring2": put, "PUT /gear/:id/ringP": put, "PUT /gear/:id/pendant1": put, ...routes });
+  const s = fakeServer({ ...BASE_ROUTES, "GET /gear": () => saved, "GET /gear/:id/flames": NO_FLAMES, "PUT /gear/:id/hat": put, "PUT /gear/:id/ring2": put, "PUT /gear/:id/ringP": put, "PUT /gear/:id/pendant1": put, ...routes });
   renderWithApp(<App />, "/gear");
   return s;
 }
@@ -340,7 +342,7 @@ describe("the Gear tab", () => {
     await userEvent.click(panel().getByRole("button", { name: /Royal Assassin Hood/ }));
     expect(slotButton(/^Hat: Royal Assassin Hood/)).toBeTruthy(); // before the server answers
     await userEvent.click(panel().getByRole("button", { name: /AbsoLab Bandit Cap/ }));
-    expect(s.sent("PUT", "/gear/7/hat")).toEqual([{ item: ROYAL.key }]); // the second waits
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/hat")).toEqual([{ item: ROYAL.key }])); // the second waits
     await userEvent.click(screen.getByRole("tab", { name: /Second/ }));
     expect(slotButton(/^Hat: empty/)).toBeTruthy();
     answers.shift()!();
@@ -364,7 +366,8 @@ describe("the Gear tab", () => {
     vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 11, 59)));
     let finishedAt = "2026-10-20T08:00:30.000Z";
     const s = show(board([walker()]), { "GET /refresh": () => ({ last: { startedAt: "2026-10-20T08:00:00.000Z", finishedAt, checked: 1, updated: 1, missing: 0, failed: 0, problem: null } }) });
-    const loads = () => s.calls.filter((c) => c.method === "GET" && c.path.startsWith("/gear")).length;
+    // the board itself (not the Flames numbers or an item's options, which also start with /gear)
+    const loads = () => s.calls.filter((c) => c.method === "GET" && c.path === "/gear?world=45").length;
     await vi.waitFor(() => expect(loads()).toBe(1));
     await new Promise((r) => setTimeout(r, 50)); // the first answer about the last check has arrived
     finishedAt = "2026-10-20T12:00:30.000Z";

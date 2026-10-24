@@ -27,6 +27,7 @@
   --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
   --danger: #ff6b6b;
   --warning: #f0b35a;
+  --good: #7fd18b; /* a score close to its best (the Flames page) */
   /* potential ranks, as the game colours them */
   --rank-rare: #8fc6e8;
   --rank-epic: #b98be8;
@@ -80,6 +81,7 @@
   --exp: linear-gradient(90deg, #8fd0f4, #f7d94c);
   --danger: #e60012;
   --warning: #b45309;
+  --good: #2f8f45;
   --rank-rare: #2b7fc0;
   --rank-epic: #7c4bc4;
   --rank-unique: #a87b12;

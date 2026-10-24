@@ -18,6 +18,7 @@ model Settings {
   ownerId   String   @id
   theme     String   @default("ren") // "ren" | "pochacco"
   worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion
+  blackFlamePrice Int @default(3000000) // meso per Black Flame, for the Flames page's costs (v2.1.0)
   updatedAt DateTime @updatedAt
 }
 
@@ -219,8 +220,9 @@ model GearSlot {
   @@unique([characterId, slot])
 }
 
-// What each stat is worth to a character, in main stat, typed in (the gear tab; defaults from
-// mafhcow's flame calculator). Used for flame scores and final damage from v2.1.0. No row: defaults.
+// What each stat is worth to a character, in main stat, typed in (the gear tab; the defaults are the
+// owner's: shared/src/index.ts STAT_VALUE_DEFAULTS). Used for flame scores and final damage from
+// v2.1.0. No row: the defaults.
 model StatValues {
   characterId Int       @id
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
@@ -228,6 +230,5 @@ model StatValues {
   allStat     Float // 1% all stat
   secRatio    Float // secondary stat ratio
   bossDmg     Float // 1% boss or damage
-  hp          Float // 1 HP (Demon Avenger)
   fdPer100    Float // % final damage per 100 flame score
 }

@@ -1,7 +1,8 @@
 import { type GearDetailsInput, POTENTIAL_RANKS, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
 import { useEffect, useState } from "react";
 import { useGearOptions } from "../api/hooks";
-import type { DetailOptions, GearBoard, GearCharacter, GearItemView } from "../api/types";
+import type { DetailOptions, FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
+import { formatScore, liveScore, scoreBand } from "../lib/flames";
 import { SLOT_ORDER } from "../lib/gear";
 import { clickStar, draftOf, fitDraft, isDirty, lineChoices, summary, toggleFlame, withRank } from "../lib/gearDetails";
 
@@ -11,8 +12,9 @@ const rankName = (r: string) => r[0]!.toUpperCase() + r.slice(1);
 // Whether a listed item takes nothing at all (stars, flames, potential, hammers).
 const takesNothing = (i: GearItemView | undefined) => Boolean(i) && !i!.starMax && !i!.flames && !i!.potential && !i!.hammers;
 
-// Every equipped item as an icon; the picked one is edited below.
-export function IconRow({ board, c, items, picked, onPick }: { board: GearBoard; c: GearCharacter; items: Map<string, GearItemView>; picked: string | null; onPick: (slot: string) => void }) {
+// Every equipped item as an icon, with its flame score under it (coloured by how close it is to its
+// best); the picked one is edited below.
+export function IconRow({ board, c, items, picked, onPick, flames }: { board: GearBoard; c: GearCharacter; items: Map<string, GearItemView>; picked: string | null; onPick: (slot: string) => void; flames?: FlameItem[] }) {
   const slots = SLOT_ORDER.filter((s) => c.equipped[s]);
   if (slots.length === 0) return <p className="muted small">Nothing equipped yet: pick items in the window first.</p>;
   return (
@@ -23,11 +25,19 @@ export function IconRow({ board, c, items, picked, onPick }: { board: GearBoard;
         const label = item?.name ?? ("other" in e ? e.other : "no longer listed");
         const nothing = takesNothing(item);
         const stars = c.details[slot]?.stars;
+        const f = flames?.find((x) => x.slot === slot);
         return (
-          <button key={slot} type="button" className={`gear-icon${nothing ? " nothing" : ""}`} aria-pressed={picked === slot} aria-label={`${label}${nothing ? " (nothing to set)" : ""}`} title={`${board.slots.find((s) => s.key === slot)?.label}: ${label}`} onClick={() => onPick(slot)}>
-            {item ? <Icon item={item} /> : <span className="slot-text">{label}</span>}
-            {stars ? <span className="icon-stars">{stars}</span> : null}
-          </button>
+          <div key={slot} className="gear-icon-cell">
+            <button type="button" className={`gear-icon${nothing ? " nothing" : ""}`} aria-pressed={picked === slot} aria-label={`${label}${nothing ? " (nothing to set)" : ""}`} title={`${board.slots.find((s) => s.key === slot)?.label}: ${label}`} onClick={() => onPick(slot)}>
+              {item ? <Icon item={item} /> : <span className="slot-text">{label}</span>}
+              {stars ? <span className="icon-stars">{stars}</span> : null}
+            </button>
+            {f && (
+              <span className={`icon-score ${scoreBand(f.score, f.best)}`} title={`Flame score ${formatScore(f.score)} of ${formatScore(f.best)}`}>
+                {Math.round(f.score).toLocaleString("en-US")}
+              </span>
+            )}
+          </div>
         );
       })}
     </div>
@@ -64,7 +74,7 @@ const gainText = (g: DetailOptions["stars"]["gains"][number]) =>
 
 // The editor for one equipped item: stars, Exceptional Hammers, potential, flames, Save / Cancel.
 // Switching to another item drops unsaved changes (the owner's choice: no "leave without saving?").
-export function DetailsEditor({ board, c, slot, items, saving, onSave }: { board: GearBoard; c: GearCharacter; slot: string; items: Map<string, GearItemView>; saving: boolean; onSave: (d: GearDetailsInput) => void }) {
+export function DetailsEditor({ board, c, slot, items, saving, onSave, flame }: { board: GearBoard; c: GearCharacter; slot: string; items: Map<string, GearItemView>; saving: boolean; onSave: (d: GearDetailsInput) => void; flame?: FlameItem }) {
   const e = c.equipped[slot]!;
   const item = "item" in e ? items.get(e.item) : undefined;
   const typed = "other" in e;
@@ -269,50 +279,67 @@ export function DetailsEditor({ board, c, slot, items, saving, onSave }: { board
         <p className="muted small">This item can't have flames.</p>
       ) : (
         <>
-          <p className="small">
-            <b>{picked} / 4</b> <span className="muted">flames picked · tiers {low}–{high}</span>
+          <p className="small row">
+            {flame && (
+              <span className="score-pill" aria-label="Flame score">
+                Flame score <b>{formatScore(liveScore({ grid: o.flames, weights: flame.weights }, draft.flames))}</b> <span className="muted">/ {formatScore(flame.best)}</span>
+              </span>
+            )}
+            <span>
+              <b>{picked} / 4</b> <span className="muted">flames picked · tiers {low}–{high}</span>
+            </span>
           </p>
-          <div className="flames-scroll">
-            <table className="flames">
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  {[1, 2, 3, 4, 5, 6, 7].map((t) => (
-                    <th key={t} className={t < low || t > high ? "off" : undefined}>
-                      T{t}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {o.flames.map((row) => {
-                  const on = draft.flames[row.stat];
-                  const locked = on === undefined && picked >= 4;
-                  return (
-                    <tr key={row.stat}>
-                      <th scope="row">{row.stat}</th>
-                      {row.values.map((v, i) =>
-                        v === null ? (
-                          <td key={i} className="off" />
-                        ) : (
-                          <td key={i}>
-                            <button type="button" className="flame" aria-label={`${row.stat} tier ${i + 1}: ${v}`} aria-pressed={on === i + 1} disabled={locked} onClick={() => set({ flames: toggleFlame(draft.flames, row.stat, i + 1) })}>
-                              {v > 0 && row.stat !== "Req. level" ? "+" : ""}
-                              {v.toLocaleString()}
-                              {row.stat.endsWith("%") ? "%" : ""}
-                            </button>
-                          </td>
-                        ),
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <FlameTable rows={o.flames} flames={draft.flames} onChange={(flames) => set({ flames })} />
         </>
       )}
     </section>
+  );
+}
+
+// The flame grid: each stat the item can roll, a button per tier; a click picks that tier (or un-picks
+// it); at most 4 stats.
+export function FlameTable({ rows, flames, onChange }: { rows: DetailOptions["flames"]; flames: Record<string, number>; onChange: (flames: Record<string, number>) => void }) {
+  const picked = Object.keys(flames).length;
+  const [low, high] = rows.length ? [rows[0]!.values.findIndex((v) => v !== null) + 1, 7 - [...rows[0]!.values].reverse().findIndex((v) => v !== null)] : [0, 0];
+  return (
+    <div className="flames-scroll">
+      <table className="flames">
+        <thead>
+          <tr>
+            <th>Stat</th>
+            {[1, 2, 3, 4, 5, 6, 7].map((t) => (
+              <th key={t} className={t < low || t > high ? "off" : undefined}>
+                T{t}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const on = flames[row.stat];
+            const locked = on === undefined && picked >= 4;
+            return (
+              <tr key={row.stat}>
+                <th scope="row">{row.stat}</th>
+                {row.values.map((v, i) =>
+                  v === null ? (
+                    <td key={i} className="off" />
+                  ) : (
+                    <td key={i}>
+                      <button type="button" className="flame" aria-label={`${row.stat} tier ${i + 1}: ${v}`} aria-pressed={on === i + 1} disabled={locked} onClick={() => onChange(toggleFlame(flames, row.stat, i + 1))}>
+                        {v > 0 && row.stat !== "Req. level" ? "+" : ""}
+                        {v.toLocaleString()}
+                        {row.stat.endsWith("%") ? "%" : ""}
+                      </button>
+                    </td>
+                  ),
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -322,7 +349,6 @@ const FIELDS: [keyof StatValuesInput, string, string][] = [
   ["allStat", "1% All Stat =", "main stat"],
   ["secRatio", "Secondary stat ratio", ""],
   ["bossDmg", "1% Boss / Damage =", "main stat"],
-  ["hp", "1 HP =", "main stat (Demon Avenger)"],
   ["fdPer100", "Final damage per 100 flame score", "%"],
 ];
 function ValueBox({ value, label, onCommit }: { value: number; label: string; onCommit: (n: number) => void }) {
@@ -346,7 +372,7 @@ export function StatValuesBox({ c, onSave }: { c: GearCharacter; onSave: (v: Sta
           Reset to defaults
         </button>
       </div>
-      <p className="tiny muted">What each stat is worth to this character, in main stat. Used for flame scores and final damage later. Get yours from MapleScouter's "Enter Directly" page.</p>
+      <p className="tiny muted">What each stat is worth to this character, in main stat. Used for the flame scores (Flames page). Get yours from MapleScouter's "Enter Directly" page.</p>
       <div className="value-grid">
         {FIELDS.map(([k, label, unit]) => (
           <label key={k} className="small">

@@ -16,4 +16,6 @@ afterEach(() => {
   // The theme lives on the page itself; start every test from the page's initial state.
   document.documentElement.dataset.theme = "ren";
   document.documentElement.removeAttribute("style");
+  // What a page remembers for the browser tab (the Gear pages' picked character) starts empty every test.
+  sessionStorage.clear();
 });

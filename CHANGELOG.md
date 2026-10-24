@@ -2,6 +2,27 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.1.0 (2026-10-24): flames, all the way through
+
+- **The Flames page**, under a new **Gear group** in the rail (Gear ▾: Equipment, Flames; a menu above the bar on a narrow window). The flame odds and costs planned for v2.3.0 came with it, so Potential is now v2.3.0 and the best upgrade v2.4.0.
+- **The flame score:** each item's flames in main stat, from the character's stat values, with the best it could have ("133 / 207.4"). Each job's main and secondary stats are known (mages use Magic ATT; Xenon, Demon Avenger, the two-secondary thieves and Zero have their own rules). Shown under each icon on the Equipment page (coloured by how close to its best) and live in its editor.
+- **Black Flames, worked out exactly** from Nexon Korea's official odds: for each item, cheapest per 1% final damage first, the meso per 1% final damage, the chance and the meso to any better roll, the average gain when it's better, the flames for a 25/50/70/99% chance, and a graph of every score a flame can give (or the cost and gain curves). Checked against mafhcow's own engine (the same to 3–4 decimals) and a million simulated flames.
+- **Targets:** pick what 1% final damage is worth (2.5–40B) and see the score to stop flaming each item at.
+- **Flames are edited on either page** (one saved set); on the Flames page the numbers and the order change on Save.
+- **The Black Flame price** is a site setting (3m by default). **The stat values' defaults are the owner's** (1 ATT = 4, 1% all stats = 10, secondary 0.125, 1% boss/damage = 12) and the "1 HP" box is gone (a Demon Avenger's main stat already is HP).
+- **The picked character carries over** between the Gear pages (and after reloading, in that browser tab).
+- **From the review pass** (9 findings, 7 fixed):
+  - A Black Flame price over 2,147,483,647 meso (e.g. 2500 typed for 2.5B) passed the check and then crashed in the database; it's now refused with a message.
+  - Targets counted a roll just under the stop score as reaching it (the stop score was rounded to the nearest hundredth instead of up), so it showed slightly too few flames.
+  - On a wide window the Gear tab flipped its (hidden) menu state on every click, which could show a stray menu after narrowing the window.
+  - A failed save's message stayed after switching character or world on the Flames page.
+  - Any settings save (theme, world) recalculated the Flames numbers; now only the price does.
+  - "Flames needed" showed "—" (never) for extremely unlikely upgrades (a chance near 1 in 10¹⁷ rounded away); now exact.
+  - The page's live score used its own copy of the server's rounding rule; both now share one (`flameLinePoints`).
+  - **Not changed:** the board is recalculated on each request (64 ms for 14 items, so not worth a cache); Demon Avenger's STR lines score 0, as in mafhcow's calculator (asked the owner).
+- Mutation testing found 62 gaps along the way (most were the Targets numbers and edge cases of the maths, now tested; a cache removed; an older refresh test that passed by accident, counting the Flames requests as gear reloads, fixed).
+- Tests: the maths with hand-worked numbers and mafhcow's figures; the page's clicks and saves; bugs planted by hand in the page (8, all caught after one test was extended); the click-through gained 20 checks (the Flames page, the phone-width menu, the remembered character), and found a layout bug at phone width (the flame grid pushed the page sideways), now fixed.
+
 ## v2.0.1 (2026-10-24): Star Force fixes after the owner's review
 
 - **Secondaries' stars use the armor figures**, not the weapon figures: Nexon Korea's Astra notice says Astra secondaries gain like Lv. 200 armor (v2.0.0 followed masonym's choice). Kataras (the Astra Blade follows the Arcane Umbra katara's rule) and Zero's Lapis still gain like weapons. An Astra secondary at 22★ now adds ATT +106 (Lv. 200 armor), not the weapon figures.

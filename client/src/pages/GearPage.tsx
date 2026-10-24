@@ -1,11 +1,10 @@
-import { worldName } from "@miku/shared";
 import { useEffect, useMemo, useState } from "react";
 import type { GearDetailsInput, StatValuesInput } from "@miku/shared";
-import { useGear, useRefreshStatus, useSaveGear, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
-import type { GearBoard, GearCharacter, GearItemView } from "../api/types";
-import { Avatar } from "../components/Avatar";
+import { useFlames, useGear, useRefreshStatus, useSaveGear, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
+import type { FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
 import { DetailsEditor, IconRow, StatValuesBox } from "../components/GearDetails";
-import { WorldSwitcher } from "../components/WorldSwitcher";
+import { GearTop, NoCharacters, useGearCharacter } from "../components/GearTop";
+import { DEFAULT_BUDGET } from "../lib/flames";
 import { byKey, counted, grouped, LAYOUT, listed, opener, options, ozElsewhere, setCounts, SLOT_ORDER, TOTEMS, type Items } from "../lib/gear";
 
 const Icon = ({ item }: { item: GearItemView | undefined }) => (item?.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="no-icon">no icon</span>);
@@ -34,8 +33,9 @@ interface WindowProps {
   onSaveDetails: (slot: string, details: GearDetailsInput) => void;
   onSaveValues: (values: StatValuesInput) => void;
   savingDetails: boolean;
+  flames: FlameItem[] | undefined; // each flameable item's score (none for a job the list doesn't know)
 }
-function GearWindow({ board, c, items, onSave, onSaveDetails, onSaveValues, savingDetails }: WindowProps) {
+function GearWindow({ board, c, items, onSave, onSaveDetails, onSaveValues, savingDetails, flames }: WindowProps) {
   const [slot, setSlot] = useState("hat");
   // the item being edited below (the first equipped one to start with)
   const [detailSlot, setDetailSlot] = useState<string | null>(null);
@@ -175,15 +175,15 @@ function GearWindow({ board, c, items, onSave, onSaveDetails, onSaveValues, savi
     </div>
     <section className="block" aria-label="Pick an item to edit">
       <h2 className="visually-hidden">Stars, potential and flames</h2>
-      <IconRow board={board} c={c} items={items} picked={editing} onPick={setDetailSlot} />
+      <IconRow board={board} c={c} items={items} picked={editing} onPick={setDetailSlot} flames={flames} />
     </section>
-    {editing && <DetailsEditor key={`${c.id}-${editing}-${JSON.stringify(c.equipped[editing])}`} board={board} c={c} slot={editing} items={items} saving={savingDetails} onSave={(d) => onSaveDetails(editing, d)} />}
+    {editing && <DetailsEditor key={`${c.id}-${editing}-${JSON.stringify(c.equipped[editing])}`} board={board} c={c} slot={editing} items={items} saving={savingDetails} onSave={(d) => onSaveDetails(editing, d)} flame={flames?.find((f) => f.slot === editing)} />}
     </>
   );
 }
 
-// The gear tab: what each character has equipped, in the game's equipment window. Only the items
-// for now; stars, potential and flames come later (PLAN.md v2.0.0).
+// The Gear group's Equipment page: what each character has equipped, in the game's equipment window,
+// and each item's stars, potential, flames and hammers.
 export function GearPage() {
   const settings = useSettings();
   const world = settings.data?.worldId ?? 45;
@@ -199,35 +199,29 @@ export function GearPage() {
     saveValues.reset();
   };
   useRefreshStatus();
-  const [picked, setPicked] = useState<number | null>(null);
+  const [picked, setPicked] = useGearCharacter();
 
   const b = board.data;
   const c = b?.characters.find((x) => x.id === picked) ?? b?.characters[0];
   const items = useMemo(() => (b ? byKey(b.items) : new Map()), [b]);
+  const flames = useFlames(c?.id, DEFAULT_BUDGET);
 
   return (
     <>
       <h1 className="visually-hidden">Gear</h1>
-      <section className="block top">
-        <div className="page-head">
-          <WorldSwitcher world={world} onChange={(w) => { resetSaves(); saveSettings.mutate({ worldId: w }); }} />
-        </div>
-        {b && b.characters.length > 0 && (
-          <div className="strip" role="tablist" aria-label="Characters">
-            {b.characters.map((x) => (
-              <button key={x.id} type="button" role="tab" className="ctab" aria-selected={x.id === c?.id} onClick={() => { resetSaves(); setPicked(x.id); }}>
-                <Avatar src={x.avatar} size={36} name={x.name} />
-                <span>
-                  <b>{x.name}</b>
-                  <small>
-                    Lv. {x.level} · {x.job}
-                  </small>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
+      <GearTop
+        world={world}
+        onWorld={(w) => {
+          resetSaves();
+          saveSettings.mutate({ worldId: w });
+        }}
+        characters={b?.characters}
+        current={c}
+        onPick={(id) => {
+          resetSaves();
+          setPicked(id);
+        }}
+      />
       {failed && (
         <p className="error block" role="alert">
           {failed.message}
@@ -239,11 +233,7 @@ export function GearPage() {
         </p>
       )}
       {board.isPending && <p className="notice muted block">Loading…</p>}
-      {b?.characters.length === 0 && (
-        <section className="block">
-          <p className="notice muted">No characters on {worldName(world)} yet. Add them on Home first.</p>
-        </section>
-      )}
+      {b?.characters.length === 0 && <NoCharacters world={world} />}
       {b && c && (
         <>
           {!c.knownJob && (
@@ -260,6 +250,7 @@ export function GearPage() {
             onSaveDetails={(slot, details) => saveDetails.mutate({ id: c.id, slot, details })}
             onSaveValues={(values) => saveValues.mutate({ id: c.id, values })}
             savingDetails={saveDetails.isPending}
+            flames={flames.data?.known ? flames.data.items : undefined}
           />
         </>
       )}

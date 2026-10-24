@@ -1,7 +1,8 @@
-import { gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, statValuesInput } from "@miku/shared";
+import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, statValuesInput } from "@miku/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { currentOwner } from "../owner";
+import { flameGraph, flamesBoard } from "../services/flames";
 import { gearBoard, listedItemOptions, otherItemOptions, saveGear, saveGearDetails, saveStatValues } from "../services/gear";
 
 const idParam = z.coerce.number().int().positive();
@@ -23,6 +24,14 @@ gearRouter.get("/options", (req, res) => {
 gearRouter.put("/:characterId/stat-values", async (req, res) => {
   await saveStatValues(currentOwner(res), idParam.parse(req.params.characterId), statValuesInput.parse(req.body));
   res.status(204).end();
+});
+
+// The Flames page: a character's flameable items with their scores and costs, and one item's graph.
+gearRouter.get("/:characterId/flames", async (req, res) => {
+  res.json(await flamesBoard(currentOwner(res), idParam.parse(req.params.characterId), flamesQuery.parse(req.query).budget));
+});
+gearRouter.get("/:characterId/flames/:slot", async (req, res) => {
+  res.json(await flameGraph(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot));
 });
 
 // An item's stars, flames, potential and hammers.

@@ -539,6 +539,9 @@ try {
 
   // ---------- gear details (v2.0.0) ----------
   await go("/gear");
+  // the Gear pages remember the picked character (LeekSpin, just above), even after reloading
+  check("Gear", "the picked character is remembered after reloading", (await text('.ctab[aria-selected="true"] b')) === "LeekSpin");
+  await page.locator(".ctab", { hasText: "MikuBeam" }).click();
   const details = () => page.getByRole("region", { name: /details$/ });
   const pickIcon = (name) => page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name, exact: true }).click();
   check("Gear details", "every equipped item has an icon to edit", (await page.getByRole("group", { name: "Equipped items" }).getByRole("button").count()) >= 5);
@@ -581,7 +584,7 @@ try {
   await values.getByRole("spinbutton", { name: "1 ATT =" }).press("Enter");
   await settle();
   await go("/gear");
-  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "12.21");
+  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "10");
   await pickIcon("AbsoLab Mage Crown");
   await details().getByRole("button", { name: "22 stars" }).waitFor();
   await shot("11-gear-details");
@@ -591,7 +594,63 @@ try {
     ["details: a potential line it can't have", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Boss Damage +40%", null, null] }, hammers: 0 }, 400],
     ["details: an empty slot", "PUT", `/gear/${miku.id}/android/details`, { stars: 0, flames: {}, potential: null, hammers: 0 }, 404],
     ["options: an unknown item", "GET", "/gear/options?item=1234567", undefined, 404],
-    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 12, secRatio: 0.1, bossDmg: 10, hp: 0.01, fdPer100: 0.8 }, 400],
+    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 12, secRatio: 0.1, bossDmg: 10, fdPer100: 0.8 }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
+  // ---------- the Flames page (v2.1.0) ----------
+  await go("/gear");
+  await page.locator(".rail-group").getByRole("link", { name: "Flames" }).click();
+  await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
+  check("Flames", "the Gear group lists Equipment and Flames; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames" && (await page.locator(".rail-page.active").innerText()) === "Flames");
+  const flameBoard = async () => (await api("GET", `/gear/${miku.id}/flames?budget=10000000000`)).json;
+  let fb = await flameBoard();
+  const rowNames = await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+  const costs = fb.items.map((i) => i.metrics.mesoPerFd ?? Infinity);
+  check("Flames", "only the flameable items, cheapest per 1% final damage first", rowNames.join("|") === fb.items.map((i) => i.name).join("|") && costs.every((c, i) => i === 0 || costs[i - 1] <= c) && !rowNames.some((n) => /Ring|Medal|Emblem|Badge|Talisman/.test(n)), rowNames.join(", "));
+  await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  const crown = page.getByRole("region", { name: "AbsoLab Mage Crown flames" });
+  // by hand (a Kanna: INT main, LUK secondary, Magic ATT): INT T7 63; the best: all stats T7 70 + INT 63 + INT+LUK 35 × 1.125 + INT+STR 35 = 207.375
+  check("Flames", "the crown's score worked out by hand: 63 of a best of 207.4", /^63 \/ 207\.4 best/.test(await crown.locator(".flame-tile.wide .big").first().innerText()), await crown.locator(".flame-tile.wide .big").first().innerText());
+  await crown.getByRole("button", { name: "All Stats % tier 7: 7" }).click();
+  check("Flames", "a click is unsaved: the numbers stay until Save", (await crown.getByText(/Unsaved changes/).count()) === 1 && /^63 /.test(await crown.locator(".flame-tile.wide .big").first().innerText()));
+  await crown.getByRole("button", { name: "Save", exact: true }).click();
+  await settle(800);
+  // 63 + all stats T7 7 × 10 = 133
+  check("Flames", "saved: the score is 63 + 70 = 133, and the row is sorted again", /^133 /.test(await page.getByRole("region", { name: "AbsoLab Mage Crown flames" }).locator(".flame-tile.wide .big").first().innerText()));
+  fb = await flameBoard();
+  check("Flames", "the same flames as the Equipment page (one saved set)", JSON.stringify(fb.items.find((i) => i.slot === "hat").flames) === JSON.stringify({ INT: 7, "All Stats %": 7 }));
+  const graph = page.getByRole("region", { name: "One flame's score" });
+  await graph.getByRole("img", { name: "Distribution" }).waitFor();
+  const scores = await graph.getByText(/of them\)/).innerText();
+  check("Flames", "the graph plots every score a flame can give", /\((\d{1,3}(,\d{3})+|\d{3,}) of them\)/.test(scores), scores);
+  await graph.getByRole("button", { name: "Cost curve (+1 score)" }).click();
+  check("Flames", "the graph switches to the cost curve", (await graph.getByRole("img", { name: "Cost curve (+1 score)" }).count()) === 1);
+  await shot("12-flames");
+  const before = fb.items.find((i) => i.slot === "hat").metrics.mesoToBetter;
+  await page.getByRole("spinbutton", { name: /Black Flame price/ }).fill("6");
+  await page.getByRole("spinbutton", { name: /Black Flame price/ }).press("Enter");
+  await settle(600);
+  fb = await flameBoard();
+  check("Flames", "the Black Flame price (6m) doubles the meso to a better roll", fb.price === 6_000_000 && Math.abs(fb.items.find((i) => i.slot === "hat").metrics.mesoToBetter / before - 2) < 1e-9, `${before} → ${fb.items.find((i) => i.slot === "hat").metrics.mesoToBetter}`);
+  await page.getByRole("button", { name: "Targets", exact: true }).click();
+  const targets = page.getByRole("region", { name: "Targets" });
+  await targets.getByRole("button", { name: "2.5B" }).click();
+  await settle(600);
+  check("Flames", "Targets: a stop score for every item, for the chosen budget", (await targets.locator("tbody tr").count()) === fb.items.length && (await targets.getByRole("button", { name: "2.5B" }).getAttribute("aria-pressed")) === "true");
+  await shot("13-flame-targets");
+  await api("PUT", "/settings", { blackFlamePrice: 3_000_000 });
+  await go("/gear");
+  await page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name: "AbsoLab Mage Crown", exact: true }).waitFor();
+  const crownScore = await page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name: "AbsoLab Mage Crown", exact: true }).locator("xpath=..").locator(".icon-score").innerText().catch(() => null);
+  check("Flames", "the Equipment page shows the crown's score (133) under its icon", crownScore === "133", String(crownScore));
+  for (const [what, method, where, body, status] of [
+    ["flames: no budget", "GET", `/gear/${miku.id}/flames`, undefined, 400],
+    ["flames: a slot without a flameable item", "GET", `/gear/${miku.id}/flames/ring1`, undefined, 404],
+    ["flames: an unknown character", "GET", "/gear/99999/flames?budget=1", undefined, 404],
+    ["settings: a negative Black Flame price", "PUT", "/settings", { blackFlamePrice: -1 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -723,6 +782,21 @@ try {
   check("Layout", "the Symbols tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/gear");
   check("Layout", "the Gear tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await go("/gear/flames");
+  await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
+  check("Layout", "the Flames page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  // a phone-sized window: the rail along the bottom; Gear opens its pages as a menu, without leaving the page
+  await page.setViewportSize({ width: 390, height: 800 });
+  await settle(300);
+  await page.locator(".rail-group > .tab").click();
+  await settle(300);
+  check("Layout", "phone width: Gear opens a menu of its pages, staying on Flames", (await text("h1")) === "Flames" && (await page.locator(".rail-group.menu .rail-pages").isVisible()));
+  check("Layout", "the Flames page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await shot("14-flames-phone");
+  await page.locator(".rail-page", { hasText: "Equipment" }).click();
+  await settle(300);
+  check("Layout", "picking Equipment from the menu opens it and closes the menu", (await text("h1")) === "Gear" && !(await page.locator(".rail-group.menu").count()));
+  await page.setViewportSize({ width: 900, height: 900 });
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/bosses");

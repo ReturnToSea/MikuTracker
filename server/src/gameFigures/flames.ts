@@ -18,6 +18,14 @@ export function flamePool(weapon: boolean, level: number): FlameStat[] {
   return OTHER_POOL.filter((s) => !((s === "ATT" || s === "M. ATT") && level < 60) && !(s === "All Stats %" && level < 70));
 }
 
+// What a Black Flame (GMS's Eternal Rebirth Flame; the same odds) rolls, from Nexon Korea's page: each
+// line's tier (boss items two tiers higher: 4–7), and how many lines an item that isn't a boss item gets
+// (boss items: always 4). Each line is a different stat, every stat the item can roll equally likely.
+// (A reset that comes out exactly like the old flames is rerolled: left out, too small to matter.)
+// Read 2026-10-24; mafhcow's and Whackybeanz's calculators use the same figures.
+export const BLACK_FLAME_TIERS: readonly [tier: number, chance: number][] = [[2, 0.29], [3, 0.45], [4, 0.25], [5, 0.01]];
+export const FLAME_LINES: readonly [lines: number, chance: number][] = [[1, 0.4], [2, 0.4], [3, 0.16], [4, 0.04]];
+
 // The tiers an item can have: boss items 3–7, others 1–5.
 export const flameTiers = (boss: boolean): [number, number] => (boss ? [3, 7] : [1, 5]);
 

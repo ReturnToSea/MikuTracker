@@ -100,7 +100,7 @@ export const EMPTY_CHECKLIST = {
 
 // The usual answers: Ren saved on Kronos, no theme art, no characters yet.
 export const BASE_ROUTES = {
-  "GET /settings": { theme: "ren", worldId: 45 },
+  "GET /settings": { theme: "ren", worldId: 45, blackFlamePrice: 3_000_000 },
   "GET /theme-art": { ren: null, pochacco: null },
   "GET /exp-table": fakeExpTable(),
   "GET /characters": { characters: [], selectedId: null },

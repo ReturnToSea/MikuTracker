@@ -160,21 +160,25 @@ How it works, what's listed and how the list is checked are in DESIGN.md ("Gear"
 ### v2.x: gear details, then the best upgrade per meso
 Planned 2026-10-24 with the owner, one version per step, each building on the last:
 - **v2.0.0, gear details — done.** How it works, the figures and their sources are in DESIGN.md ("Gear details"). **Still to confirm** (no readable source yet): Lv. 138–199 weapons from 26★ and Lv. 250 (Destiny Stage 2) weapons from 23★ (unknown everywhere: nobody stars them that far; masonym's estimates, marked on the page); shoes' speed +2 from 11★ or 12★ (masonym and the wiki disagree; a 12★+ pair of shoes in game would settle it).
-  - **Stat values, typed in per character** (owner, 2026-10-24), defaults from mafhcow's flame calculator: 1 ATT = 2.44, 1% All Stat = 12.21, secondary ratio 0.08, 1% Boss/Damage = 10.12, 1 HP = 0.014, 0.785% final damage per 100 flame score. Used from v2.1.0 on.
-- **v2.1.0, flame score:** each item's flame score from the stat values, and the final damage it gives (via "% FD per 100 flame score").
+- **v2.1.0, flames — done.** The flame score, the Gear group in the rail and the Flames page (Upgrade and Targets, Black Flames, the odds and costs that were planned for v2.3.0): how it works, the maths and the sources are in DESIGN.md ("Flames"). **Still to check:** that GMS uses Korea's Black Flame odds (Nexon Korea's page; mafhcow and Whackybeanz assume it too). The owner thinks Xenon may value one stat until breakpoints; scored as three equal main stats for now.
 - **Each system all the way through, cost included** (decided 2026-10-24: upgrades aren't 100%, so final damage alone doesn't say whether an upgrade is worth it):
   - **v2.2.0, Star Force:** the final damage each star gives, and what each next star costs (e.g. 21→22★): the **median** cost, the **average**, an **unlucky** figure (e.g. 1 run in 10 costs more), the **chance of a boom** with a boom price the player sets (a replacement or a restore), and the options (events, MVP, Enhancement Mode, safeguard). From those: **meso per 1% final damage**.
-  - **v2.3.0, flames:** the final damage of the current flames, and the expected flames and meso to beat them (meso per 1% final damage). **To ask the owner first:** how flames are reset on Heroic and at what price.
-  - **v2.4.0, potential:** the final damage of the current lines, and the expected cubes or meso to reach better ones (meso per 1% final damage). **To ask first:** how potential is reset on Heroic now and at what price.
+  - **v2.3.0, potential:** the final damage of the current lines, and the expected cubes or meso to reach better ones (meso per 1% final damage). **To ask first:** how potential is reset on Heroic now and at what price.
   - **Set bonuses** are needed by v2.2.0 (an item swap changes them).
-- **v2.5.0, the cheapest upgrade:** everything above, across all the saved gear, best final damage per meso first.
-- **Standalone calculators** (formerly v3.0.0+): a page with the same maths without saved gear, which comes out of v2.2.0–v2.4.0.
+- **v2.4.0, the cheapest upgrade:** everything above, across all the saved gear, best final damage per meso first.
+
 - **Sources (decided 2026-10-24):** the owner allows using data and methods from community tools and sites (most are extracted game data), for this personal project, to build and to check our numbers. We write our own code (their repos have no license) and never read or extract the game client ourselves. Each figure keeps its source next to it.
   - **Flames:** the wiki's tables (`Bonus Stats/Stat Tables`); the odds and the score method from mafhcow's flame calculator (from MathBro's data); checked against whackybeanz.com's flame calculator.
   - **Star Force:** starforce.tadeucci.dev (`rates.js`): GMS rates after star catching was removed (the wiki's rates × 1.05, e.g. 15→16★ 31.5% with 2.055% booms; checked in-game by its author) and the v.269 Enhancement Modes' rates and cost multipliers; the wiki's cost formula (GMS divisors) and stats per star; checked against masonym.dev.
   - **Potential:** MathBro's cubing calculator (brendonmay), from Nexon Korea's official tables (scraped 2023-08-28). Those are the rates GMS has (owner, 2026-10-24), so they count as accurate, not estimates. The wiki gives the stat % caps by level.
   - **Set bonuses:** the wiki; checked against whackybeanz.com.
   - Not maplehub.io: it's for MapleStory N, not GMS.
+
+### v3.0.0+: Standalone upgrade calculators
+Their own tabs, used as calculators, **not tied to the saved gear or characters** (the owner, 2026-10-24: different and still useful information; v2's saved-gear pages stay as they are, a separate step). They reuse v2's maths (the flame odds and score from v2.1.0, then Star Force and potential).
+- **v3.0.0, flames:** any item (level, boss or not, weapon attack) and flames, with your own stat values: the score, the odds and costs of a better flame, the graph, stop scores.
+- **v3.1.0, potential:** how many cubes it should take for the lines you want.
+- **v3.2.0, Star Force:** the expected meso, and the chance of booming, to reach a star.
 
 ### v4.0.0: HEXA (6th job) progress
 A major version of its own (decided 2026-10-23: a lot of work; moved from v2.0.0 when gear details took v2). Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v5.0.0 (they matter for boss damage).

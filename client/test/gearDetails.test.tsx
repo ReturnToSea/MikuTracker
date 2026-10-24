@@ -164,7 +164,7 @@ const HAT = view("1000001", "Test Hat", "hat", { stats: { str: 40, dex: 40, att:
 const MEDAL = view("1000002", "Test Medal", "medal", { stats: { str: 10 }, starMax: 0, flames: "boss", hammers: OPTIONS.hammers! });
 const OZ = view("1000003-4", "Test Oz Ring Lv. 4", "ring", { oz: { kind: "active", level: 4 }, starMax: 0 });
 const HAT2 = view("1000004", "Other Hat", "hat", { stats: { str: 10 }, starMax: 5, flames: "boss", potential: "hat" });
-const DEFAULTS = { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 };
+const DEFAULTS = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 };
 const char = (over: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: [HAT.key, MEDAL.key, OZ.key, HAT2.key], equipped: { hat: { item: HAT.key }, medal: { item: MEDAL.key }, ring1: { item: OZ.key } }, details: {}, statValues: DEFAULTS, ...over });
 const gearBoard = (c: GearCharacter): GearBoard => ({ generated: "2026-10-24", slots: SLOTS, items: [HAT, MEDAL, OZ, HAT2], jobs: {}, characters: [c] });
 
@@ -348,6 +348,30 @@ describe("the details editor", () => {
     expect(await screen.findByText("Saved with 1★, but this item comes with 3★.")).toBeTruthy();
   });
 
+  it("flame scores: under each flameable item's icon (coloured by how close to its best), and live in the editor", async () => {
+    // the hat: STR worth 1, STR+DEX 1.125; saved STR T4 40 of a best of 200
+    const flame = { slot: "hat", name: "Test Hat", icon: null, level: 200, boss: true, starMin: 0, grid: OPTIONS.flames, weights: { STR: 1, "STR+DEX": 1.125 }, flames: { STR: 4 }, score: 40, best: 200, metrics: {}, stop: null };
+    await show(char({ details: { hat: { stars: 0, flames: { STR: 4 }, potential: null, hammers: 0 } } }), { "GET /gear/:id/flames": { known: true, price: 3e6, budget: 1e10, items: [flame] } });
+    const hatCell = (await icons().findByRole("button", { name: "Test Hat" })).closest(".gear-icon-cell")!;
+    await waitFor(() => expect(hatCell.querySelector(".icon-score")?.textContent).toBe("40"));
+    expect(hatCell.querySelector(".icon-score")!.classList.contains("lo")).toBe(true); // 20% of its best
+    expect(icons().getByRole("button", { name: "Test Medal" }).closest(".gear-icon-cell")!.querySelector(".icon-score")).toBeNull();
+    await userEvent.click(icons().getByRole("button", { name: "Test Hat" }));
+    const pill = await editor().findByLabelText("Flame score");
+    expect(pill.textContent).toMatch(/Flame score 40 \/ 200/);
+    // STR+DEX T5: 25 × 1.125 = 28.125, shown before saving
+    await userEvent.click(editor().getByRole("button", { name: "STR+DEX tier 5: 25" }));
+    expect(pill.textContent).toMatch(/68\.1/);
+  });
+
+  it("no scores for a job the list doesn't know", async () => {
+    await show(char(), { "GET /gear/:id/flames": { known: false, price: 3e6, budget: 1e10, items: [] } });
+    await userEvent.click(await icons().findByRole("button", { name: "Test Hat" }));
+    await editor().findAllByRole("button", { name: /stars$/ });
+    expect(editor().queryByLabelText("Flame score")).toBeNull();
+    expect(document.querySelector(".icon-score")).toBeNull();
+  });
+
   it("a typed secondary says it gains stars like armor", async () => {
     await show(char({ equipped: { secondary: { other: "Event Jewel" } } }));
     expect(editor().getByText(/a typed secondary gains stars like armor/)).toBeTruthy();
@@ -391,10 +415,10 @@ describe("saving", () => {
     const att = within(screen.getByRole("group", { name: "Stat values" })).getByRole("spinbutton", { name: "1 ATT =" });
     await userEvent.clear(att);
     await userEvent.type(att, "3{Enter}");
-    expect(await within(screen.getByRole("group", { name: "Stat values" })).findByText("(default 2.44)")).toBeTruthy(); // shown at once
+    expect(await within(screen.getByRole("group", { name: "Stat values" })).findByText("(default 4)")).toBeTruthy(); // shown at once
     expect(s.calls.filter((c) => c.method === "PUT").map((c) => c.path)).toEqual(["/gear/7/hat/details"]); // the second waits
     await userEvent.click(screen.getByRole("tab", { name: /Second/ }));
-    expect(within(await screen.findByRole("group", { name: "Stat values" })).getByRole("spinbutton", { name: "1 ATT =" })).toHaveProperty("value", "2.44");
+    expect(within(await screen.findByRole("group", { name: "Stat values" })).getByRole("spinbutton", { name: "1 ATT =" })).toHaveProperty("value", "4");
     expect(icons().getByRole("button", { name: "Test Hat" }).textContent).not.toContain("2"); // the other character's hat
     const loads = () => s.calls.filter((c) => c.method === "GET" && c.path.startsWith("/gear?")).length;
     const before = loads();
@@ -435,12 +459,12 @@ describe("stat values", () => {
     const s = await show(char());
     const box = within(await screen.findByRole("group", { name: "Stat values" }));
     const att = box.getByRole("spinbutton", { name: "1 ATT =" }) as HTMLInputElement;
-    expect([att.value, (box.getByRole("spinbutton", { name: "Final damage per 100 flame score" }) as HTMLInputElement).value]).toEqual(["2.44", "0.785"]);
+    expect([att.value, (box.getByRole("spinbutton", { name: "Final damage per 100 flame score" }) as HTMLInputElement).value]).toEqual(["4", "0.785"]);
     expect(box.getByRole("button", { name: "Reset to defaults" })).toHaveProperty("disabled", true);
     await userEvent.clear(att);
     await userEvent.type(att, "2.6{Enter}");
     await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, att: 2.6 }]));
-    expect(await box.findByText("(default 2.44)")).toBeTruthy();
+    expect(await box.findByText("(default 4)")).toBeTruthy();
     await userEvent.click(box.getByRole("button", { name: "Reset to defaults" }));
     await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, att: 2.6 }, DEFAULTS]));
   });
@@ -450,9 +474,9 @@ describe("stat values", () => {
     const att = within(await screen.findByRole("group", { name: "Stat values" })).getByRole("spinbutton", { name: "1 ATT =" }) as HTMLInputElement;
     await userEvent.clear(att);
     await userEvent.tab();
-    expect(att.value).toBe("2.44");
+    expect(att.value).toBe("4");
     await userEvent.type(att, "{selectall}-3{Enter}");
-    expect(att.value).toBe("2.44");
+    expect(att.value).toBe("4");
     expect(s.calls.filter((c) => c.method === "PUT")).toEqual([]);
   });
 });

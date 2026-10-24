@@ -442,7 +442,7 @@ describe("PUT /api/gear/:id/stat-values", () => {
   it("the defaults until changed, then what was saved, per character", async () => {
     const a = await character();
     const b = await character();
-    const defaults = { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 };
+    const defaults = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 };
     expect((await board()).characters.map((c: { statValues: object }) => c.statValues)).toEqual([defaults, defaults]);
     const mine = { ...defaults, att: 2.6, fdPer100: 0.9 };
     await ok(api().put(`/api/gear/${a}/stat-values`).send(mine));
@@ -454,13 +454,13 @@ describe("PUT /api/gear/:id/stat-values", () => {
 
   it.each([[{ att: -1 }], [{ att: "2" }], [{ extra: 1 }], [{}]])("refuses %j", async (change) => {
     const id = await character();
-    const body = Object.keys(change).length ? { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785, ...change } : {};
+    const body = Object.keys(change).length ? { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, ...change } : {};
     expect((await api().put(`/api/gear/${id}/stat-values`).send(body)).status).toBe(400);
   });
 
   it("deleting a character deletes its stat values", async () => {
     const id = await character();
-    await ok(api().put(`/api/gear/${id}/stat-values`).send({ att: 3, allStat: 12, secRatio: 0.1, bossDmg: 10, hp: 0.01, fdPer100: 0.8 }));
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ att: 3, allStat: 12, secRatio: 0.1, bossDmg: 10, fdPer100: 0.8 }));
     await ok(api().delete(`/api/characters/${id}`));
     expect(await db().statValues.count()).toBe(0);
   });

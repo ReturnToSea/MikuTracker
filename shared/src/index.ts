@@ -29,10 +29,11 @@ export const characterName = z
 export const searchQuery = z.strictObject({ world: worldId, name: characterName });
 export type SearchQuery = z.infer<typeof searchQuery>;
 
-// Saving settings: the theme, the world shown on Home, or both.
+// Saving settings: the theme, the world shown on Home, the price of a Black Flame (meso: at most
+// 2,147,483,647, what the database column holds), or several.
 export const settingsInput = z
-  .strictObject({ theme: themeId.optional(), worldId: worldId.optional() })
-  .refine((s) => s.theme !== undefined || s.worldId !== undefined, { message: "Nothing to save" });
+  .strictObject({ theme: themeId.optional(), worldId: worldId.optional(), blackFlamePrice: z.number().int().min(0).max(2_147_483_647).optional() })
+  .refine((s) => s.theme !== undefined || s.worldId !== undefined || s.blackFlamePrice !== undefined, { message: "Nothing to save" });
 export type SettingsInput = z.infer<typeof settingsInput>;
 
 // Adding a character: looked up again by the server, never taken from the page as is.
@@ -154,10 +155,18 @@ export const gearOptionsQuery = z.union([
   }),
 ]);
 
+// One flame line's score in hundredths of a point (its value × what a point of it is worth), each line
+// rounded on its own: the server and the page add scores up the same way.
+export const flameLinePoints = (worth: number, value: number | null): number => Math.round(worth * (value ?? 0) * 100);
+
+// The Flames page: the budget (meso per 1% final damage) its stop scores are for.
+export const flamesQuery = z.strictObject({ budget: z.coerce.number().min(0).max(1e15) });
+export type FlamesQuery = z.infer<typeof flamesQuery>;
+
 // What each stat is worth to a character, in main stat (typed in on the gear tab).
-export const STAT_VALUE_DEFAULTS = { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 } as const;
+export const STAT_VALUE_DEFAULTS = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 } as const;
 const statValue = z.number().min(0).max(10000);
-export const statValuesInput = z.strictObject({ att: statValue, allStat: statValue, secRatio: statValue, bossDmg: statValue, hp: statValue, fdPer100: statValue });
+export const statValuesInput = z.strictObject({ att: statValue, allStat: statValue, secRatio: statValue, bossDmg: statValue, fdPer100: statValue });
 export type StatValuesInput = z.infer<typeof statValuesInput>;
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.

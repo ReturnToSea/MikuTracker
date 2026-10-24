@@ -5,7 +5,7 @@ import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -19,6 +19,8 @@ export const keys = {
   symbols: (world: number) => ["symbols", world],
   gear: (world: number) => ["gear", world],
   gearOptions: (query: string | null) => ["gear-options", query],
+  flames: (id: number, budget: number) => ["flames", id, budget],
+  flameGraph: (id: number, slot: string) => ["flames", id, "graph", slot],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -55,7 +57,11 @@ export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: SettingsInput) => api<SettingsView>("/settings", { method: "PUT", body: input }),
-    onSuccess: (saved) => qc.setQueryData(keys.settings, saved),
+    onSuccess: (saved, input) => {
+      qc.setQueryData(keys.settings, saved);
+      // the Black Flame price changes every cost on the Flames page (the theme or world doesn't)
+      if (input.blackFlamePrice !== undefined) void qc.invalidateQueries({ queryKey: ["flames"] });
+    },
   });
 }
 
@@ -155,6 +161,10 @@ export function useSaveSymbol(world: number) {
   });
 }
 
+// After a gear save: the board, and the Flames page's numbers (which follow the items, their flames
+// and the stat values).
+const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) => Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] })]);
+
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
 
@@ -170,7 +180,7 @@ export function useSaveGear(world: number) {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
       qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, equipped: withGear(c.equipped, slot, input), details: detailsAfter(c, slot, input) } : c)) });
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
+    onSettled: () => reloadGear(qc, world),
   });
 }
 
@@ -191,7 +201,7 @@ export function useSaveGearDetails(world: number) {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
       qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, details: { ...c.details, [slot]: details } } : c)) });
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
+    onSettled: () => reloadGear(qc, world),
   });
 }
 
@@ -206,6 +216,13 @@ export function useSaveStatValues(world: number) {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
       qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, statValues: values } : c)) });
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
+    onSettled: () => reloadGear(qc, world),
   });
 }
+
+// The Flames page: a character's flameable items with their scores and costs (the stop scores for a
+// budget), and one item's graph. A new budget keeps showing the last numbers until the new ones come
+// (only for the same character).
+export const useFlames = (id: number | undefined, budget: number) =>
+  useQuery({ queryKey: keys.flames(id ?? 0, budget), queryFn: () => api<FlamesBoard>(`/gear/${id}/flames?budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
+export const useFlameGraph = (id: number, slot: string) => useQuery({ queryKey: keys.flameGraph(id, slot), queryFn: () => api<FlameGraph>(`/gear/${id}/flames/${slot}`) });

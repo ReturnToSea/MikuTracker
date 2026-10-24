@@ -130,10 +130,10 @@ export async function saveGear(ownerId: string, characterId: number, slot: strin
 
 // ── v2.0.0: stars, flames, potential and hammers ──────────────────────────────────────────────
 
-const statValuesOf = (row: StatValuesInput | undefined): StatValuesInput => {
+export const statValuesOf = (row: StatValuesInput | undefined): StatValuesInput => {
   if (!row) return { ...STAT_VALUE_DEFAULTS };
-  const { att, allStat, secRatio, bossDmg, hp, fdPer100 } = row;
-  return { att, allStat, secRatio, bossDmg, hp, fdPer100 };
+  const { att, allStat, secRatio, bossDmg, fdPer100 } = row;
+  return { att, allStat, secRatio, bossDmg, fdPer100 };
 };
 
 export async function saveStatValues(ownerId: string, characterId: number, input: StatValuesInput) {
@@ -152,14 +152,14 @@ export interface DetailOptions {
 
 // A listed item's figures as the calculations take them. Its class stats come from its class
 // requirement (a job's own items: that job's branch).
-function detailItem(item: GearItem): DetailItem {
+export function detailItem(item: GearItem): DetailItem {
   const { jobs } = gearFile();
   const branches = item.jobs?.flatMap((j) => (Object.hasOwn(jobs, j) ? jobs[j]!.branches : [j])) ?? null;
   return { slot: item.slot, level: item.level ?? 0, stats: item.stats ?? {}, classStats: classStatsOf(branches), starMin: item.starMin ?? 0, starMax: item.starMax ?? 0, flames: item.flames ?? null, type: item.type };
 }
 
 // A typed "Other item", from what the player said it is.
-function otherItem(other: NonNullable<GearDetailsInput["other"]>): DetailItem {
+export function otherItem(other: NonNullable<GearDetailsInput["other"]>): DetailItem {
   return { slot: other.kind, level: other.level, stats: { att: other.att, matt: other.matt }, classStats: classStatsOf(null), starMin: 0, starMax: otherStarLimit(other.kind, other.level), flames: FLAME_KINDS.has(other.kind) ? (other.boss ? "boss" : "normal") : null };
 }
 
