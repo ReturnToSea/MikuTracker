@@ -1,10 +1,10 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, SettingsInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, SettingsInput, SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -15,6 +15,7 @@ export const keys = {
   progress: (id: number) => ["progress", id],
   bosses: (world: number) => ["bosses", world],
   checklist: (world: number) => ["checklist", world],
+  symbols: (world: number) => ["symbols", world],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -35,6 +36,7 @@ export function useRefreshStatus() {
       void qc.invalidateQueries({ queryKey: ["progress"] });
       void qc.invalidateQueries({ queryKey: ["bosses"] });
       void qc.invalidateQueries({ queryKey: ["checklist"] });
+      void qc.invalidateQueries({ queryKey: ["symbols"] });
     }
     seen.current = finished;
   }, [finished, qc]);
@@ -127,5 +129,24 @@ export function useSetTaskDone(world: number) {
       qc.setQueryData<ChecklistBoard>(keys.checklist(world), (b) => b && withTaskDone(b, id, task, done));
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["checklist"] }),
+  });
+}
+
+// The symbol calculator of a world.
+export const useSymbols = (world: number) => useQuery({ queryKey: keys.symbols(world), queryFn: () => api<SymbolsBoard>(`/symbols?world=${world}`) });
+
+// Saving one symbol as typed: shown at once, sent one at a time in order, then the board loads
+// again (so a refused value goes back to what's saved).
+export function useSaveSymbol(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "symbols" },
+    mutationFn: ({ id, symbol, state }: { id: number; symbol: string; state: SymbolInput }) => api<void>(`/symbols/${id}/${symbol}`, { method: "PUT", body: state }),
+    onMutate: async ({ id, symbol, state }) => {
+      await qc.cancelQueries({ queryKey: keys.symbols(world) });
+      qc.setQueryData<SymbolsBoard>(keys.symbols(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, symbols: { ...c.symbols, [symbol]: state } } : c)) });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.symbols(world) }),
   });
 }

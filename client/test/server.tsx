@@ -108,4 +108,5 @@ export const BASE_ROUTES = {
   "GET /characters/:id/progress": NO_PROGRESS,
   "GET /bosses": EMPTY_BOSSES,
   "GET /checklist": EMPTY_CHECKLIST,
+  "GET /symbols": { patch: "v.271", symbols: [], characters: [] },
 };

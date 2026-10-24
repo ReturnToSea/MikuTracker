@@ -12,6 +12,7 @@ import { expTableRouter } from "./routes/expTable";
 import { refreshRouter } from "./routes/refresh";
 import { searchRouter } from "./routes/search";
 import { settingsRouter } from "./routes/settings";
+import { symbolsRouter } from "./routes/symbols";
 import { themeArtRouter } from "./routes/themeArt";
 
 // The built React app (npm run build). Tests pass a temporary folder instead.
@@ -55,6 +56,7 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/theme-art", themeArtRouter);
   app.use("/api/bosses", bossesRouter);
   app.use("/api/checklist", checklistRouter);
+  app.use("/api/symbols", symbolsRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });

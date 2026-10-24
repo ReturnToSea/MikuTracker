@@ -235,6 +235,7 @@ describe("the Checklist tab", () => {
     let finishedAt = "2026-10-20T08:00:30.000Z";
     const s = show(board([REMY]), { "GET /refresh": () => ({ last: { startedAt: "2026-10-20T08:00:00.000Z", finishedAt, checked: 1, updated: 1, missing: 0, failed: 0, problem: null } }) });
     await vi.waitFor(() => expect(loads(s)).toBe(1));
+    await new Promise((r) => setTimeout(r, 50)); // the first answer about the last check has arrived
     finishedAt = "2026-10-20T12:00:30.000Z";
     await vi.advanceTimersByTimeAsync(60_000);
     await vi.waitFor(() => expect(loads(s)).toBe(2));

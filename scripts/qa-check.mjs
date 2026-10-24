@@ -46,13 +46,13 @@ try {
 
   // ---------- the rail and pages ----------
   await go("/");
-  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/3", "TBD"], ["Bosses", "/bosses", null], ["Checklist", "/checklist", null], ["Home", "/", null]]) {
+  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/4", "TBD"], ["Bosses", "/bosses", null], ["Checklist", "/checklist", null], ["Symbols", "/symbols", null], ["Home", "/", null]]) {
     await page.locator(".rail a", { hasText: label }).first().click();
     await page.waitForFunction((l) => document.querySelector(".rail a.active")?.textContent?.includes(l), label, { timeout: 3000 }).catch(() => {});
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "two TBD tabs, after Bosses and Checklist", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 2 && (await page.locator(".rail a").nth(1).innerText()).includes("Bosses") && (await page.locator(".rail a").nth(2).innerText()).includes("Checklist"));
+  check("Rail", "one TBD tab, after Bosses, Checklist and Symbols", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 1 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -419,6 +419,48 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
 
+  // ---------- the Symbols tab (v1.4.0) ----------
+  const symCard = (name) => page.getByRole("group", { name, exact: true });
+  const typeIn = async (label, value) => {
+    const box = page.getByRole("spinbutton", { name: label, exact: true });
+    await box.fill(String(value));
+    await box.press("Enter");
+    await settle(300);
+  };
+  await go("/symbols");
+  check("Symbols", "a tab per character; every Arcane symbol starts not unlocked", (await page.getByRole("tab").count()) === 2 && (await page.getByText("not unlocked", { exact: true }).count()) === 6);
+  await typeIn("Esfera level", 17);
+  await typeIn("Esfera symbols held", 40);
+  await typeIn("Arcana level", 19);
+  await typeIn("Arcana symbols held", 200);
+  await page.getByRole("combobox", { name: "Arcana weekly clears" }).selectOption("3");
+  await settle();
+  // Arcana: 372 − 200 = 172 left at (7 × 40 + 3 × 80) / 7 ≈ 74.3 a day → 2.3 days; Esfera: 300 + 335 + 372 − 40 = 967 at 40 a day → 24.2 days
+  const ttmText = await page.getByRole("region", { name: "Time to max" }).innerText();
+  check("Symbols", "time to max worked out by hand: Arcana ≈ 2.3 days, Esfera ≈ 24.2 days (all maxed)", /Arcana\s+2\.3 days/.test(ttmText) && /Esfera\s+24\.2 days/.test(ttmText) && /All maxed\s+24\.2 days/.test(ttmText), ttmText.replace(/\n/g, " | "));
+  check("Symbols", "Force: Arcana 210 + Esfera 190 = 400 of 1,320", /400\s*\/ 1320/.test(ttmText));
+  // meso: Arcana 19→20 = 10,000 × floor(372 × 15.9) = 59,140,000; Esfera 17→20 = 59,100,000 + 66,330,000 + 74,020,000
+  check("Symbols", "meso to go worked out by hand: 258.59M (≈ 259M)", /259M meso to go/.test(ttmText), ttmText.replace(/\n/g, " | "));
+  await page.getByRole("spinbutton", { name: "Selector coupons" }).fill("300");
+  const advice = await page.getByRole("region", { name: "Selector coupons" }).innerText();
+  check("Symbols", "300 coupons: maxed soonest puts them all into Esfera; most Force first finishes Arcana (172)", /Everything maxed soonest\s+Esfera\s+300/.test(advice) && /Most Force soonest\s+Arcana\s+172/.test(advice), advice.replace(/\n/g, " | "));
+  check("Symbols", "the forecast graph is drawn", (await page.locator("svg.force-graph path.graph-line").count()) === 1);
+  await go("/symbols");
+  check("Symbols", "what was typed is saved: still there after reloading", (await page.getByRole("spinbutton", { name: "Esfera level", exact: true }).inputValue()) === "17" && (await page.getByRole("combobox", { name: "Arcana weekly clears" }).inputValue()) === "3");
+  await page.getByRole("button", { name: "Sacred", exact: true }).click();
+  check("Symbols", "Sacred: 8 symbols, Tallahart and Geardock marked Grand, Geardock without a selector, no weekly clears", (await page.getByRole("group").filter({ has: page.locator(".symbol-top") }).count()) === 8 && (await symCard("Geardock").getByText("no selector").count()) === 1 && (await symCard("Tallahart").getByText("Grand").count()) === 1 && (await page.getByRole("combobox", { name: /weekly clears/ }).count()) === 0);
+  await shot("09-symbols");
+  for (const [what, method, where, body, status] of [
+    ["symbols: bad world", "GET", "/symbols?world=3", undefined, 400],
+    ["symbol: above its top level", "PUT", `/symbols/${miku.id}/cernium`, { level: 12, held: 0, days: 7, weekly: 0 }, 400],
+    ["symbol: more held than the level takes", "PUT", `/symbols/${miku.id}/cernium`, { level: 9, held: 909, days: 7, weekly: 0 }, 400],
+    ["symbol: weekly clears on a Sacred symbol", "PUT", `/symbols/${miku.id}/cernium`, { level: 1, held: 0, days: 7, weekly: 1 }, 400],
+    ["symbol: unknown", "PUT", `/symbols/${miku.id}/nowhere`, { level: 1, held: 0, days: 7, weekly: 0 }, 404],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));
@@ -541,6 +583,8 @@ try {
   });
   check("Layout", "the Level view's points line up with their days' columns", lined < 1.5, `${lined.toFixed(2)} px off`);
   await shot("05-narrow");
+  await go("/symbols");
+  check("Layout", "the Symbols tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/bosses");

@@ -4,6 +4,7 @@ import { ThemeEffect } from "./components/ThemeEffect";
 import { BossesPage } from "./pages/BossesPage";
 import { ChecklistPage } from "./pages/ChecklistPage";
 import { ExpTablePage } from "./pages/ExpTablePage";
+import { SymbolsPage } from "./pages/SymbolsPage";
 import { HomePage } from "./pages/HomePage";
 import { TbdPage } from "./pages/TbdPage";
 import { ThemesPage } from "./pages/ThemesPage";
@@ -19,6 +20,7 @@ export function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/bosses" element={<BossesPage />} />
             <Route path="/checklist" element={<ChecklistPage />} />
+            <Route path="/symbols" element={<SymbolsPage />} />
             <Route path="/tbd/:n" element={<TbdPage />} />
             <Route path="/exp-table" element={<ExpTablePage />} />
             <Route path="/themes" element={<ThemesPage />} />

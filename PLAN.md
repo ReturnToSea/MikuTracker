@@ -151,24 +151,8 @@ How it works is in DESIGN.md ("Bosses"). **Still unconfirmed:** Jupiter's prices
 ### v1.3.0: Daily and weekly checklist — done
 How it works is in DESIGN.md ("Checklist"). **Still to check:** Flag Race's Thursday reset (from the owner; not documented in what was found), and drop Monster Park Extreme if it's removed in November (the wiki marks it as pending removal). History of past days and weeks is under "Later" (the ticks are kept).
 
-### v1.4.0: Symbol calculator
-A **calculator** for each roster character's Arcane and Sacred symbols: time and meso to max, Force over time, and where to put selector coupons. **Decided 2026-10-23** (from the owner's description, then questions):
-- **Its own tab** (the next TBD tab). Character tabs at the top like Home; the page shows the selected character only.
-- **Two tabs on the left: Arcane / Sacred.** Arcane: the 6 Arcane River symbols. Sacred: the 6 Sacred symbols **and** Tallahart and Geardock (Grand Sacred, marked as such), since Grand Sacred levels add to Sacred Force.
-- **Each symbol:** its level and symbols held toward the next level (as the game shows), a **dropdown 0–7 for how many days a week its daily is done**, and for Arcane symbols a **dropdown 0–3 for weekly clears** (Sacred areas have no weekly content).
-- **A calculator, not a tracker:** saved per character exactly as typed (no date shown); the checklist never changes it.
-- **Time to max for each symbol** (shown after the symbols, top right) and **time to max for the tab in total**, plus the **meso still needed** to max, per symbol and in total.
-- **A forecast graph at the bottom:** the tab's Force (Arcane Force, or Sacred Force including Grand Sacred) from today until max, as the symbols level up at the entered days a week.
-- **Selector coupons:** typed in per tab, not saved. The advice shows **both**: where to put them for **everything maxed soonest**, and for **the most Force soonest**. Arcane Symbol Selector Coupons cover the 6 Arcane symbols; Sacred Symbol Selector Coupons cover the 6 Sacred and Tallahart (v.271). **Geardock has no selector coupon** and is marked so.
-- **Layout (picked from three mockups, 2026-10-23): A, as the owner described.** Character tabs at the top. Left: the Arcane / Sacred switch and a card per symbol (icon, name, "Grand" badge, "no selector" on Geardock, its Force; level and symbols held "300 / 909" with a bar; "Daily [0–7] days/wk"; Arcane: "Weekly [0–3] clears"); a maxed symbol is outlined gold, one not unlocked (level 0) is dimmed. Top right: the tab's Force ("280 / 880") and **All maxed** (time, date, meso to go), then each symbol's time to max, date and meso. Under it: the coupon box ("I have [n]"; "Everything maxed soonest" and "Most Force soonest" side by side, each with how many to put in each symbol and the result). Bottom: the Force forecast, from today to max, with the max as a dashed line.
-  - **Not unlocked** (level 0) symbols are left out of "All maxed" (no level to forecast from); entering a level counts them.
-  - **Rates are averaged over the week** (e.g. 5 days a week of 40 = 28.6 a day); the forecast advances day by day at that average.
-- **Research (2026-10-23, MapleStory Wiki symbol pages' cost tables and formulas, and Nexon's v.270–v.271 notes):**
-  - **Arcane:** max Lv. 20. Symbols for level L → L+1: L² + 11 (12 at Lv. 1, 372 at Lv. 19; 2,679 in all). Meso: 10,000 × floor((L² + 11) × (k + 0.1 × L)), with k = 8 Vanishing Journey, 10 Chu Chu Island, 12 Lachelein, 14 Arcana, 16 Morass, 18 Esfera. Arcane Force 30 at Lv. 1, +10 a level (220 at Lv. 20).
-  - **Sacred and Grand Sacred:** max Lv. 11. Symbols for L → L+1: 9L² + 20L (29 at Lv. 1, 1,100 at Lv. 10; 4,565 in all). Meso: 100,000 × floor((9L² + 20L) × (k − 0.6 × L)), with k = 13.2 Cernium, 15 Hotel Arcus, 16.8 Odium, 18.6 Shangri-La, 20.4 Arteria, 22.2 Carcion, 39.8 Tallahart, 48.8 Geardock. Sacred Force 10 at Lv. 1, +10 a level (110 at Lv. 11); Grand Sacred also +10 Sacred Force a level (v.270).
-  - **Symbols a day** (v.271, 9 Sep 2026): Arcane dailies 40 (Vanishing Journey and Chu Chu Island give 20 until a story quest is done; we assume it's done), Arcane weekly content 80 per clear, up to 3 clears a week (wiki); Cernium 30, Hotel Arcus to Carcion 15, Tallahart and Geardock 15.
-  - The Vanishing Journey page's "Mentor System" meso discount appears nowhere in GMS's patch notes: treated as not in GMS.
-  - The wiki's cost tables match its formulas: all 194 rows of all 14 symbols, symbols and meso, checked with exact fractions (2026-10-23).
+### v1.4.0: Symbol calculator — done
+How it works is in DESIGN.md ("Symbols"); the costs, Force and symbols a day are in `server/src/gameFigures/symbols.ts` with their sources. **Still to check in the game:** Vanishing Journey and Chu Chu Island giving 40 a day (we assume their story quest is done), and the weekly content's 3 clears a week of 80 (from the wiki).
 
 ### v1.5.0: Gear tab (equipped items)
 **Decided 2026-10-23:** this version is **only choosing each roster character's equipped items**. Potential, Star Force and flames move to v2.0.0.

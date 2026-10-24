@@ -33,6 +33,13 @@ export const ChecklistIcon = () => (
   </svg>
 );
 
+export const SymbolIcon = () => (
+  <svg {...common}>
+    <path d="M12 3l7 4v10l-7 4-7-4V7z" />
+    <path d="M12 8l3 2v4l-3 2-3-2v-4z" />
+  </svg>
+);
+
 export const TbdIcon = () => (
   <svg {...common}>
     <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />

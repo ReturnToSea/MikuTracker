@@ -2,13 +2,13 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.3.0)
+## The app (as of v1.4.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
-- **Top:** Home, Bosses, Checklist, then two TBD tabs (placeholders for features still to be decided).
+- **Top:** Home, Bosses, Checklist, Symbols, then a TBD tab (a placeholder for a feature still to be decided).
 - **Bottom:** the EXP table and Themes.
 
-Each tab has its own address (`/`, `/bosses`, `/checklist`, `/tbd/3`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
+Each tab has its own address (`/`, `/bosses`, `/checklist`, `/symbols`, `/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
 
 ## Home: characters
 
@@ -94,6 +94,17 @@ The non-boss tasks, ticked off per character. Layout C of five mockups: one char
 - **The planning menu:** every task as a box in two columns, by reset (Daily · 00:00 UTC, Weekly, One-off) and category, with its level (flagged "above Lv. 278" when it is: shown, not enforced) and badges; custom tasks have "Edit". Save sends the plan in the tasks' order; Cancel, Escape or a click outside close it without saving. Taking a task out removes this period's tick only.
 - **Your own tasks** ("New task…", or "Edit" in the menu): name, category, resets (Daily / Weekly on a chosen day / No reset), worlds (Both / Kronos / Hyperion) and limit (per character, or at most N characters per world or account). Deleting one asks first and takes it off every character, with its ticks. Moving it off a world takes it off that world's characters, with their ticks (left there, they could still use up a per-account limit).
 - **Presets** (`server/src/gameFigures/checklist.ts`, as of v.271): the 6 Arcane River and 8 Grandis dailies, Monster Park (2 characters per world), Ursus (once per account); the 6 Arcane River weeklies, Erda's Request (once per account), Epic Dungeon (2 per account, one per character), Monster Park Extreme (2 per world), Legion Weekly Dragon (once per world), Guild Culvert and Flag Race, Mu Lung Dojo. Weekly content resets Thursday 00:00 UTC since v.264 (Nov 2025). Sources in the file.
+
+## Symbols: the symbol calculator
+
+A **calculator** for each character's Arcane and Sacred symbols (layout A, as the owner described it). Nothing feeds it automatically (not the checklist): what's typed is what it uses, saved per character exactly as typed.
+- **Character tabs** at the top; the page shows the selected character only.
+- **Left: the Arcane / Sacred switch** and a card per symbol. Arcane: the 6 Arcane River symbols. Sacred: the 6 Sacred symbols and Tallahart and Geardock (Grand Sacred, marked "Grand"; Grand Sacred levels add to Sacred Force). Each card: the level (0: not unlocked), the symbols held toward the next level ("300 / 909", with a bar), a **0–7 dropdown for the days a week its daily is done**, and for Arcane symbols a **0–3 dropdown for weekly clears**. Number boxes save when you leave them or press Enter (typing "19" doesn't save a 1 on the way); an emptied box is put back, not saved as 0; a value past what the symbol allows is fitted first (a level within 0 to the top, symbols held within what that level can hold). A maxed symbol is outlined; one not unlocked is dimmed; Geardock says "no selector".
+- **Right: the tab's Force** ("400 / 1320") and **All maxed** (time, date and meso to go), then each symbol's time to max, date and meso. Symbols not unlocked aren't counted (nothing to forecast from).
+- **The selector coupon box** ("I have [n]", per tab, not saved) with **both suggestions**: "Everything maxed soonest" (one coupon at a time to the symbol with the longest wait, a symbol that never gets there first) with when everything would be maxed, and "Most Force soonest" (whole level-ups, cheapest first, the rest toward the next cheapest) with the Force gained. Arcane selectors cover the Arcane symbols; Sacred selectors the Sacred ones and Tallahart (since v.271); Geardock has none.
+- **The Force forecast** across the bottom: the tab's Force day by day from today until every unlocked symbol is maxed (up to two years), with the top as a dashed line.
+- **Rates are averaged over the week** (5 days of 40 is 28.6 a day; weekly clears add 80 each); the forecast advances day by day at that average.
+- **The maths** (`client/src/lib/symbols.ts`) runs on the costs the server sends; **the costs** are worked out on the server from the game's formulas (`server/src/calc/symbols.ts`, `gameFigures/symbols.ts`, as of v.271), in whole tenths: in ordinary decimals 13.2 − 3 is 10.19999…, which would make Cernium's Lv. 5 cost 331,400,000 instead of the game's 331,500,000 (7 of the 194 rows would be off that way).
 
 ## The EXP table tab
 
@@ -220,6 +231,8 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
 - **`/api/checklist?world=45`:** `{ patch, daily: { day, resetsAt }, weekly: { week, resetsAt }, tasks, characters, limits }`: every task showing on the world (presets, then the owner's own for that world), each with its category, reset, day, level, limit, `custom` (its worlds, or null) and when its period ends; the world's characters with their `plan` and this period's `done`, in the tasks' order; and for each limited task, the `users` who did it this period (per account: on both worlds).
 - **`PUT /api/checklist/:id/plan`** `{ tasks }`: replaces the plan; an unknown task (or one not on the character's world) is a 400 naming it. **`PUT /api/checklist/:id/ticks/:task`** `{ done }`: a task not in the plan is a 409; a limit used up by others is a 409 naming them ("Monster Park is already done by Aa and Bb (2 per world)."). Checked and saved in one transaction.
 - **`POST /api/checklist/tasks`**, **`PUT /api/checklist/tasks/:id`**, **`DELETE /api/checklist/tasks/:id`:** the owner's own tasks. Name 1–40 characters (trimmed), a known category, reset, worlds and limit, a day only for weekly ones (and then required), a count of 1–50 (stored as 1 per character).
+- **`/api/symbols?world=45`:** `{ patch, symbols, characters }`: every symbol with its kind, Grand or not, symbols a day and per weekly clear, top level, selector, each level's cost (`steps`: symbols and meso from L to L+1) and Force at each level; the world's characters with the symbols they entered (`{ level, held, days, weekly }`).
+- **`PUT /api/symbols/:id/:symbol`** `{ level, held, days, weekly }`: saves one symbol as typed. Refused with a 400 saying why: a level above the symbol's top ("Cernium goes up to Lv. 11"), more held than the level takes ("Cernium Lv. 9 holds at most 908 symbols"), held at level 0 or the top, weekly clears on a Sacred symbol. 404 for an unknown symbol or character.
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
   - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.
@@ -316,9 +329,10 @@ Tables:
 - **`Selection`:** the selected character on each world.
 - **`BossPlan`:** a boss a character does, with the difficulty and party size: one row per character and boss. Kept until the plan changes.
 - **`ChecklistTask`:** the owner's own tasks (name, category, reset, day, worlds, limit). **`ChecklistPlan`:** a task a character does (a preset's id or "custom-<id>"). **`ChecklistTick`:** a task done in one period (the UTC day, "week-" and the week's first day, or "once"); unique per character, task and period; kept for a history later.
+- **`SymbolState`:** one symbol of a character in the calculator, as typed: level, symbols held, days a week, weekly clears. Unique per character and symbol.
 - **`BossClear`:** a boss ticked as cleared in one boss week (named by its first day, a Thursday) or, for Black Mage, one month ("2026-11"), with the difficulty and party at the time. A new week simply has none yet, so nothing is cleared at the reset, and past weeks are kept for a boss history later. Unique per character, boss and period.
 
-Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks, and its checklist plan and ticks.
+Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks, its checklist plan and ticks, and its symbols.
 
 **Avatar files** are in the data folder's `avatars/` (`dev-avatars/` for the dev copy):
 - Downloaded only from Nexon's https image servers, up to 1 MB, and only if the first bytes really are a PNG, GIF or JPEG.

@@ -47,6 +47,7 @@ model Character {
   bossClears  BossClear[]
   checklistPlans ChecklistPlan[]
   checklistTicks ChecklistTick[]
+  symbols        SymbolState[]
 
   @@unique([ownerId, worldId, nameKey])
   @@index([ownerId, worldId, sortOrder])
@@ -180,4 +181,20 @@ model ChecklistTick {
 
   @@unique([characterId, task, period])
   @@index([task, period])
+}
+
+// One symbol of a character in the symbol calculator, saved as typed: its level (0: not
+// unlocked), symbols held toward the next level, the days a week its daily is done, and its weekly
+// clears (Arcane only). `symbol` is an id from src/gameFigures/symbols.ts.
+model SymbolState {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  symbol      String
+  level       Int
+  held        Int
+  days        Int
+  weekly      Int
+
+  @@unique([characterId, symbol])
 }

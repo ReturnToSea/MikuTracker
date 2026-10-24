@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
-import { BossIcon, ChecklistIcon, HomeIcon, TableIcon, TbdIcon, ThemesIcon } from "./icons";
+import { BossIcon, ChecklistIcon, HomeIcon, SymbolIcon, TableIcon, TbdIcon, ThemesIcon } from "./icons";
 
 export interface Tab {
   path: string;
@@ -14,7 +14,8 @@ export const TOP_TABS: Tab[] = [
   { path: "/", label: "Home", icon: <HomeIcon /> },
   { path: "/bosses", label: "Bosses", icon: <BossIcon /> },
   { path: "/checklist", label: "Checklist", icon: <ChecklistIcon /> },
-  ...[3, 4].map((n) => ({ path: `/tbd/${n}`, label: "TBD", icon: <TbdIcon /> })),
+  { path: "/symbols", label: "Symbols", icon: <SymbolIcon /> },
+  { path: "/tbd/4", label: "TBD", icon: <TbdIcon /> },
 ];
 export const BOTTOM_TABS: Tab[] = [
   { path: "/exp-table", label: "EXP table", icon: <TableIcon /> },

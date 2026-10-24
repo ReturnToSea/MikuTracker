@@ -2,6 +2,24 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.4.0 (2026-10-24): the symbol calculator
+
+- **The Symbols tab** (in place of the next TBD tab), the layout the owner described: character tabs; an Arcane / Sacred switch with a card per symbol (level, symbols held, days a week, weekly clears); the tab's Force and when everything is maxed with the meso to go; each symbol's time to max; a selector coupon box with **two suggestions** (everything maxed soonest, and the most Force soonest); and a Force forecast graph.
+  - Sacred includes Tallahart and Geardock (Grand Sacred, which adds to Sacred Force). Geardock has no selector coupon; Sacred selectors cover Tallahart since v.271.
+  - A calculator: saved as typed, per character; the checklist doesn't feed it.
+- **Costs from the game's formulas** (the MapleStory Wiki's cost tables match them for all 194 rows), worked out in whole tenths: in ordinary decimals, 7 of the 194 rows come out 10,000–100,000 meso too low (Vanishing Journey Lv. 2, Cernium Lv. 5 and 10, Arteria Lv. 5 and 10, Tallahart Lv. 5, Geardock Lv. 5; e.g. Cernium Lv. 5 → 6 would be 331,400,000 instead of 331,500,000). Symbols a day as of v.271 (Arcane dailies 40, weekly content 80 per clear; Cernium 30, the rest 15).
+- **From the review pass** (9 findings; 7 addressed):
+  - A typed value fitted back to the current one (Lv. 25 on a maxed Arcane symbol) stayed in the box, and was still sent to the server. The box now shows what's kept, and an unchanged value isn't sent.
+  - Saved values are fitted to the current game figures when the page loads, so a later patch lowering a top level can't show "NaN" Force.
+  - The graph says when it shows only the first two years, and says "nothing is levelling up" instead of drawing an empty box.
+  - The "maxed soonest" suggestion stops once everything is covered, so typing a huge coupon count doesn't loop once per coupon.
+  - A leftover one-item list in the rail.
+  - **Not changed:** the server rebuilds the cost tables on each request, and the page keeps some small logic inline (covered by page tests and planted bugs). Both are fine for one person on this Mac.
+- **Tests:** 466 server and 263 app tests, in California time and UTC. Full mutation testing: 100% (server and shared, and the app's logic). `qa:check`: 181/181, with 15 new checks for the Symbols tab, several against hand-worked numbers (Arcana ≈ 2.3 days and Esfera ≈ 24.2 days to max, 258.59M meso to go, where 300 coupons go), plus saving, the Sacred tab, bad requests and a narrow window.
+  - **Found by tests and planted bugs:** an emptied number box saved 0 instead of putting the old value back; with nothing unlocked, the coupon box said "never" and the graph's dates piled up and ran off the edge.
+  - **Found by mutation testing:** missing checks for a maxed symbol with no days, symbols arriving exactly at a level's cost, coupons between symbols with different rates, locked symbols in the suggestions, and the symbol saves' order and reloads. Several conditions that couldn't change a result were simplified away.
+  - **My mistakes along the way:** a wrong hand calculation (weekly clears included), a test comment claiming a row was a rounding case when it wasn't (Cernium Lv. 5 is; Lv. 9 isn't) and a changelog line naming Carcion among the rounding cases (it isn't: 7 rows are, listed above), a click-through check matching the footnote's "Not unlocked", and a test that changed the fake "last check" before the page had its first answer (the same race was in the Bosses and Checklist tests, which passed by luck: all three wait now).
+
 ## v1.3.0 (2026-10-23): the daily and weekly checklist
 
 - **The Checklist tab** (in place of the next TBD tab), layout C of five mockups: one character at a time, with tabs showing each one's counts ("D 6/14 · W 5/12").

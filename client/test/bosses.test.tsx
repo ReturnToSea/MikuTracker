@@ -293,6 +293,7 @@ describe("the Bosses tab", () => {
     const server = show(board([REMY]), { "GET /refresh": run });
     const loads = () => server.calls.filter((c) => c.method === "GET" && c.path.startsWith("/bosses")).length;
     await vi.waitFor(() => expect(loads()).toBe(1));
+    await new Promise((r) => setTimeout(r, 50)); // the first answer about the last check has arrived
     finishedAt = "2026-10-20T12:00:30.000Z";
     await vi.advanceTimersByTimeAsync(60_000);
     await vi.waitFor(() => expect(loads()).toBe(2));
