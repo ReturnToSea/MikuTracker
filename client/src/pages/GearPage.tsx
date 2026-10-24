@@ -1,10 +1,12 @@
 import { worldName } from "@miku/shared";
 import { useEffect, useMemo, useState } from "react";
-import { useGear, useRefreshStatus, useSaveGear, useSettings, useUpdateSettings } from "../api/hooks";
+import type { GearDetailsInput, StatValuesInput } from "@miku/shared";
+import { useGear, useRefreshStatus, useSaveGear, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
 import type { GearBoard, GearCharacter, GearItemView } from "../api/types";
 import { Avatar } from "../components/Avatar";
+import { DetailsEditor, IconRow, StatValuesBox } from "../components/GearDetails";
 import { WorldSwitcher } from "../components/WorldSwitcher";
-import { byKey, counted, grouped, LAYOUT, listed, opener, options, ozElsewhere, setCounts, TOTEMS, type Items } from "../lib/gear";
+import { byKey, counted, grouped, LAYOUT, listed, opener, options, ozElsewhere, setCounts, SLOT_ORDER, TOTEMS, type Items } from "../lib/gear";
 
 const Icon = ({ item }: { item: GearItemView | undefined }) => (item?.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="no-icon">no icon</span>);
 
@@ -24,8 +26,21 @@ function OtherItem({ current, onUse }: { current: string; onUse: (name: string) 
 }
 
 // The game's equipment window for one character, with the slot lists beside it.
-function GearWindow({ board, c, items, onSave }: { board: GearBoard; c: GearCharacter; items: Items; onSave: (slot: string, input: { item: string } | { other: string } | { clear: true }) => void }) {
+interface WindowProps {
+  board: GearBoard;
+  c: GearCharacter;
+  items: Items;
+  onSave: (slot: string, input: { item: string } | { other: string } | { clear: true }) => void;
+  onSaveDetails: (slot: string, details: GearDetailsInput) => void;
+  onSaveValues: (values: StatValuesInput) => void;
+  savingDetails: boolean;
+}
+function GearWindow({ board, c, items, onSave, onSaveDetails, onSaveValues, savingDetails }: WindowProps) {
   const [slot, setSlot] = useState("hat");
+  // the item being edited below (the first equipped one to start with)
+  const [detailSlot, setDetailSlot] = useState<string | null>(null);
+  const firstEquipped = SLOT_ORDER.find((k) => c.equipped[k]) ?? null;
+  const editing = detailSlot !== null && c.equipped[detailSlot] ? detailSlot : firstEquipped;
   const eq = c.equipped;
   const label = (key: string) => (key === "ringP" ? "Passive ring" : board.slots.find((s) => s.key === key)!.label);
   const open = opener(eq, items);
@@ -90,6 +105,7 @@ function GearWindow({ board, c, items, onSave }: { board: GearBoard; c: GearChar
         : `${list.length} item${list.length === 1 ? "" : "s"} for ${c.job}.${blockedBy ? ` Only one special skill ring can be in the ring slots (${blockedBy.name} is in one), so the others are off here.` : ""}`;
 
   return (
+    <>
     <div className="gear">
       <section className="block gear-window" aria-label="Equipment window">
         <div className="gear-grid">{LAYOUT.map((key, i) => (key ? cell(key) : <div key={`gap${i}`} aria-hidden="true" />))}</div>
@@ -113,6 +129,7 @@ function GearWindow({ board, c, items, onSave }: { board: GearBoard; c: GearChar
             ))
           )}
         </div>
+        <StatValuesBox c={c} onSave={onSaveValues} />
       </section>
       <section className="block gear-panel" aria-label={`${label(slot)} slot`}>
         <h2>{label(slot)}</h2>
@@ -156,6 +173,12 @@ function GearWindow({ board, c, items, onSave }: { board: GearBoard; c: GearChar
         </div>
       </section>
     </div>
+    <section className="block" aria-label="Pick an item to edit">
+      <h2 className="visually-hidden">Stars, potential and flames</h2>
+      <IconRow board={board} c={c} items={items} picked={editing} onPick={setDetailSlot} />
+    </section>
+    {editing && <DetailsEditor key={`${c.id}-${editing}-${JSON.stringify(c.equipped[editing])}`} board={board} c={c} slot={editing} items={items} saving={savingDetails} onSave={(d) => onSaveDetails(editing, d)} />}
+    </>
   );
 }
 
@@ -167,6 +190,14 @@ export function GearPage() {
   const saveSettings = useUpdateSettings();
   const board = useGear(world);
   const save = useSaveGear(world);
+  const saveDetails = useSaveGearDetails(world);
+  const saveValues = useSaveStatValues(world);
+  const failed = save.error ?? saveDetails.error ?? saveValues.error;
+  const resetSaves = () => {
+    save.reset();
+    saveDetails.reset();
+    saveValues.reset();
+  };
   useRefreshStatus();
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -179,12 +210,12 @@ export function GearPage() {
       <h1 className="visually-hidden">Gear</h1>
       <section className="block top">
         <div className="page-head">
-          <WorldSwitcher world={world} onChange={(w) => { save.reset(); saveSettings.mutate({ worldId: w }); }} />
+          <WorldSwitcher world={world} onChange={(w) => { resetSaves(); saveSettings.mutate({ worldId: w }); }} />
         </div>
         {b && b.characters.length > 0 && (
           <div className="strip" role="tablist" aria-label="Characters">
             {b.characters.map((x) => (
-              <button key={x.id} type="button" role="tab" className="ctab" aria-selected={x.id === c?.id} onClick={() => { save.reset(); setPicked(x.id); }}>
+              <button key={x.id} type="button" role="tab" className="ctab" aria-selected={x.id === c?.id} onClick={() => { resetSaves(); setPicked(x.id); }}>
                 <Avatar src={x.avatar} size={36} name={x.name} />
                 <span>
                   <b>{x.name}</b>
@@ -197,9 +228,9 @@ export function GearPage() {
           </div>
         )}
       </section>
-      {save.isError && (
+      {failed && (
         <p className="error block" role="alert">
-          {save.error.message}
+          {failed.message}
         </p>
       )}
       {board.isError && (
@@ -220,7 +251,16 @@ export function GearPage() {
               {c.job} isn't in the item list yet, so every class's items are offered for {c.name}.
             </p>
           )}
-          <GearWindow key={c.id} board={b} c={c} items={items} onSave={(slot, input) => save.mutate({ id: c.id, slot, input })} />
+          <GearWindow
+            key={c.id}
+            board={b}
+            c={c}
+            items={items}
+            onSave={(slot, input) => save.mutate({ id: c.id, slot, input })}
+            onSaveDetails={(slot, details) => saveDetails.mutate({ id: c.id, slot, details })}
+            onSaveValues={(values) => saveValues.mutate({ id: c.id, values })}
+            savingDetails={saveDetails.isPending}
+          />
         </>
       )}
     </>

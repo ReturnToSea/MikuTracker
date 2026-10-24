@@ -119,6 +119,47 @@ export const gearInput = z
   .refine((v) => [v.item, v.other, v.clear].filter((x) => x !== undefined).length === 1, { message: "Choose an item, type one, or empty the slot" });
 export type GearInput = z.infer<typeof gearInput>;
 
+// v2.0.0: an item's stars, flames, potential and hammers (Save on the gear tab). Whether each value
+// fits the item (its star limit, the flames and potential lines it can roll, its hammers) is checked
+// by the server. A typed "Other item" also says what it is.
+export const POTENTIAL_RANKS = ["rare", "epic", "unique", "legendary"] as const;
+export const gearDetailsInput = z.strictObject({
+  stars: z.number().int().min(0).max(30),
+  // flame stat → tier, at most 4 different stats
+  flames: z.record(z.string().max(20), z.number().int().min(1).max(7)).refine((f) => Object.keys(f).length <= 4, { message: "At most 4 flames" }),
+  potential: z.strictObject({ rank: z.enum(POTENTIAL_RANKS), lines: z.array(z.string().max(80).nullable()).length(3) }).nullable(),
+  hammers: z.number().int().min(0).max(3),
+  // only for a typed "Other item"
+  other: z
+    .strictObject({
+      kind: z.string().max(20),
+      level: z.number().int().min(0).max(300),
+      boss: z.boolean(),
+      att: z.number().int().min(0).max(2000), // a weapon's base attack and magic attack (for its flames)
+      matt: z.number().int().min(0).max(2000),
+    })
+    .optional(),
+});
+export type GearDetailsInput = z.infer<typeof gearDetailsInput>;
+
+// What can be set on an item: a listed item by its key, or a typed one by what it is.
+export const gearOptionsQuery = z.union([
+  z.strictObject({ item: z.string().regex(/^\d{7}(-\d)?$/, { message: "Unknown item" }) }),
+  z.strictObject({
+    kind: z.string().max(20),
+    level: z.coerce.number().int().min(0).max(300),
+    boss: z.enum(["0", "1"]).transform((b) => b === "1"),
+    att: z.coerce.number().int().min(0).max(2000),
+    matt: z.coerce.number().int().min(0).max(2000),
+  }),
+]);
+
+// What each stat is worth to a character, in main stat (typed in on the gear tab).
+export const STAT_VALUE_DEFAULTS = { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 } as const;
+const statValue = z.number().min(0).max(10000);
+export const statValuesInput = z.strictObject({ att: statValue, allStat: statValue, secRatio: statValue, bossDmg: statValue, hp: statValue, fdPer100: statValue });
+export type StatValuesInput = z.infer<typeof statValuesInput>;
+
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({
   world: worldId,

@@ -49,6 +49,7 @@ model Character {
   checklistTicks ChecklistTick[]
   symbols        SymbolState[]
   gear           GearSlot[]
+  statValues     StatValues?
 
   @@unique([ownerId, worldId, nameKey])
   @@index([ownerId, worldId, sortOrder])
@@ -211,6 +212,22 @@ model GearSlot {
   slot        String
   item        String? // a listed item's key
   other       String? // an unlisted item's name, as typed
+  // v2.0.0: its stars, flames, potential and hammers, as JSON (shared/src/index.ts gearDetailsInput);
+  // cleared whenever the item changes
+  details     String?
 
   @@unique([characterId, slot])
+}
+
+// What each stat is worth to a character, in main stat, typed in (the gear tab; defaults from
+// mafhcow's flame calculator). Used for flame scores and final damage from v2.1.0. No row: defaults.
+model StatValues {
+  characterId Int       @id
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  att         Float // 1 ATT = this much main stat
+  allStat     Float // 1% all stat
+  secRatio    Float // secondary stat ratio
+  bossDmg     Float // 1% boss or damage
+  hp          Float // 1 HP (Demon Avenger)
+  fdPer100    Float // % final damage per 100 flame score
 }

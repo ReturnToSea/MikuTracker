@@ -503,3 +503,53 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .set-badge { padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; white-space: nowrap; color: var(--line); border: 1px solid var(--line); }
 .gear-other { display: flex; gap: 8px; align-items: center; }
 .gear-other .text-input { flex: 1; min-width: 0; }
+
+/* Gear details (v2.0.0) */
+.gear-icons { display: flex; flex-wrap: wrap; gap: 6px; }
+.gear-icon { position: relative; width: 52px; height: 52px; display: grid; place-items: center; padding: 2px; border: var(--border-width) solid var(--border); border-radius: 6px; background: var(--surface-2); color: var(--text-muted); }
+.gear-icon[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.gear-icon.nothing { opacity: 0.45; }
+.gear-icon .slot-text { font-size: 9px; line-height: 1.1; overflow: hidden; max-height: 3.3em; }
+.icon-stars { position: absolute; top: 1px; right: 3px; font-size: 9px; font-weight: 700; color: var(--line); }
+.details { display: grid; gap: 10px; margin-bottom: 16px; }
+.details h3 { margin: 4px 0 0; font-size: 0.95em; }
+.details-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.details-head h2 { margin: 0; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+.btn.ghost { background: var(--surface-2); color: var(--text); border: var(--border-width) solid var(--border); }
+.btn.tight { padding: 2px 10px; font-size: 0.85em; }
+.warning { color: var(--warning); }
+.what-box { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 10px; border: 1px dashed var(--border); border-radius: var(--radius); }
+.stars { display: grid; gap: 4px; justify-content: start; }
+.star-row { display: flex; gap: 12px; }
+.star-group { display: flex; gap: 2px; }
+.star { padding: 0; border: 0; background: none; font-size: 19px; line-height: 1; color: var(--border); }
+.star.on { color: var(--line); }
+.star:disabled { cursor: default; opacity: 0.7; }
+.details-two { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(260px, 330px); gap: 16px; align-items: start; }
+@media (max-width: 720px) { .details-two { grid-template-columns: 1fr; } }
+.details-pot { display: grid; gap: 8px; align-content: start; }
+.pot-line { display: grid; grid-template-columns: 16px 1fr; gap: 6px; align-items: center; }
+.pot-line select { width: 100%; }
+.tip { display: grid; gap: 4px; padding: 12px 14px; border: var(--border-width) solid var(--border); border-radius: 6px; background: var(--surface); font-size: 0.85em; }
+.tip-name { text-align: center; font-weight: 700; margin-bottom: 4px; }
+.tip-line { display: flex; justify-content: space-between; gap: 8px; }
+.tip-pot { display: grid; gap: 2px; padding-top: 6px; border-top: var(--border-width) solid var(--border); }
+.c-stars { color: var(--line); }
+.c-flames { color: var(--part-flames); }
+.c-hammers { color: var(--part-hammers); }
+.rank-rare { color: var(--rank-rare); } .rank-epic { color: var(--rank-epic); } .rank-unique { color: var(--rank-unique); } .rank-legendary { color: var(--rank-legendary); }
+.flames-scroll { overflow-x: auto; }
+.flames { border-collapse: collapse; font-size: 0.85em; min-width: 520px; }
+.flames th, .flames td { padding: 2px 4px; text-align: center; border-bottom: 1px solid var(--border); }
+.flames th[scope="row"] { text-align: left; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+.flames th.off, .flames td.off { color: var(--text-muted); opacity: 0.35; }
+.flame { width: 100%; padding: 3px 6px; border: 0; border-radius: 3px; background: none; color: var(--text); font: inherit; }
+.flame:hover:not(:disabled) { background: var(--surface-2); }
+.flame[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.flame:disabled { opacity: 0.35; cursor: default; }
+.stat-values { display: grid; gap: 6px; padding-top: 8px; border-top: var(--border-width) solid var(--border); max-width: 380px; }
+.stat-values p { margin: 0; }
+.value-grid { display: grid; grid-template-columns: max-content 80px auto; gap: 6px 8px; align-items: center; }
+.value-grid label { display: contents; }

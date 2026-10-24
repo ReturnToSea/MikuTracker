@@ -1,11 +1,11 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, GearInput, SettingsInput, SymbolInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, GearDetailsInput, GearInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
-import { withGear } from "../lib/gear";
+import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -18,6 +18,7 @@ export const keys = {
   checklist: (world: number) => ["checklist", world],
   symbols: (world: number) => ["symbols", world],
   gear: (world: number) => ["gear", world],
+  gearOptions: (query: string | null) => ["gear-options", query],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -167,7 +168,43 @@ export function useSaveGear(world: number) {
     mutationFn: ({ id, slot, input }: { id: number; slot: string; input: GearInput }) => api<void>(`/gear/${id}/${slot}`, { method: "PUT", body: input }),
     onMutate: async ({ id, slot, input }) => {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
-      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, equipped: withGear(c.equipped, slot, input) } : c)) });
+      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, equipped: withGear(c.equipped, slot, input), details: detailsAfter(c, slot, input) } : c)) });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
+  });
+}
+
+// What can be set on an item (a listed one: "item=<key>"; a typed one: what it is). The figures only
+// change with a new version of the app, so each is loaded once per visit.
+export const useGearOptions = (query: string | null) =>
+  useQuery({ queryKey: keys.gearOptions(query), queryFn: () => api<DetailOptions>(`/gear/options?${query}`), enabled: query !== null, staleTime: Infinity });
+
+// Saving an item's details (Save): shown at once, sent in order with the other gear saves, then the
+// board loads again (so a refused save goes back to what's saved).
+export function useSaveGearDetails(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "gear" },
+    mutationFn: ({ id, slot, details }: { id: number; slot: string; details: GearDetailsInput }) => api<void>(`/gear/${id}/${slot}/details`, { method: "PUT", body: details }),
+    onMutate: async ({ id, slot, details }) => {
+      await qc.cancelQueries({ queryKey: keys.gear(world) });
+      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, details: { ...c.details, [slot]: details } } : c)) });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
+  });
+}
+
+// Saving a character's stat values, the same way.
+export function useSaveStatValues(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "gear" },
+    mutationFn: ({ id, values }: { id: number; values: StatValuesInput }) => api<void>(`/gear/${id}/stat-values`, { method: "PUT", body: values }),
+    onMutate: async ({ id, values }) => {
+      await qc.cancelQueries({ queryKey: keys.gear(world) });
+      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, statValues: values } : c)) });
     },
     onSettled: () => qc.invalidateQueries({ queryKey: keys.gear(world) }),
   });

@@ -44,7 +44,7 @@ const ITEMS = [HAT, ROYAL, SUIT, SHIRT, PANTS, SHOES, GLOVES, GENESIS, CLAW, SWO
 // Built by hand (not with byKey, which is tested on its own below).
 const items = new Map(ITEMS.map((i) => [i.key, i]));
 
-const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, ...extra });
+const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, details: {}, statValues: { att: 2.44, allStat: 12.21, secRatio: 0.08, bossDmg: 10.12, hp: 0.014, fdPer100: 0.785 }, ...extra });
 const board = (characters: GearCharacter[]): GearBoard => ({ generated: "2026-10-23", slots: SLOTS, items: ITEMS, jobs: { "Night Walker": { branches: ["Thief"], weapons: ["Claw"] } }, characters });
 const on = (...pairs: [string, GearItemView | string][]): Equipped => Object.fromEntries(pairs.map(([slot, x]) => [slot, typeof x === "string" ? { other: x } : { item: x.key }]));
 

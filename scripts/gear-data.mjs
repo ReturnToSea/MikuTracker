@@ -63,9 +63,51 @@ function infoboxes(text) {
       level: Number(f("reqLevel")) || null,
       job: unlink(f("reqJob")) || null,
       type: unlink(f("equipmentType")) || null,
+      // v2.0.0: the item's own stats, star limit and tags (its notes' {{Equipment Properties|…}})
+      stats: Object.fromEntries(Object.entries(STAT_FIELDS).map(([key, field]) => [key, f(field)]).filter(([, v]) => v !== "")),
+      starForce: f("starForceEnhancements"),
+      tags: [...chunk.matchAll(/\{\{Equipment Properties\|([^|}]+)/g)].map((m) => m[1].trim()),
     };
   });
 }
+
+// The infobox fields of an item's own stats.
+const STAT_FIELDS = { str: "incSTR", dex: "incDEX", int: "incINT", luk: "incLUK", hp: "incMaxHP", mp: "incMaxMP", att: "incWAttack", matt: "incMAttack", def: "incDefense", speed: "incSpeed", jump: "incJump", boss: "incBossDamage", ied: "incIgnoredDefense", damage: "incDamage" };
+// "10", "1,000", "10%": whole numbers, and percentages as "<stat>Pct" (Oath of Death's "Max HP +5%").
+function readStats(raw) {
+  const out = {};
+  for (const [key, text] of Object.entries(raw)) {
+    const m = /^\+?(-?[\d,]+)(%?)$/.exec(text.replace(/\s/g, ""));
+    if (!m) continue;
+    const n = Number(m[1].replace(/,/g, ""));
+    if (n) out[m[2] && !["boss", "ied", "damage"].includes(key) ? `${key}Pct` : key] = n;
+  }
+  return out;
+}
+
+// Star Force limits by item level (the wiki's Star Force Enhancement page), to check each item's own.
+const levelStarLimit = (level) => (level <= 94 ? 5 : level <= 107 ? 8 : level <= 117 ? 10 : level <= 127 ? 15 : level <= 137 ? 20 : 30);
+// Slots whose items can have flames (the wiki's Bonus Stats page: not secondaries, emblems, badges,
+// medals except Immortal Legacy, rings, hearts, shoulders, totems).
+const FLAME_SLOTS = new Set(["hat", "top", "bottom", "shoes", "gloves", "cape", "belt", "face", "eye", "earrings", "pendant", "pocket", "weapon"]);
+// Slots whose items can have potential (the wiki's Potential page: not medals, badges, pocket items,
+// totems or special skill rings), with Nexon Korea's potential category for each.
+const POTENTIAL_PART = { weapon: "weapon", emblem: "emblem", hat: "hat", bottom: "bottom", shoes: "shoes", gloves: "gloves", cape: "cape", belt: "belt", shoulder: "shoulder", face: "face", eye: "eye", earrings: "earrings", ring: "ring", pendant: "pendant", heart: "heart" };
+// Secondaries by type: shields and Demon Aegis / soul shields have their own potential lists.
+const secondaryPart = (type) => (/Demon Aegis|Soul Shield|Soul Ring|Force Shield/i.test(type ?? "") ? "force shield" : /^Shield$/i.test(type ?? "") ? "shield" : "secondary");
+// Exceptional Hammers (the wiki's Exceptional Hammer and Exceptional Enhancement pages): Pitched Boss
+// pieces once, Brilliant Boss pieces three times; the bonus per hammer by item.
+const HAMMERS = {
+  Berserked: { count: 1, per: { allStat: 15, hp: 750, mp: 750, att: 10, matt: 10 } },
+  "Magic Eyepatch": { count: 1, per: { allStat: 15, hp: 750, mp: 750, att: 10, matt: 10 } },
+  "Commanding Force Earring": { count: 1, per: { allStat: 20, hp: 1000, mp: 1000, att: 15, matt: 15 } },
+  "Dreamy Belt": { count: 1, per: { allStat: 20, hp: 1000, mp: 1000, att: 15, matt: 15 } },
+  "Original Sin of Pride": { count: 3, per: { allStat: 15, hp: 750, mp: 750, att: 10, matt: 10 } },
+  "Immortal Legacy": { count: 3, per: { allStat: 20, hp: 1000, mp: 1000, att: 15, matt: 15 } },
+};
+// Boss flames the wiki doesn't tag: Ayame's Treasure (owner, 2026-10-24), and the Fafnir and Arcane
+// Umbra chakrams (every other weapon of those sets is tagged; taken as a wiki slip).
+const BOSS_FLAMES_TOO = new Set(["Ayame's Treasure", "Fafnir Chakram", "Arcane Umbra Chakram"]);
 
 // A set page's item rows: id, name ("Genesis Guards#Unsealed"), type, job. Rows have typos (an id
 // "1254p26", a fan typed "Chain"), so only the name is relied on; the rest comes from the item's own page.
@@ -266,7 +308,25 @@ for (const w of wanted) {
     }
     const type = WEAPON_TYPE[box.type] ?? box.type;
     const lucky = w.luckyName && slot === "weapon";
-    const base = { id, name: show, slot, jobs: jobsFor, level: box.level, set: lucky ? null : w.set, group: lucky ? "Lucky weapons" : w.group, file: box.file, weaponType: slot === "weapon" ? type : undefined, overall: type === "Overall" || undefined, lucky: lucky || undefined };
+    // v2.0.0 details: stars, flames, potential and hammers this item can take.
+    const ownStars = box.starForce === "" ? 0 : Number(box.starForce) || 0;
+    const oz = Boolean(w.oz);
+    if (ownStars && box.level && ownStars !== levelStarLimit(box.level) && !/^(Genesis|Destiny|Astra) /.test(show)) report.push(`star limit differs from the level rule: ${show} (Lv. ${box.level}) ${ownStars}★, the rule says ${levelStarLimit(box.level)}★`);
+    const canFlame = FLAME_SLOTS.has(slot) || box.name === "Immortal Legacy";
+    const potential = oz || box.tags.includes("NoPotential") ? null : slot === "top" ? (type === "Overall" ? "overall" : "top") : slot === "secondary" ? secondaryPart(box.type) : (POTENTIAL_PART[slot] ?? null);
+    const details = {
+      stats: readStats(box.stats),
+      starMax: ownStars,
+      // Genesis and Destiny weapons come with 22★ and can't go below it (Genesis can't be enhanced at all:
+      // its own limit is 22 too; Destiny's second stage goes to 25).
+      starMin: /^(Genesis|Destiny) /.test(show) && slot === "weapon" ? 22 : undefined,
+      flames: canFlame ? (box.tags.includes("BossReward") || BOSS_FLAMES_TOO.has(box.name) ? "boss" : "normal") : undefined,
+      potential: potential ?? undefined,
+      hammers: HAMMERS[box.name],
+      // "exclusive equipment": only one of it can be worn (Guardian Angel Ring, Dawn Guardian Angel Ring)
+      exclusive: box.tags.includes("ExclusiveEquipment") || undefined,
+    };
+    const base = { id, name: show, slot, jobs: jobsFor, level: box.level, set: lucky ? null : w.set, group: lucky ? "Lucky weapons" : w.group, file: box.file, weaponType: slot === "weapon" ? type : undefined, overall: type === "Overall" || undefined, lucky: lucky || undefined, type: box.type ?? undefined, ...details };
     if (w.oz) {
       for (const level of w.oz.levels) items.push({ ...base, key: `${id}-${level}`, name: `${show} Lv. ${level}`, oz: { kind: w.oz.kind, level } });
     } else {

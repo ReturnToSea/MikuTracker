@@ -157,16 +157,24 @@ How it works is in DESIGN.md ("Symbols"); the costs, Force and symbols a day are
 ### v1.5.0: Gear tab (equipped items) — done
 How it works, what's listed and how the list is checked are in DESIGN.md ("Gear"). **Still to check in the game:** that the Guild Castle Brooches are the guild shop's totems.
 
-### v2.0.0: Gear details, then upgrades from saved gear
-Planned 2026-10-23, to build after this batch (a lot of work and testing):
-- **v2.0.0, gear details:** under the equipment window, a row of the equipped items' icons; click one to set its **potential** and **Star Force**, and its **flames** from a **grid of every flame the item can roll**: stats down the side (e.g. DEX, all stat %, DEX+STR), tiers across the top; click up to 4 to add, then save.
-- **v2.x, upgrades from saved gear:** calculators that use the saved gear to work out the **next best upgrades** (flames, cubes, Star Force). These reuse the standalone calculators' maths (v3.0.0+).
-
-### v3.0.0+: Standalone upgrade calculators
-Just calculators: not tied to saved gear (kept as planned; decided 2026-10-23). Their maths is also what v2.x uses on saved gear. Other sites already calculate these; ideally we use the same method. The safest source is the one those sites start from: **Nexon's published odds and formulas**. Copying a site's code, or reverse engineering it, could go against its terms, so that's checked first.
-- **v3.0.0, flames:** how many flames it should take to reach a better flame score.
-- **v3.1.0, potential:** how many cubes it should take for the lines you want.
-- **v3.2.0, Star Force:** the expected meso, and the chance of booming, to reach a star.
+### v2.x: gear details, then the best upgrade per meso
+Planned 2026-10-24 with the owner, one version per step, each building on the last:
+- **v2.0.0, gear details — done.** How it works, the figures and their sources are in DESIGN.md ("Gear details"). **Still to confirm** (no source has them yet): weapon Star Force from 26★ and Lv. 250 weapons (masonym's guesses), whether secondaries use the weapon table, a weapon's flame for an attack it doesn't have, and whether GMS's HP%/MP%/DEF% potential lines also take the 151+ step.
+  - **Stat values, typed in per character** (owner, 2026-10-24), defaults from mafhcow's flame calculator: 1 ATT = 2.44, 1% All Stat = 12.21, secondary ratio 0.08, 1% Boss/Damage = 10.12, 1 HP = 0.014, 0.785% final damage per 100 flame score. Used from v2.1.0 on.
+- **v2.1.0, flame score:** each item's flame score from the stat values, and the final damage it gives (via "% FD per 100 flame score").
+- **Each system all the way through, cost included** (decided 2026-10-24: upgrades aren't 100%, so final damage alone doesn't say whether an upgrade is worth it):
+  - **v2.2.0, Star Force:** the final damage each star gives, and what each next star costs (e.g. 21→22★): the **median** cost, the **average**, an **unlucky** figure (e.g. 1 run in 10 costs more), the **chance of a boom** with a boom price the player sets (a replacement or a restore), and the options (events, MVP, Enhancement Mode, safeguard). From those: **meso per 1% final damage**.
+  - **v2.3.0, flames:** the final damage of the current flames, and the expected flames and meso to beat them (meso per 1% final damage). **To ask the owner first:** how flames are reset on Heroic and at what price.
+  - **v2.4.0, potential:** the final damage of the current lines, and the expected cubes or meso to reach better ones (meso per 1% final damage). **To ask first:** how potential is reset on Heroic now and at what price.
+  - **Set bonuses** are needed by v2.2.0 (an item swap changes them).
+- **v2.5.0, the cheapest upgrade:** everything above, across all the saved gear, best final damage per meso first.
+- **Standalone calculators** (formerly v3.0.0+): a page with the same maths without saved gear, which comes out of v2.2.0–v2.4.0.
+- **Sources (decided 2026-10-24):** the owner allows using data and methods from community tools and sites (most are extracted game data), for this personal project, to build and to check our numbers. We write our own code (their repos have no license) and never read or extract the game client ourselves. Each figure keeps its source next to it.
+  - **Flames:** the wiki's tables (`Bonus Stats/Stat Tables`); the odds and the score method from mafhcow's flame calculator (from MathBro's data); checked against whackybeanz.com's flame calculator.
+  - **Star Force:** starforce.tadeucci.dev (`rates.js`): GMS rates after star catching was removed (the wiki's rates × 1.05, e.g. 15→16★ 31.5% with 2.055% booms; checked in-game by its author) and the v.269 Enhancement Modes' rates and cost multipliers; the wiki's cost formula (GMS divisors) and stats per star; checked against masonym.dev.
+  - **Potential:** MathBro's cubing calculator (brendonmay), from Nexon Korea's official tables (scraped 2023-08-28). Those are the rates GMS has (owner, 2026-10-24), so they count as accurate, not estimates. The wiki gives the stat % caps by level.
+  - **Set bonuses:** the wiki; checked against whackybeanz.com.
+  - Not maplehub.io: it's for MapleStory N, not GMS.
 
 ### v4.0.0: HEXA (6th job) progress
 A major version of its own (decided 2026-10-23: a lot of work; moved from v2.0.0 when gear details took v2). Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v5.0.0 (they matter for boss damage).
@@ -174,6 +182,7 @@ A major version of its own (decided 2026-10-23: a lot of work; moved from v2.0.0
 
 ### v5.0.0: Bosses
 Which bosses each roster character **can actually do**, worked out from its stats and saved. Separate from the boss tracker (v1.2.0), which records what you *do*. Like MapleScouter: stats entered by hand, such as the stat window's boss damage, ignore defense, damage and attack, alongside the saved gear, symbols (v1.4.0) and HEXA levels (v4.0.0).
+- **Stats are imported, not worked out (decided 2026-10-24):** the player imports all their stats and HEXA, and the app works out which bosses they can do. Automatic import isn't possible (Nexon publishes no GMS stats), and the gear tab's stat values (v2.0.0) are only what each stat is worth, not the character's stats.
 - **To research first:** what MapleScouter offers for GMS and whether its data can be used (an API, or terms that allow it). It's built mostly around KMS and Korea's official API, which GMS doesn't have. No scraping a site that doesn't allow it. Otherwise we calculate it ourselves from each boss's published requirements.
 - Expected to be more work than everything before it combined.
 - **Research found 2026-10-23** (from another open-source GMS project's notes, `iamnbutler/maple`, `docs/research/existing-tools.md`, researched 2026-09-06): MapleScouter is KMS-only and can't load GMS characters (GMS players use its "Enter Directly" page); its backend API is private. `RonaldLiu2143/maplecompile` has a full reverse-engineering of its damage and boss clear-rate maths (`src/lib/scouter/calc.ts`, `boss-cuts.ts`) and boss data (`boss-info-data.json`), but **no license**, so it's a reference to reimplement from, not code to copy. The same notes list sources for item stats, Star Force and cube rates (useful for v1.5.0 and v3.x).
@@ -190,6 +199,7 @@ Everything needed only when the app moves off this Mac (decided 2026-10-23). Not
 - **Better boss art for the planning menu** (2026-10-23): the banners are only 135 × 30, so enlarged in the planning menu they look blocky. Find higher-resolution art in the same style (the user likes the banner art, not the boss models), for every boss.
 - **Boss and checklist history:** past weeks' cleared bosses and meso, and past days' and weeks' checklist ticks (moved out of v1.2.0 and v1.3.0 on 2026-10-23: not core to them; the ticks are already kept).
 - **More totems and rental equipment** (noted 2026-10-23, from the gear tab's planning): add the other totems (e.g. the weekly farmable temporary ones and rental ones) and rental gear to the gear lists.
+- **Familiars tab** (noted 2026-10-24, from planning v2's stats): each character's familiars, their potential and badges, so their stats count toward the character's stats instead of "everything else".
 - **Export everything (JSON):** low priority. Once gear, stats and checklists are entered by hand, that typing is the most valuable data in the app; backups protect it, and an export would be a second safety net.
 
 ## Risks

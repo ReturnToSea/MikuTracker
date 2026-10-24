@@ -2,6 +2,35 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.0.0 (2026-10-24): gear details (stars, potential, flames, hammers)
+
+- **Under the gear window** (layout A of 5 mockups): a row of every equipped item's icon, and an editor for the picked item, with Save / Cancel; clicking another item drops unsaved changes without asking (the owner's choice).
+  - **Star Force** laid out as in the game (1–15 on top, 16–30 below, in groups of 5), each item's own limit, and what the stars add; Genesis weapons fixed at 22★, Destiny weapons from 22★.
+  - **Potential:** a rank and 3 lines picked from the lines that kind of item can really roll at that rank and level. No bonus potential: Kronos and Hyperion are Heroic worlds, which don't have it (nor scrolling).
+  - **Flames:** a grid of every flame the item can roll, with real values; boss items tiers 3–7, others 1–5; up to 4.
+  - **Exceptional Hammers** on the six items that take them (Original Sin of Pride and Immortal Legacy up to 3, the four Pitched pieces 1).
+  - **A summary** like the game's tooltip: each stat's total with its parts (base, stars, flames, hammers).
+  - **Typed "Other items"** get the same editor once you give their level, boss tick and (weapons) attack.
+  - **Stat values** per character under the window (1 ATT = 2.44 main stat, 1% All Stat = 12.21, …, 0.785% final damage per 100 flame score; mafhcow's defaults), for v2.1.0's flame scores.
+  - **One Guardian Angel Ring and one Dawn Guardian Angel Ring** at a time (the wiki marks them "exclusive equipment").
+- **The figures, every level and item type, each checked against a second source** (the owner's rule for this version):
+  - **Star Force:** the wiki's tables, checked against masonym.dev (every armor figure matches) and StrategyWiki. Where they disagree, two agreeing sources win: 17★ weapons at Lv. 128–159, shoes' speed from 11★, armor HP from 3★. **Not confirmed by any source** (marked on the page): weapons from 26★ and Lv. 250 (Destiny) weapons, which masonym took from another simulator's guess; secondaries following the weapon table.
+  - **Flames:** the wiki's tables; which stats each kind of item rolls and the level rules from **Nexon Korea's official page**; checked against mafhcow's calculator (weapon attack flames rounded up). Gollux items and the Horntail necklaces roll normal flames; Immortal Legacy (the only medal that can) and Ayame's Treasure roll boss flames.
+  - **Potential:** **Nexon Korea's official tables for every kind, rank and level range**, read by hand (`scripts/potential-fetch.mjs`: 2,000 requests, one every 2 seconds; `scripts/potential-data.mjs` translates them into GMS's wording, and every line translated). brendonmay's cubing calculator only has Lv. 120–200, and adds 1% for Lv. 160+ by its own admission a guess. **GMS's one known difference is applied:** items from Lv. 151 get Korea's Lv. 201+ values (13% instead of 12% at Legendary), and +1% on the right lines where Korea has no Lv. 201+ table. Checked against StrategyWiki's GMS tables: 2,257 values agree; the 119 that differ are Max HP % at Lv. 160 (unconfirmed; brendonmay sides with us) and Korea's current lower Lv. 50 values for Demon Aegis and hearts.
+  - **Each item's own figures** (base stats, star limit, boss flames, what it can take) from its own wiki page, through `scripts/gear-data.mjs`.
+- **From the review pass** (9 findings; 8 addressed):
+  - The potential file it read was built mid-download, with 7 of 20 kinds (rebuilt complete; a test now checks every item's kind has tables).
+  - Swapping an item briefly showed the old item's stars and flames on the new one (and could save them onto it).
+  - A typed item could claim a different kind than its slot (a "weapon" in the hat slot).
+  - Changing a typed item's level or boss tick left stars, flames or lines it could no longer have.
+  - Typed items got no stats from 16★–22★, typed gloves no attack from stars, and a typed weapon with no attack offered "+0" attack flames.
+  - The slot order and the per-kind rules were written in several places.
+  - **Not changed:** the StatValues migration's "AUTOINCREMENT" is Prisma's own doing and harmless (the id is always the character's).
+- **Found by checking the figures:** the cross-check against StrategyWiki showed Lv. 160 overalls, secondaries, emblems, belts, earrings and hearts were missing GMS's 13% (Korea has no Lv. 201+ table for them; fixed). My first cross-check script also misread StrategyWiki's chance tables as values.
+- **Tests:** 583 server and 321 app tests, in California time and UTC, many against hand-worked numbers (a Lv. 200 hat at 22★: STR +145, ATT +106; the Genesis Sword's fixed 22★: ATT +228; every flame bracket). Full mutation testing: 100% (server and shared, and the app's logic), after fixing the gaps it found: secondaries and magic weapons' stars, gloves with only magic attack, DEX/INT/MP flames, the save hooks, details staying with their slot (one test only passed because the database happened to list a detail-less row first), and code that could never change a result (simplified; three boundary coincidences at Lv. 120 and Lv. 200 marked with their reason). `qa:check`: 222/222, with 17 new checks (22★ and an INT T7 flame on a Lv. 160 hat worked out by hand: INT 239, LUK 176, Magic ATT 95; the 13% lines; saving; dropping unsaved changes; stat values; bad requests).
+  - **Planted bugs in the page** (14): all caught.
+  - **My mistakes along the way:** a mockup's star figures guessed and stopped at 22★ (the owner caught it); a test that only passed because its check was ignored; tests that didn't wait for the board, or rendered two pages at once; test titles and item names typed wrong; and pre-emptive mutation-testing exemptions I added and then removed.
+
 ## v1.5.0 (2026-10-24): the gear tab (equipped items)
 
 - **The Gear tab** (in place of the last TBD tab): each character's equipped items in **the game's own equipment window**, all its slots plus the three totems. Click a slot for its list (scrolling, in groups, each item with its icon, level and set), None, or **Other item** with a typed name. Stars, potential and flames are for v2.0.0.

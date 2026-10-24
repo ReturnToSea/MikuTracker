@@ -11,6 +11,6 @@ export type { LevelGoal } from "../../../server/src/calc/levelGoals";
 export type { BossBoard, BossCharacter, BossInfo, BossRow } from "../../../server/src/services/bosses";
 export type { ChecklistBoard, ChecklistCharacter, LimitUse, TaskView } from "../../../server/src/services/checklist";
 export type { SymbolInfo, SymbolsBoard, SymbolsCharacter } from "../../../server/src/services/symbols";
-export type { GearBoard, GearCharacter, GearItemView } from "../../../server/src/services/gear";
+export type { DetailOptions, GearBoard, GearCharacter, GearItemView } from "../../../server/src/services/gear";
 
 export type ThemeArt = Record<ThemeId, string | null>;

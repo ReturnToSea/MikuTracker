@@ -19,6 +19,15 @@ export interface GearItem {
   overall?: true; // an overall: covers the bottom too
   lucky?: true; // a lucky item (Genesis and Destiny weapons)
   oz?: { kind: "active" | "passive"; level: number }; // an Oz (special skill) ring
+  // v2.0.0, from the item's own wiki page:
+  type?: string; // its equipment type ("Hat", "Shield", "Imugi Gem")
+  stats?: Partial<Record<"str" | "dex" | "int" | "luk" | "hp" | "mp" | "att" | "matt" | "def" | "speed" | "jump" | "boss" | "ied" | "damage" | "hpPct" | "mpPct", number>>;
+  starMax?: number; // its own Star Force limit (0: it can't take stars)
+  starMin?: number; // stars it comes with and can't go below (Genesis and Destiny weapons: 22)
+  flames?: "boss" | "normal"; // the flames it can roll (none: it can't have flames)
+  potential?: string; // Nexon's potential category for it (none: it can't have potential)
+  hammers?: { count: number; per: Partial<Record<"allStat" | "hp" | "mp" | "att" | "matt", number>> }; // Exceptional Hammers
+  exclusive?: true; // only one of it can be worn (Guardian Angel Rings)
 }
 
 export interface GearJob {
@@ -53,6 +62,15 @@ export const GEAR_SLOTS: readonly { key: string; label: string; kind: string }[]
 ].map(([key, label, kind]) => ({ key: key!, label: label!, kind: kind! }));
 
 export const RING_SLOTS = ["ring1", "ring2", "ring3", "ring4"];
+
+// What each kind of item can take (for a typed "Other item"; listed items carry their own, from their
+// wiki pages). Flames: not secondaries, emblems, badges, medals, rings, hearts, shoulders or totems (the
+// wiki's Bonus Stats page and Nexon Korea's). Potential: not medals, badges, pocket items, totems or
+// androids (the wiki's Potential page). Stars: not emblems, badges, pocket items, medals, totems or
+// androids (items without upgrade slots).
+export const FLAME_KINDS = new Set(["hat", "top", "bottom", "shoes", "gloves", "cape", "belt", "face", "eye", "earrings", "pendant", "pocket", "weapon"]);
+export const POTENTIAL_KINDS = new Set(["weapon", "emblem", "secondary", "hat", "top", "bottom", "shoes", "gloves", "cape", "belt", "shoulder", "face", "eye", "earrings", "ring", "pendant", "heart"]);
+export const STARLESS_KINDS = new Set(["emblem", "badge", "pocket", "medal", "totem", "android"]);
 
 // Whether a job can wear an item. An unknown job (one added to the game after the list was built)
 // can wear anything, so its lists aren't empty. A weapon must also be one of the job's weapon types.

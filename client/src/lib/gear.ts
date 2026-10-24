@@ -17,6 +17,8 @@ export const LAYOUT: (string | null)[] = [
   null, null, "shoes", "cape", "heart",
 ];
 export const TOTEMS = ["totem1", "totem2", "totem3"];
+// Every slot in the window's order, then the passive ring slot and the totems.
+export const SLOT_ORDER = [...LAYOUT.filter((k): k is string => k !== null), "ringP", ...TOTEMS];
 const RINGS = ["ring1", "ring2", "ring3", "ring4"];
 // The sets with a weapon of their own, which a lucky item counts for.
 export const ARMOR_SETS = ["Root Abyss", "AbsoLab", "Arcane Umbra", "Eternal"];
@@ -104,5 +106,15 @@ export function withGear(eq: Equipped, slot: string, input: GearInput): Equipped
   const { [slot]: _old, ...rest } = eq;
   if (input.item !== undefined) return { ...rest, [slot]: { item: input.item } };
   if (input.other !== undefined) return { ...rest, [slot]: { other: input.other.trim() } };
+  return rest;
+}
+
+// A slot's details after a save: kept when the same item (or the same typed name) goes back in,
+// dropped when the item changes or the slot is emptied (as the server does).
+export function detailsAfter(c: GearCharacter, slot: string, input: GearInput): GearCharacter["details"] {
+  const before = c.equipped[slot];
+  const same = before !== undefined && (("item" in before && before.item === input.item) || ("other" in before && before.other === input.other?.trim()));
+  if (same) return c.details;
+  const { [slot]: _dropped, ...rest } = c.details;
   return rest;
 }

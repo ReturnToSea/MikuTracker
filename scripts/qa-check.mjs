@@ -537,6 +537,66 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
 
+  // ---------- gear details (v2.0.0) ----------
+  await go("/gear");
+  const details = () => page.getByRole("region", { name: /details$/ });
+  const pickIcon = (name) => page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name, exact: true }).click();
+  check("Gear details", "every equipped item has an icon to edit", (await page.getByRole("group", { name: "Equipped items" }).getByRole("button").count()) >= 5);
+  await pickIcon("AbsoLab Mage Crown");
+  await details().getByRole("button", { name: "30 stars" }).waitFor();
+  check("Gear details", "the Lv. 160 hat takes 30 stars, laid out 15 + 15", (await details().getByRole("button", { name: /^\d+ stars$/ }).count()) === 30 && (await page.locator(".details .star-row").count()) === 2);
+  await details().getByRole("button", { name: "22 stars" }).click();
+  await details().getByRole("button", { name: "INT tier 7: 63" }).click();
+  const tipText = async () => (await page.getByLabel("Item summary").innerText()).replace(/\n/g, " | ");
+  // by hand: INT 45 + 131 (40 + 7 × 13) + 63 (9 × 7) = 239; LUK 45 + 131 = 176; Magic ATT 3 + 92 = 95
+  let tipNow = await tipText();
+  check("Gear details", "22★ and an INT T7 flame worked out by hand: INT 239, LUK 176, Magic ATT 95", /INT \+239/.test(tipNow) && /LUK \+176/.test(tipNow) && /Magic ATT \+95/.test(tipNow), tipNow);
+  check("Gear details", "boss item: flame tiers 1–2 can't be picked", (await details().getByRole("button", { name: /^INT tier [12]:/ }).count()) === 0);
+  await details().getByRole("combobox", { name: "Potential rank" }).selectOption("legendary");
+  const line1 = await details().getByRole("combobox", { name: "Potential line 1" }).locator("option").allInnerTexts();
+  check("Gear details", "a Lv. 160 hat's Legendary first line can be INT +13% (GMS's 151+ step), and Skill Cooldown", line1.includes("INT +13%") && line1.some((l) => /Skill Cooldown -2 sec/.test(l)) && !line1.includes("INT +12%"), line1.slice(0, 6).join(", "));
+  await details().getByRole("combobox", { name: "Potential line 1" }).selectOption("INT +13%");
+  check("Gear details", "unsaved changes are marked", (await details().getByText("Unsaved changes").count()) === 1);
+  await details().getByRole("button", { name: "Save", exact: true }).click();
+  await settle();
+  await go("/gear");
+  await pickIcon("AbsoLab Mage Crown");
+  await details().getByRole("button", { name: "22 stars" }).waitFor();
+  tipNow = await tipText();
+  check("Gear details", "saved: still there after reloading (22★, the flame, the potential line)", /INT \+239/.test(tipNow) && /Legendary potential/.test(tipNow) && /INT \+13%/.test(tipNow), tipNow);
+  await pickIcon("Genesis Spirit Walker Fan");
+  const fixedShown = await details().getByText(/22★, fixed/).waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check("Gear details", "the Genesis weapon shows its fixed 22★", fixedShown, (await details().innerText().catch(() => "")).slice(0, 200).replace(/\n/g, " | "));
+  await pickIcon("AbsoLab Mage Suit");
+  await details().getByRole("combobox", { name: "Potential rank" }).selectOption("legendary");
+  const suitLine = await details().getByRole("combobox", { name: "Potential line 1" }).locator("option").allInnerTexts();
+  check("Gear details", "the Lv. 160 overall gets GMS's 13% too (Korea has no Lv. 201+ overalls)", suitLine.includes("INT +13%") && !suitLine.includes("INT +12%"), suitLine.slice(0, 6).join(", "));
+  await pickIcon("AbsoLab Mage Crown");
+  await details().getByRole("button", { name: "25 stars" }).click();
+  await pickIcon("AbsoLab Mage Suit");
+  await pickIcon("AbsoLab Mage Crown");
+  check("Gear details", "switching items drops unsaved changes, without asking", (await details().getByText("Saved", { exact: true }).count()) === 1 && /\(\+22★\)/.test(await tipText()));
+  const values = page.getByRole("group", { name: "Stat values" });
+  await values.getByRole("spinbutton", { name: "1 ATT =" }).fill("2.6");
+  await values.getByRole("spinbutton", { name: "1 ATT =" }).press("Enter");
+  await settle();
+  await go("/gear");
+  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "12.21");
+  await pickIcon("AbsoLab Mage Crown");
+  await details().getByRole("button", { name: "22 stars" }).waitFor();
+  await shot("11-gear-details");
+  for (const [what, method, where, body, status] of [
+    ["details: too many stars", "PUT", `/gear/${miku.id}/hat/details`, { stars: 31, flames: {}, potential: null, hammers: 0 }, 400],
+    ["details: a flame tier a boss item can't roll", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: { INT: 1 }, potential: null, hammers: 0 }, 400],
+    ["details: a potential line it can't have", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Boss Damage +40%", null, null] }, hammers: 0 }, 400],
+    ["details: an empty slot", "PUT", `/gear/${miku.id}/android/details`, { stars: 0, flames: {}, potential: null, hammers: 0 }, 404],
+    ["options: an unknown item", "GET", "/gear/options?item=1234567", undefined, 404],
+    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 12, secRatio: 0.1, bossDmg: 10, hp: 0.01, fdPer100: 0.8 }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));

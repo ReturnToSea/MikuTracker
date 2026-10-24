@@ -27,6 +27,14 @@
   --exp: linear-gradient(90deg, #8fc6e8, #f3eee6 55%, #e5484d);
   --danger: #ff6b6b;
   --warning: #f0b35a;
+  /* potential ranks, as the game colours them */
+  --rank-rare: #8fc6e8;
+  --rank-epic: #b98be8;
+  --rank-unique: #d4b46e;
+  --rank-legendary: #7fd18b;
+  /* the item summary's parts: flames and Exceptional Hammers */
+  --part-flames: #6fd6cf;
+  --part-hammers: #f0a35a;
   --diff-easy: #3b5b4a;
   --diff-normal: #3e4f73;
   --diff-hard: #7a3042;
@@ -72,6 +80,12 @@
   --exp: linear-gradient(90deg, #8fd0f4, #f7d94c);
   --danger: #e60012;
   --warning: #b45309;
+  --rank-rare: #2b7fc0;
+  --rank-epic: #7c4bc4;
+  --rank-unique: #a87b12;
+  --rank-legendary: #2f8f45;
+  --part-flames: #0f8a83;
+  --part-hammers: #b45309;
   --diff-easy: #5fae7d;
   --diff-normal: #4f86c6;
   --diff-hard: #d9506b;
