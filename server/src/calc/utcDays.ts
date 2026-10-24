@@ -26,3 +26,12 @@ export function nextUtcMidnight(moment: Date): Date {
 export function addUtcDays(day: string, n: number): string {
   return utcDay(new Date(startOfUtcDay(day).getTime() + n * DAY_MS));
 }
+
+// The week a moment falls in, for weeks that start on `weekday` (0 Sunday … 6 Saturday) at 00:00
+// UTC, named by their first day: weeks starting Thursday are named "2026-10-15", "2026-10-22", …
+export function weekStarting(moment: Date, weekday: number): string {
+  return addUtcDays(utcDay(moment), -((moment.getUTCDay() - weekday + 7) % 7));
+}
+
+// When the week after `week` (named by its first day) starts, at 00:00 UTC.
+export const nextWeek = (week: string): Date => startOfUtcDay(addUtcDays(week, 7));

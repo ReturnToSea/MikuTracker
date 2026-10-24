@@ -311,7 +311,10 @@ describe("the Bosses tab", () => {
     // the answer still has the old week (this computer's clock ahead of the server's): not asked again every second
     await new Promise((r) => setTimeout(r, 2200));
     expect(loads()).toBe(2);
-  });
+    // still the old week 10 seconds on: asked once more
+    vi.setSystemTime(new Date("2026-10-22T00:00:12Z"));
+    await waitFor(() => expect(loads()).toBe(3), { timeout: 3000 });
+ }, 15_000);
 
   it("shows a hint to scroll only with more characters than fit", async () => {
     show(board([REMY, MEOW]));

@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errors";
 import { type NexonClient, nexon as realNexon } from "./nexon";
 import { bossesRouter } from "./routes/bosses";
 import { charactersRouter } from "./routes/characters";
+import { checklistRouter } from "./routes/checklist";
 import { expTableRouter } from "./routes/expTable";
 import { refreshRouter } from "./routes/refresh";
 import { searchRouter } from "./routes/search";
@@ -53,6 +54,7 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/refresh", refreshRouter);
   app.use("/api/theme-art", themeArtRouter);
   app.use("/api/bosses", bossesRouter);
+  app.use("/api/checklist", checklistRouter);
   extraRoutes?.(app);
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });

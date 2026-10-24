@@ -45,6 +45,8 @@ model Character {
   selection   Selection?
   bossPlans   BossPlan[]
   bossClears  BossClear[]
+  checklistPlans ChecklistPlan[]
+  checklistTicks ChecklistTick[]
 
   @@unique([ownerId, worldId, nameKey])
   @@index([ownerId, worldId, sortOrder])
@@ -134,4 +136,48 @@ model BossClear {
   clearedAt   DateTime
 
   @@unique([characterId, boss, period])
+}
+
+// One of the owner's own checklist tasks (the presets are in src/gameFigures/checklist.ts). Its
+// task id is "custom-<id>". A weekly task resets on `weekday` (0 Sunday … 6 Saturday) at 00:00
+// UTC; "none" is a one-off. A per-world or per-account limit lets `limitCount` characters do it
+// each period.
+model ChecklistTask {
+  id         Int      @id @default(autoincrement())
+  ownerId    String
+  name       String
+  category   String // "arcane" | "sacred" | "other"
+  reset      String // "daily" | "weekly" | "none"
+  weekday    Int?
+  worlds     String // "both" | "45" | "70"
+  limitScope String // "character" | "world" | "account"
+  limitCount Int
+  createdAt  DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+// A task a character does (a preset's id or "custom-<id>"). Kept until the plan changes.
+model ChecklistPlan {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  task        String
+
+  @@unique([characterId, task])
+}
+
+// A task ticked as done in one period: its UTC day ("2026-10-23") for a daily task, its week's
+// first day for a weekly one, "once" for a one-off. A new period has none yet, so resets need
+// nothing, and past periods are kept for a history later.
+model ChecklistTick {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  task        String
+  period      String
+  doneAt      DateTime
+
+  @@unique([characterId, task, period])
+  @@index([task, period])
 }

@@ -2,6 +2,31 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v1.3.0 (2026-10-23): the daily and weekly checklist
+
+- **The Checklist tab** (in place of the next TBD tab), layout C of five mockups: one character at a time, with tabs showing each one's counts ("D 6/14 · W 5/12").
+  - **Daily and Weekly side by side** (one-offs under Weekly), each split into **Arcane symbols, Sacred symbols and Other** (the owner's addition after picking C), with each task's level and its limit or "custom" badge.
+  - **Limits are enforced when ticking:** a task shared per world or per account (Ursus once per account, Monster Park 2 characters per world, Epic Dungeon 2 per account, …) is greyed out on the others once its limit is used, saying who did it. Per account covers both worlds.
+  - **A side panel** with the daily and weekly countdowns in your time, and who used each limited task.
+  - **Resets** like the boss tracker: a tick belongs to its day or week, so nothing is deleted and past ticks are kept for a history later; the page reloads at a reset and after each check of Nexon.
+- **The planning menu:** every task in two columns, by reset and category, levels shown (flagged when above the character's) but not enforced.
+- **Your own tasks:** name, category, a daily or weekly reset (any day) or none (a one-off), which worlds, and a limit (per character, or N characters per world or account). Editable and deletable from the planning menu.
+- **The presets** (`server/src/gameFigures/checklist.ts`, as of v.271): the 6 Arcane River and 8 Grandis dailies, Monster Park, Ursus; the 6 Arcane River weeklies, Erda's Request, Epic Dungeon, Monster Park Extreme, Legion Weekly Dragon, Guild Culvert and Flag Race, Mu Lung Dojo. **Research found that weekly content moved to Thursday 00:00 UTC in v.264 (Nov 2025)**: the plan's old "weekly quests: Monday" was out of date.
+- **Shared:** the game's weekly reset day (`WEEKLY_RESET_DAY`), weeks from any day (`weekStarting`), and the reset clock used by the Bosses and Checklist tabs (`useResetClock`).
+- **Fixed: the database test could crash the test run.** Its "migrations match the schema" check started Prisma with a blocking call, which sometimes crashed the process at exit when tests run in worker threads, as mutation testing's do (it crashed two runs in three that way). It made today's full mutation run fail before testing anything. It now runs Prisma without blocking (six threaded runs out of six pass).
+- **Fixed: after a reset, if this Mac's clock is ahead of the server's,** the page asked once, got the old period back, and never asked again (on the Bosses tab too, from v1.2.0). It now asks again every 10 seconds until the reset moves.
+- **Removed:** reloading the Bosses tab's data when characters change on Home. That tab isn't on screen then, and it loads fresh when opened (found by mutation testing: nothing could notice the reload).
+- **From the review pass** (10 findings, all addressed):
+  - Changing a custom task's worlds left its ticks on the other world, where they could block a per-account limit with no way to untick them. Moving a task off a world now takes it off that world's characters.
+  - Changing a daily task to weekly could make today's tick count as this week's (a weekly period from Friday and Friday's date had the same name). Weekly periods are now named "week-…".
+  - The board loaded every tick ever and repeated queries per limited task; it now reads only the current periods, in a few queries.
+  - The period calculation moved from services/ to calc/ (the project's layout rule), with its own tests; "Thursday" is now one shared constant instead of five copies.
+  - A tick's error stayed on screen after switching character or world; an old delete error could show on a new task form; the count box accepted any number (over 50, the browser now refuses to send the form).
+- **Tests:** 445 server and 234 app tests, in California time and UTC. Full mutation testing: 100% (server and shared, and the app's logic); harmless narrowing in the board's database reads is marked with reasons. `qa:check`: 166/166, with 21 new checks for the Checklist tab (planning, categories, ticks kept after reloading, Ursus blocked across both worlds, Monster Park's 2 per world, a custom Monday task, daily resets, deleting a custom task, bad requests, a narrow window).
+  - **Found by tests and planted bugs:** clearing the count box and typing "3" gave 13 (the box refilled itself with 1); a weekly task saved without touching the day would have been sent with none (the box showed Thursday anyway).
+  - **Found by mutation testing:** missing checks for two characters with different plans, two limited tasks at once, unticking one task among several, and a world change leaving other tasks and the staying world's ticks alone; the weekday names; reloads limited to the checklist.
+  - **My mistakes along the way:** a test helper that called the fake server twice, a broken planted bug (an unclosed bracket), click-through checks that matched "Monster Park Extreme" for "Monster Park" or compared uppercase headings, and an incremental mutation result reused after I added a check inside an existing test (rerun with --force).
+
 ## v1.2.0 (2026-10-23): the weekly boss tracker
 
 - **The Bosses tab** (in place of the first TBD tab), for one world at a time like Home: layout A of five mockups, worked on over three rounds.

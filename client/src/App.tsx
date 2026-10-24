@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router";
 import { Rail } from "./components/Rail";
 import { ThemeEffect } from "./components/ThemeEffect";
 import { BossesPage } from "./pages/BossesPage";
+import { ChecklistPage } from "./pages/ChecklistPage";
 import { ExpTablePage } from "./pages/ExpTablePage";
 import { HomePage } from "./pages/HomePage";
 import { TbdPage } from "./pages/TbdPage";
@@ -17,6 +18,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/bosses" element={<BossesPage />} />
+            <Route path="/checklist" element={<ChecklistPage />} />
             <Route path="/tbd/:n" element={<TbdPage />} />
             <Route path="/exp-table" element={<ExpTablePage />} />
             <Route path="/themes" element={<ThemesPage />} />

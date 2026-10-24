@@ -1,9 +1,10 @@
-import type { AddCharacterInput, BossPlanInput, SettingsInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, SettingsInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
+import { customNumber, withTaskDone } from "../lib/checklist";
 import { api } from "./client";
-import type { BossBoard, CharacterList, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -13,6 +14,7 @@ export const keys = {
   refresh: ["refresh"],
   progress: (id: number) => ["progress", id],
   bosses: (world: number) => ["bosses", world],
+  checklist: (world: number) => ["checklist", world],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -32,6 +34,7 @@ export function useRefreshStatus() {
       void qc.invalidateQueries({ queryKey: ["characters"] });
       void qc.invalidateQueries({ queryKey: ["progress"] });
       void qc.invalidateQueries({ queryKey: ["bosses"] });
+      void qc.invalidateQueries({ queryKey: ["checklist"] });
     }
     seen.current = finished;
   }, [finished, qc]);
@@ -54,13 +57,11 @@ export function useUpdateSettings() {
 export const useSearch = () =>
   useMutation({ mutationFn: ({ world, name }: AddCharacterInput) => api<SearchResult>(`/search?world=${world}&name=${encodeURIComponent(name)}`) });
 
-// Changes to a world's characters reload that world's list, and its Bosses tab (which lists them).
+// Changes to a world's characters reload that world's list. (The Bosses and Checklist tabs aren't
+// on screen while characters change on Home, and load fresh when opened.)
 function useCharacterChange<I, O>(world: number, send: (input: I) => Promise<O>) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: send,
-    onSuccess: () => Promise.all([qc.invalidateQueries({ queryKey: keys.characters(world) }), qc.invalidateQueries({ queryKey: keys.bosses(world) })]),
-  });
+  return useMutation({ mutationFn: send, onSuccess: () => qc.invalidateQueries({ queryKey: keys.characters(world) }) });
 }
 
 export const useAddCharacter = (world: number) => useCharacterChange(world, (name: string) => api<CharacterView>("/characters", { method: "POST", body: { world, name } }));
@@ -94,5 +95,37 @@ export function useSetBossCleared(world: number) {
       qc.setQueryData<BossBoard>(keys.bosses(world), (b) => b && withTick(b, id, boss, cleared));
     },
     onSettled: () => qc.invalidateQueries({ queryKey: keys.bosses(world) }),
+  });
+}
+
+// The checklist of a world. Saving a plan or a custom task loads it again (a custom task, and a
+// per-account limit, can show on both worlds, so every world's).
+export const useChecklist = (world: number) => useQuery({ queryKey: keys.checklist(world), queryFn: () => api<ChecklistBoard>(`/checklist?world=${world}`) });
+
+function useChecklistChange<I, O>(send: (input: I) => Promise<O>) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: send, onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist"] }) });
+}
+
+export const useSaveChecklistPlan = () => useChecklistChange(({ id, tasks }: { id: number; tasks: string[] }) => api<void>(`/checklist/${id}/plan`, { method: "PUT", body: { tasks } }));
+export const useSaveCustomTask = () =>
+  useChecklistChange(({ id, task }: { id: string | null; task: CustomTaskInput }) =>
+    id ? api<unknown>(`/checklist/tasks/${customNumber(id)}`, { method: "PUT", body: task }) : api<unknown>("/checklist/tasks", { method: "POST", body: task }),
+  );
+export const useDeleteCustomTask = () => useChecklistChange((id: string) => api<void>(`/checklist/tasks/${customNumber(id)}`, { method: "DELETE" }));
+
+// A tick shows at once, and ticks are sent one at a time in the order they were clicked (as on
+// the Bosses tab). Then every checklist loads again, with who used the limits.
+export function useSetTaskDone(world: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "checklist-ticks" },
+    mutationFn: ({ id, task, done }: { id: number; task: string; done: boolean }) => api<void>(`/checklist/${id}/ticks/${task}`, { method: "PUT", body: { done } }),
+    onMutate: async ({ id, task, done }) => {
+      await qc.cancelQueries({ queryKey: keys.checklist(world) });
+      qc.setQueryData<ChecklistBoard>(keys.checklist(world), (b) => b && withTaskDone(b, id, task, done));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["checklist"] }),
   });
 }

@@ -1,9 +1,11 @@
 // Input rules shared by the API (server/) and the app (client/), written with zod.
 import { z } from "zod";
 import { DIFFICULTIES } from "./bosses";
+import { LIMIT_SCOPES, TASK_CATEGORIES, TASK_RESETS, TASK_WORLDS } from "./checklist";
 import { WORLDS } from "./worlds";
 
 export * from "./bosses";
+export * from "./checklist";
 export * from "./levels";
 export * from "./worlds";
 
@@ -56,6 +58,38 @@ export type BossPlanInput = z.infer<typeof bossPlanInput>;
 
 // Ticking a planned boss as cleared this week (this month for a monthly one), or unticking it.
 export const bossClearInput = z.strictObject({ cleared: z.boolean() });
+
+// The checklist of a world: /api/checklist?world=45
+export const checklistQuery = z.strictObject({ world: worldId });
+
+// A task id: a preset's ("cernium", "ursus") or a custom task's ("custom-12").
+const taskId = z.string().regex(/^[a-z0-9-]{1,40}$/, { message: "Unknown task" });
+
+// A character's checklist plan: the tasks it does, each once.
+export const checklistPlanInput = z.strictObject({
+  tasks: z
+    .array(taskId)
+    .max(200)
+    .refine((tasks) => new Set(tasks).size === tasks.length, { message: "Each task can be planned once" }),
+});
+
+// Ticking a planned task as done this period, or unticking it.
+export const checklistTickInput = z.strictObject({ done: z.boolean() });
+
+// Your own task. A weekly one names its reset day (0 Sunday … 6 Saturday, at 00:00 UTC); a limit
+// per world or account says how many characters may do it each period.
+export const customTaskInput = z
+  .strictObject({
+    name: z.string().trim().min(1, { message: "Give the task a name" }).max(40),
+    category: z.enum(TASK_CATEGORIES),
+    reset: z.enum(TASK_RESETS),
+    weekday: z.number().int().min(0).max(6).nullable(),
+    worlds: z.enum(TASK_WORLDS),
+    limitScope: z.enum(LIMIT_SCOPES),
+    limitCount: z.number().int().min(1).max(50),
+  })
+  .refine((t) => (t.reset === "weekly") === (t.weekday !== null), { message: "A weekly task needs its reset day, and only a weekly one has one" });
+export type CustomTaskInput = z.infer<typeof customTaskInput>;
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({

@@ -1,18 +1,14 @@
 // Boss weeks and months, and what a crystal pays. Weekly bosses reset every Thursday at 00:00 UTC
 // and Black Mage on the 1st of each month at 00:00 UTC (sources in gameFigures/bosses.ts).
+import { WEEKLY_RESET_DAY } from "@miku/shared";
 import { HEROIC_MULTIPLIER } from "../gameFigures/bosses";
-import { addUtcDays, startOfUtcDay, utcDay } from "./utcDays";
-
-const THURSDAY = 4; // getUTCDay(): 0 is Sunday
+import { nextWeek, utcDay, weekStarting } from "./utcDays";
 
 // The boss week a moment falls in, named by its first day (a Thursday): "2026-10-15".
-export function bossWeek(moment: Date): string {
-  const day = utcDay(moment);
-  return addUtcDays(day, -((moment.getUTCDay() - THURSDAY + 7) % 7));
-}
+export const bossWeek = (moment: Date): string => weekStarting(moment, WEEKLY_RESET_DAY);
 
 // When the week after `week` starts: the next weekly reset.
-export const weeklyReset = (week: string): Date => startOfUtcDay(addUtcDays(week, 7));
+export const weeklyReset = nextWeek;
 
 // The boss month a moment falls in: "2026-10".
 export const bossMonth = (moment: Date): string => utcDay(moment).slice(0, 7);

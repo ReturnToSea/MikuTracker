@@ -2,13 +2,13 @@
 
 How MikuTracker works **now**, part by part, with the decisions behind it. Updated in place whenever behavior changes; it never describes old behavior. What's next is in `PLAN.md`; what each version changed is in `CHANGELOG.md`.
 
-## The app (as of v1.2.0)
+## The app (as of v1.3.0)
 
 A website that only this Mac can open. Its feature tabs run down the left edge of the screen (along the bottom on a narrow window):
-- **Top:** Home, Bosses, then three TBD tabs (placeholders for features still to be decided).
+- **Top:** Home, Bosses, Checklist, then two TBD tabs (placeholders for features still to be decided).
 - **Bottom:** the EXP table and Themes.
 
-Each tab has its own address (`/`, `/bosses`, `/tbd/2`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
+Each tab has its own address (`/`, `/bosses`, `/checklist`, `/tbd/3`–`/tbd/4`, `/exp-table`, `/themes`). An unknown address goes to Home. Pages are made of separate sections with small corners, so the theme's background shows between them.
 
 ## Home: characters
 
@@ -66,7 +66,7 @@ For personal tracking: which bosses each roster character does, ticked off as th
   - bosses cleared, out of those planned (with a bar)
   - the world's weekly crystals against its limit of 180
   - Black Mage's meso, separately, as it's monthly, with the monthly reset date ("resets Nov 1", the game's UTC date)
-  - the countdown to the weekly reset ("5d 4h", then "3h 30m", then "13m") with its local time ("Wed 5:00 PM your time"), and the prices' patch. When a reset passes, the page loads the board again (once for that reset, even if this computer's clock is a little ahead of the server's) and the ticks clear.
+  - the countdown to the weekly reset ("5d 4h", then "3h 30m", then "13m") with its local time ("Wed 5:00 PM your time"), and the prices' patch. When a reset passes, the page loads the board again and the ticks clear; if this computer's clock is ahead of the server's and the old period comes back, it asks again every 10 seconds (not every second) until the reset moves (`useResetClock`, shared with the Checklist tab).
 - **A card per character** in tab order, in one row that **scrolls sideways** when there are more than fit (with a hint past two). Each card has the character's avatar, level and job, "Plan bosses…", how many of its weekly bosses are cleared, its meso so far out of planned, then its planned bosses in game order as a checklist (each with its banner, difficulty, party and meso per person) and Black Mage under "Monthly".
   - **Only planned bosses can be ticked.** A tick shows at once and is saved straight away; ticks are sent one at a time in the order they were clicked (so a quick untick can't be overtaken by the tick before it), and the board is then loaded again with its totals. The tick is checked and saved in one database transaction, so a plan saved at the same moment can't leave a tick behind for a boss it took out.
   - After each check of Nexon (every 4 hours), the board loads again, so the cards' levels, jobs and avatars stay current.
@@ -81,6 +81,19 @@ For personal tracking: which bosses each roster character does, ticked off as th
   - The plan stays week to week until it's changed. **A plan outlives game changes:** if a patch removes a boss or a difficulty, it's left out of the board (until the plan is saved again), and a party larger than the game now allows counts as the largest allowed, so the tab never fails to load because of an old plan.
 - **Boss pictures** are the game's boss-list banners (135 × 30: the boss's name and face), from masonym.dev's repo (`public/bossImages/`). They're Nexon's art, so like the theme art they live in the data folder's `boss-art/` (`<boss id>.png`) and **never in git**. Shared by the real app and the dev copy, and copied into the QA copy. On the cards at their real size; in the menu at 2× with sharp pixel edges. A boss without a picture shows its name instead. Tried and turned down (2026-10-23): cropping to the face, smooth enlarging (blurry), and enlarging with Real-ESRGAN (its anime model flattens the art). Better art for the menu is on the plan's "Later" list.
 - **Difficulty colors** are theme variables (`--diff-easy` … `--diff-extreme`), like the warning color and the menu's backdrop.
+
+## Checklist: dailies and weeklies
+
+The non-boss tasks, ticked off per character. Layout C of five mockups: one character at a time.
+- **The top:** the world switch (shared with Home), "Plan tasks…", "New task…", and character tabs, each with its daily and weekly counts ("D 6/14 · W 5/12").
+- **The selected character:** its **Daily** and **Weekly** lists side by side (One-off under Weekly), each with its done count and **split into categories: Arcane symbols, Sacred symbols** (incl. Tallahart and Geardock's Grand Sacred) **and Other**. Each row: a box, the name and level (a reminder), and a gold limit badge ("2 per world", "once per account") or a "custom" badge; a custom weekly task on another day says so ("resets Mon").
+  - **Limits:** a task limited per world or per account can be planned on any character, but once its limit is used by others this period, it's greyed out and can't be ticked, saying who did it ("done by RemyRabbit"). Per account covers both worlds.
+  - A tick shows at once, ticks go one at a time in order, and every checklist loads again (who used the limits can change on either world).
+- **The side panel:** the daily and weekly countdowns in your time, and every limited task with how much is used and by whom ("Monster Park 2/2 per world · MikuBeam, LeekSpin").
+- **Resets:** a tick belongs to its period (`server/src/calc/checklist.ts`): the UTC day ("2026-10-23") for a daily task, the week from its reset day ("week-2026-10-19", prefixed so it's never mistaken for a day) for a weekly one, "once" for a one-off. Nothing is deleted at a reset; the page reloads when one passes, and after each check of Nexon.
+- **The planning menu:** every task as a box in two columns, by reset (Daily · 00:00 UTC, Weekly, One-off) and category, with its level (flagged "above Lv. 278" when it is: shown, not enforced) and badges; custom tasks have "Edit". Save sends the plan in the tasks' order; Cancel, Escape or a click outside close it without saving. Taking a task out removes this period's tick only.
+- **Your own tasks** ("New task…", or "Edit" in the menu): name, category, resets (Daily / Weekly on a chosen day / No reset), worlds (Both / Kronos / Hyperion) and limit (per character, or at most N characters per world or account). Deleting one asks first and takes it off every character, with its ticks. Moving it off a world takes it off that world's characters, with their ticks (left there, they could still use up a per-account limit).
+- **Presets** (`server/src/gameFigures/checklist.ts`, as of v.271): the 6 Arcane River and 8 Grandis dailies, Monster Park (2 characters per world), Ursus (once per account); the 6 Arcane River weeklies, Erda's Request (once per account), Epic Dungeon (2 per account, one per character), Monster Park Extreme (2 per world), Legion Weekly Dragon (once per world), Guild Culvert and Flag Race, Mu Lung Dojo. Weekly content resets Thursday 00:00 UTC since v.264 (Nov 2025). Sources in the file.
 
 ## The EXP table tab
 
@@ -153,7 +166,7 @@ The result: `{ name, worldId, level, exp, job, avatarUrl, worldRank, overallRank
   - Re-check it after each GMS patch.
 - **`server/src/calc/`:** pure calculations, with no database and no HTTP.
   - **`exp.ts`:** a character's progress is (level, EXP into the level), as the rankings report it. **Total EXP** is everything since level 1, so EXP gained across a level-up is just the difference of two totals. The most possible is 8,509,498,537,428,819, still exact as a JavaScript number. Impossible progress is refused: a level outside 1–300, EXP that isn't a whole number from 0 to one short of the next level, or any EXP at level 300.
-  - **`utcDays.ts`:** MapleStory's days are UTC days (the daily reset is at 00:00 UTC), written "YYYY-MM-DD", whatever the computer's time zone.
+  - **`utcDays.ts`:** weeks starting on any day (`weekStarting`, also used for boss weeks). MapleStory's days are UTC days (the daily reset is at 00:00 UTC), written "YYYY-MM-DD", whatever the computer's time zone.
   - **`dailyGains.ts`:** EXP per UTC day from the snapshots' `gained` (each check adds the change in total EXP since the check before, so level-ups need nothing special). Today is a bar too. A day without a snapshot is "no data"; the next day that has one carries their EXP, with how many days it `covers` (a character's first day covers 1).
     - **Ranges (7, 14, 30, 90 days, today included):** the EXP from the total at the end of the day before the range (from the last snapshot on or before it, even if days just before weren't checked) to the latest snapshot. For a character first tracked within the range, from where its first day started (its total minus that day's `gained`).
     - **Daily average:** that EXP divided by the days from that starting point to today, today counting as a day. So a character tracked for 3 days isn't averaged over 14, and days not checked are still counted.
@@ -204,6 +217,9 @@ Two themes, **Ren** (the default) and **Pochacco**. The choice is saved on the s
   - `totals`: planned, so far, cleared, bosses planned, crystals within each character's limit, and the monthly planned and so far.
 - **`PUT /api/bosses/:id/plan`** `{ plan: [{ boss, difficulty, partySize }] }`: replaces the character's plan. Each boss at most once, a party of 1–6; a boss, difficulty or party the game doesn't have is refused with a 400 saying which ("Extreme Lotus allows a party of up to 2"), and nothing changes. This week's ticks follow it: a boss taken out loses its tick, a kept one takes the new difficulty and party. Earlier weeks' ticks stay. 204, or 404 for an unknown character or another owner's.
 - **`PUT /api/bosses/:id/clears/:boss`** `{ cleared }`: ticks a planned boss for this week (this month for Black Mage) or unticks it. A boss not in the plan is a 409 ("Lucid isn't in Remy's plan. Add it to the plan first."); an unknown boss or character, a 404.
+- **`/api/checklist?world=45`:** `{ patch, daily: { day, resetsAt }, weekly: { week, resetsAt }, tasks, characters, limits }`: every task showing on the world (presets, then the owner's own for that world), each with its category, reset, day, level, limit, `custom` (its worlds, or null) and when its period ends; the world's characters with their `plan` and this period's `done`, in the tasks' order; and for each limited task, the `users` who did it this period (per account: on both worlds).
+- **`PUT /api/checklist/:id/plan`** `{ tasks }`: replaces the plan; an unknown task (or one not on the character's world) is a 400 naming it. **`PUT /api/checklist/:id/ticks/:task`** `{ done }`: a task not in the plan is a 409; a limit used up by others is a 409 naming them ("Monster Park is already done by Aa and Bb (2 per world)."). Checked and saved in one transaction.
+- **`POST /api/checklist/tasks`**, **`PUT /api/checklist/tasks/:id`**, **`DELETE /api/checklist/tasks/:id`:** the owner's own tasks. Name 1–40 characters (trimmed), a known category, reset, worlds and limit, a day only for weekly ones (and then required), a count of 1–50 (stored as 1 per character).
 - **`/api/characters?world=45`:** `{ characters, selectedId }`: the world's characters in tab order, each `{ id, worldId, name, job, level, exp, expToNext, worldRank, overallRank, legion, avatar, addedAt, checkedAt }`. With nothing selected (the selected one was deleted), the first counts as selected.
 - **`POST /api/characters`** `{ world, name }`:
   - **Uses the owner's latest search** when it was this character on this world and is at most an hour old: instant, and still the server's own data. Otherwise it **looks the character up in Nexon itself** (nothing from the page is trusted). Adds it at the end of the tabs with its first snapshot, selects it, stores its avatar (the search's picture, or a fresh download), and answers 201. The answer, like the list, carries the world's Legion.
@@ -299,9 +315,10 @@ Tables:
 - **`Avatar`:** every avatar file a character has had, with when it was first and last seen. The current one is the most recently seen, so an old look that returns is current again. Kept for the avatar history planned after v1.0.0.
 - **`Selection`:** the selected character on each world.
 - **`BossPlan`:** a boss a character does, with the difficulty and party size: one row per character and boss. Kept until the plan changes.
+- **`ChecklistTask`:** the owner's own tasks (name, category, reset, day, worlds, limit). **`ChecklistPlan`:** a task a character does (a preset's id or "custom-<id>"). **`ChecklistTick`:** a task done in one period (the UTC day, "week-" and the week's first day, or "once"); unique per character, task and period; kept for a history later.
 - **`BossClear`:** a boss ticked as cleared in one boss week (named by its first day, a Thursday) or, for Black Mage, one month ("2026-11"), with the difficulty and party at the time. A new week simply has none yet, so nothing is cleared at the reset, and past weeks are kept for a boss history later. Unique per character, boss and period.
 
-Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks.
+Deleting a character deletes its snapshots, avatars, selection, boss plan and ticks, and its checklist plan and ticks.
 
 **Avatar files** are in the data folder's `avatars/` (`dev-avatars/` for the dev copy):
 - Downloaded only from Nexon's https image servers, up to 1 MB, and only if the first bytes really are a PNG, GIF or JPEG.

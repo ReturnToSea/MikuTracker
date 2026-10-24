@@ -9,5 +9,6 @@ export type { ProgressView } from "../../../server/src/services/progress";
 export type { DayBar, LevelPoint } from "../../../server/src/calc/dailyGains";
 export type { LevelGoal } from "../../../server/src/calc/levelGoals";
 export type { BossBoard, BossCharacter, BossInfo, BossRow } from "../../../server/src/services/bosses";
+export type { ChecklistBoard, ChecklistCharacter, LimitUse, TaskView } from "../../../server/src/services/checklist";
 
 export type ThemeArt = Record<ThemeId, string | null>;

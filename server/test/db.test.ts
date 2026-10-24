@@ -1,7 +1,8 @@
-import { execSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { getConfig, isInside } from "../src/config";
 import { db, openDatabase } from "../src/db";
@@ -29,16 +30,18 @@ describe("the test database", () => {
 
 describe("migrations", () => {
   // A schema change without a migration would work in tests (if generated) but fail on the real
-  // database, so the migrations must always produce exactly the schema.
-  it("match the schema exactly", () => {
-    expect(() =>
-      execSync("npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code", {
+  // database, so the migrations must always produce exactly the schema. (Run without blocking:
+  // a blocking execSync here sometimes crashed the test process at exit when tests run in worker
+  // threads, as mutation testing does.)
+  it("match the schema exactly", async () => {
+    const run = promisify(execFile);
+    await expect(
+      run("npx", ["prisma", "migrate", "diff", "--from-migrations", "prisma/migrations", "--to-schema", "prisma/schema.prisma", "--exit-code"], {
         cwd: path.resolve(import.meta.dirname, ".."),
         env: { ...process.env, CHECKPOINT_DISABLE: "1" },
-        stdio: "pipe",
       }),
-    ).not.toThrow();
-  });
+    ).resolves.toBeDefined();
+  }, 60_000);
 });
 
 describe("helpers", () => {

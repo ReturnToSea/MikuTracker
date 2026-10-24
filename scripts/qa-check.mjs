@@ -46,13 +46,13 @@ try {
 
   // ---------- the rail and pages ----------
   await go("/");
-  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/2", "TBD"], ["Bosses", "/bosses", null], ["Home", "/", null]]) {
+  for (const [label, where, heading] of [["EXP table", "/exp-table", "EXP table (GMS)"], ["Themes", "/themes", "Themes"], ["TBD", "/tbd/3", "TBD"], ["Bosses", "/bosses", null], ["Checklist", "/checklist", null], ["Home", "/", null]]) {
     await page.locator(".rail a", { hasText: label }).first().click();
     await page.waitForFunction((l) => document.querySelector(".rail a.active")?.textContent?.includes(l), label, { timeout: 3000 }).catch(() => {});
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "three TBD tabs, after Bosses", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 3 && (await page.locator(".rail a").nth(1).innerText()).includes("Bosses"));
+  check("Rail", "two TBD tabs, after Bosses and Checklist", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 2 && (await page.locator(".rail a").nth(1).innerText()).includes("Bosses") && (await page.locator(".rail a").nth(2).innerText()).includes("Checklist"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -334,6 +334,91 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
 
+  // ---------- the Checklist tab (v1.3.0) ----------
+  // Kronos: MikuBeam and LeekSpin; Hyperion: NewHere and SakuraRin.
+  const col = (name) => page.getByRole("region", { name });
+  const box = (name) => page.getByRole("checkbox", { name, exact: true });
+  const planTasks = async (who, tasks) => {
+    await page.getByRole("tab", { name: new RegExp(who) }).click();
+    await page.getByRole("button", { name: "Plan tasks…" }).click();
+    for (const t of tasks) await page.getByRole("dialog").getByRole("checkbox", { name: `Plan ${t}`, exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+    await page.getByRole("dialog").waitFor({ state: "detached" });
+  };
+  await go("/checklist");
+  check("Checklist", "a tab for each of the world's characters", (await page.getByRole("tab").allInnerTexts()).map((t) => t.split("\n")[0]).join(",") === "MikuBeam,LeekSpin");
+  check("Checklist", "nothing planned yet: both columns say so", (await page.getByText("Nothing planned.").count()) === 2);
+  check("Checklist", "the countdowns: daily and weekly resets in your time", /Daily reset in .+your time/s.test(await page.locator(".checklist-side").innerText()) && /Weekly reset in .+your time/s.test(await page.locator(".checklist-side").innerText()));
+  await page.getByRole("button", { name: "Plan tasks…" }).click();
+  const menu = page.getByRole("dialog");
+  const menuHeads = (await menu.getByRole("heading", { level: 3 }).allInnerTexts()).join("|");
+  check("Planner", "the checklist menu lists every preset (29) by reset", (await menu.getByRole("checkbox").count()) === 29 && /^daily · 00:00 utc\|weekly$/i.test(menuHeads), `${await menu.getByRole("checkbox").count()} boxes; ${menuHeads}`);
+  check("Planner", "a level above the character's is flagged (Geardock 295 vs MikuBeam 286)", (await menu.getByText("295+ (above Lv. 286)").count()) === 1);
+  await page.keyboard.press("Escape");
+  await planTasks("MikuBeam", ["Cernium", "Monster Park", "Ursus", "Erda Spectrum", "Epic Dungeon"]);
+  check("Checklist", "the plan shows by category: Sacred and Other daily, Arcane and Other weekly", (await col("Daily").getByRole("heading", { level: 3 }).allInnerTexts()).join("|").toLowerCase() === "sacred symbols|other" && (await col("Weekly").getByRole("heading", { level: 3 }).allInnerTexts()).join("|").toLowerCase() === "arcane symbols|other");
+  await box("Cernium done").click();
+  await box("Ursus done").click();
+  await box("Monster Park done").click();
+  await settle();
+  await go("/checklist");
+  check("Checklist", "ticks are saved: still done after reloading, counted in the tab", (await box("Cernium done").isChecked()) && (await page.getByRole("tab", { name: /MikuBeam/ }).innerText()).includes("D 3/3"));
+  await planTasks("LeekSpin", ["Ursus", "Monster Park"]);
+  check("Checklist", "Ursus (once per account) done by MikuBeam: greyed out on LeekSpin, saying who", (await box("Ursus done").isDisabled()) && (await col("Daily").getByText("done by MikuBeam").count()) === 1);
+  await box("Monster Park done").click();
+  await settle();
+  check("Checklist", "Monster Park: the second character of the world can still do it", await box("Monster Park done").isChecked());
+  check("Checklist", "the side panel shows who used each limit", /Monster Park\s+2\/2 per world · MikuBeam, LeekSpin/.test(await page.locator(".limits").innerText()) && /Ursus\s+1\/1 per account · MikuBeam/.test(await page.locator(".limits").innerText()));
+  await page.getByRole("button", { name: "Hyperion" }).click();
+  await settle();
+  await planTasks("NewHere", ["Ursus", "Monster Park"]);
+  check("Checklist", "per account reaches the other world (Ursus blocked on Hyperion); per world doesn't (Monster Park free)", (await box("Ursus done").isDisabled()) && !(await box("Monster Park done").isDisabled()));
+  await page.getByRole("button", { name: "Kronos" }).click();
+  await settle();
+  // your own task: weekly on Monday, on Kronos only
+  await page.getByRole("button", { name: "New task…" }).click();
+  const tform = page.getByRole("dialog", { name: "New task" });
+  await tform.getByLabel("Name").fill("Mondays");
+  await tform.getByRole("button", { name: "Weekly" }).click();
+  await tform.getByRole("combobox", { name: "Reset day" }).selectOption({ label: "Monday" });
+  await tform.getByRole("button", { name: "Kronos" }).click();
+  await tform.getByRole("button", { name: "Add task" }).click();
+  await tform.waitFor({ state: "detached" });
+  await planTasks("MikuBeam", ["Mondays"]);
+  check("Custom tasks", "a new weekly task (Monday) is planned and shown with its day and a custom badge", (await col("Weekly").getByText("resets Mon").count()) === 1 && (await col("Weekly").getByText("custom").count()) === 1);
+  await box("Mondays done").click();
+  await settle();
+  // a day and a week go by: the ticks move into the past
+  const clDb = new Database(path.join(qa.dir, "miku.db"));
+  clDb.prepare("UPDATE ChecklistTick SET period = '2000-01-03' WHERE task = 'cernium'").run();
+  await go("/checklist");
+  check("Checklist", "after the daily reset: Cernium unticked, Ursus still ticked (its own tick moved nothing)", !(await box("Cernium done").isChecked()) && (await box("Ursus done").isChecked()));
+  clDb.prepare("UPDATE ChecklistTick SET period = '2000-01-06' WHERE task = 'ursus'").run();
+  clDb.close();
+  await go("/checklist");
+  await page.getByRole("tab", { name: /LeekSpin/ }).click();
+  check("Checklist", "once Ursus's tick is in the past, LeekSpin can do it", !(await box("Ursus done").isDisabled()));
+  await shot("08-checklist");
+  // delete the custom task from the planning menu
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("tab", { name: /MikuBeam/ }).click();
+  await page.getByRole("button", { name: "Plan tasks…" }).click();
+  await page.getByRole("button", { name: "Change Mondays" }).click();
+  await page.getByRole("dialog", { name: "Change Mondays" }).getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("dialog", { name: "Change Mondays" }).waitFor({ state: "detached" });
+  await page.keyboard.press("Escape");
+  await settle();
+  check("Custom tasks", "deleted: off MikuBeam's checklist", (await page.getByText("Mondays").count()) === 0);
+  for (const [what, method, where, body, status] of [
+    ["checklist: bad world", "GET", "/checklist?world=3", undefined, 400],
+    ["checklist plan: unknown task", "PUT", `/checklist/${miku.id}/plan`, { tasks: ["nobody"] }, 400],
+    ["checklist tick: a task not planned", "PUT", `/checklist/${miku.id}/ticks/geardock`, { done: true }, 409],
+    ["custom task: no name", "POST", "/checklist/tasks", { name: " ", category: "other", reset: "daily", weekday: null, worlds: "both", limitScope: "character", limitCount: 1 }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));
@@ -456,6 +541,8 @@ try {
   });
   check("Layout", "the Level view's points line up with their days' columns", lined < 1.5, `${lined.toFixed(2)} px off`);
   await shot("05-narrow");
+  await go("/checklist");
+  check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/bosses");
   check("Layout", "the Bosses tab at 900 px wide: no sideways page scrolling (the cards scroll on their own)", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
 

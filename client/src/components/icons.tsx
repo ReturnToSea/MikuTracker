@@ -22,6 +22,17 @@ export const BossIcon = () => (
   </svg>
 );
 
+export const ChecklistIcon = () => (
+  <svg {...common}>
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1" />
+    <path d="M8.5 10l1.5 1.5L13 8.5" />
+    <path d="M8.5 16l1.5 1.5L13 14.5" />
+    <path d="M15 10h1" />
+    <path d="M15 16h1" />
+  </svg>
+);
+
 export const TbdIcon = () => (
   <svg {...common}>
     <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />

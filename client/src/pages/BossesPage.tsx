@@ -1,34 +1,12 @@
 import { worldName } from "@miku/shared";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { keys, useBossBoard, useRefreshStatus, useSaveBossPlan, useSetBossCleared, useSettings, useUpdateSettings } from "../api/hooks";
 import { BossCard } from "../components/BossCard";
 import { BossPlanner } from "../components/BossPlanner";
+import { useResetClock } from "../components/useResetClock";
 import { WorldSwitcher } from "../components/WorldSwitcher";
 import { resetDay, resetLocal, untilReset } from "../lib/bosses";
 import { fmtExp } from "../lib/format";
-
-// The time now, every second; when a reset passes, the board is loaded again (its ticks clear),
-// once for that reset (if this computer's clock is ahead of the server's, the answer can still
-// have the old week for a moment, and that's not asked about again every second).
-function useClock(world: number, resets: Date[]) {
-  const qc = useQueryClient();
-  const [now, setNow] = useState(() => new Date());
-  const next = Math.min(...resets.map((r) => r.getTime()));
-  const asked = useRef(0);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const t = new Date();
-      if (t.getTime() >= next && asked.current !== next) {
-        asked.current = next;
-        void qc.invalidateQueries({ queryKey: keys.bosses(world) });
-      }
-      setNow(t);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [next, world, qc]);
-  return now;
-}
 
 // The Bosses tab: each character's planned bosses this week, ticked off as they're cleared.
 export function BossesPage() {
@@ -44,7 +22,7 @@ export function BossesPage() {
   const b = board.data;
   const weekly = b ? new Date(b.week.resetsAt) : null;
   const monthly = b ? new Date(b.month.resetsAt) : null;
-  const now = useClock(world, weekly && monthly ? [weekly, monthly] : []);
+  const now = useResetClock(keys.bosses(world), weekly && monthly ? [weekly, monthly] : []);
   const planned = b?.characters.find((c) => c.id === planning);
   const t = b?.totals;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addUtcDays, nextUtcMidnight, startOfUtcDay, utcDay } from "./utcDays";
+import { addUtcDays, nextUtcMidnight, nextWeek, startOfUtcDay, utcDay, weekStarting } from "./utcDays";
 
 // These run in California time and in UTC (npm test runs both); every moment here is written in
 // UTC, so the answers must be the same in both.
@@ -48,5 +48,31 @@ describe("addUtcDays", () => {
     expect(addUtcDays("2026-10-01", -1)).toBe("2026-09-30");
     expect(addUtcDays("2026-12-25", 14)).toBe("2027-01-08");
     expect(addUtcDays("2028-02-28", 1)).toBe("2028-02-29");
+  });
+});
+
+describe("weekStarting", () => {
+  it("names a week by its first day, for any start day (Tue 20 Oct 2026 is a Tuesday)", () => {
+    const tue = at("2026-10-20T19:00:00Z");
+    expect(weekStarting(tue, 4)).toBe("2026-10-15"); // Thursday weeks
+    expect(weekStarting(tue, 1)).toBe("2026-10-19"); // Monday weeks
+    expect(weekStarting(tue, 2)).toBe("2026-10-20"); // a Tuesday week starts today
+    expect(weekStarting(tue, 3)).toBe("2026-10-14"); // Wednesday weeks: last Wednesday
+    expect(weekStarting(tue, 0)).toBe("2026-10-18");
+    expect(weekStarting(tue, 6)).toBe("2026-10-17");
+  });
+
+  it("changes at 00:00 UTC on the start day, not at local midnight", () => {
+    expect(weekStarting(at("2026-10-18T23:59:59.999Z"), 1)).toBe("2026-10-12");
+    expect(weekStarting(at("2026-10-19T00:00:00.000Z"), 1)).toBe("2026-10-19");
+    expect(weekStarting(at("2026-10-01T05:00:00Z"), 4)).toBe("2026-10-01");
+    expect(weekStarting(at("2027-01-01T05:00:00Z"), 4)).toBe("2026-12-31");
+  });
+});
+
+describe("nextWeek", () => {
+  it("is 00:00 UTC seven days after the week's first day", () => {
+    expect(nextWeek("2026-10-15").toISOString()).toBe("2026-10-22T00:00:00.000Z");
+    expect(nextWeek("2026-12-28").toISOString()).toBe("2027-01-04T00:00:00.000Z");
   });
 });

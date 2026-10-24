@@ -83,6 +83,21 @@ export const EMPTY_BOSSES = {
   totals: { planned: 0, soFar: 0, cleared: 0, bosses: 0, crystals: 0, monthlyPlanned: 0, monthlySoFar: 0 },
 };
 
+// A world's checklist with no characters: Tue 20 Oct 2026, and three tasks (a daily, a limited
+// daily, a weekly) instead of the presets.
+export const EMPTY_CHECKLIST = {
+  patch: "v.271",
+  daily: { day: "2026-10-20", resetsAt: "2026-10-21T00:00:00.000Z" },
+  weekly: { week: "2026-10-15", resetsAt: "2026-10-22T00:00:00.000Z" },
+  tasks: [
+    { id: "cernium", name: "Cernium", category: "sacred", reset: "daily", weekday: null, level: 260, limit: null, custom: null, resetsAt: "2026-10-21T00:00:00.000Z" },
+    { id: "ursus", name: "Ursus", category: "other", reset: "daily", weekday: null, level: 100, limit: { scope: "account", count: 1 }, custom: null, resetsAt: "2026-10-21T00:00:00.000Z" },
+    { id: "erda-spectrum", name: "Erda Spectrum", category: "arcane", reset: "weekly", weekday: 4, level: 200, limit: null, custom: null, resetsAt: "2026-10-22T00:00:00.000Z" },
+  ],
+  characters: [],
+  limits: [{ task: "ursus", users: [] }],
+};
+
 // The usual answers: Ren saved on Kronos, no theme art, no characters yet.
 export const BASE_ROUTES = {
   "GET /settings": { theme: "ren", worldId: 45 },
@@ -92,4 +107,5 @@ export const BASE_ROUTES = {
   "GET /refresh": { last: null },
   "GET /characters/:id/progress": NO_PROGRESS,
   "GET /bosses": EMPTY_BOSSES,
+  "GET /checklist": EMPTY_CHECKLIST,
 };
