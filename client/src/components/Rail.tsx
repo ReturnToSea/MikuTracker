@@ -23,6 +23,7 @@ export const TOP_TABS: Tab[] = [
     pages: [
       { path: "/gear", label: "Equipment" },
       { path: "/gear/flames", label: "Flames" },
+      { path: "/gear/starforce", label: "Star Force" },
     ],
   },
 ];

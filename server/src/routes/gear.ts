@@ -1,9 +1,10 @@
-import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, statValuesInput } from "@miku/shared";
+import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, starForceItemQuery, starForceQuery, statValuesInput } from "@miku/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { currentOwner } from "../owner";
 import { flameGraph, flamesBoard } from "../services/flames";
 import { gearBoard, listedItemOptions, otherItemOptions, saveGear, saveGearDetails, saveStatValues } from "../services/gear";
+import { starForceBoard, starForceDetail } from "../services/starForce";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -32,6 +33,16 @@ gearRouter.get("/:characterId/flames", async (req, res) => {
 });
 gearRouter.get("/:characterId/flames/:slot", async (req, res) => {
   res.json(await flameGraph(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot));
+});
+
+// The Star Force page: a character's items that can take more stars, and one item for a target star.
+gearRouter.get("/:characterId/starforce", async (req, res) => {
+  const q = starForceQuery.parse(req.query);
+  res.json(await starForceBoard(currentOwner(res), idParam.parse(req.params.characterId), q.events, q.budget));
+});
+gearRouter.get("/:characterId/starforce/:slot", async (req, res) => {
+  const q = starForceItemQuery.parse(req.query);
+  res.json(await starForceDetail(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot, q.events, q.target));
 });
 
 // An item's stars, flames, potential and hammers.

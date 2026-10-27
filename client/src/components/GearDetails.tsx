@@ -45,7 +45,7 @@ export function IconRow({ board, c, items, picked, onPick, flames }: { board: Ge
 }
 
 // The stars as in the game: 1–15 on top, 16–30 below, each row in three groups of 5.
-function Stars({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (n: number) => void }) {
+export function Stars({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (n: number) => void }) {
   const group = (from: number) => (
     <div key={from} className="star-group">
       {[0, 1, 2, 3, 4].map((i) => from + i).filter((n) => n <= max).map((n) => (

@@ -2,6 +2,28 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.2.0 (2026-10-27): Star Force
+
+- **The Star Force page**, the Gear group's third page (layout A of 5 mockups): each item that can still take stars, cheapest per 1% final damage first by its **best jump** (from where it stands, the target with the cheapest meso per 1% FD for that jump alone; e.g. 19→21★ together when 20→21★ is cheap), with the next tap's success chance.
+- **For the picked item:** its stars, saved from here too (the same stars as Equipment, with Save / Cancel); a **boom cost** (plain meso) and boxes for an item too rare to risk (**Modes 1 1 4 4** or **4 4 4 4**); a summary for the target star (median, exact average and 75/90/99% unlucky costs, final damage, median and exact average booms, the chance of a boom); every next star with its pick, **unrounded** rates, costs, final damage, running totals and the best jumps; graphs of the cost to get there, the booms on the way and the cost per star.
+- **The cheapest Enhancement Mode or Safeguard per star**, worked out with the boom price; the **events as checkboxes** (30% off, 30% fewer booms, 5/10/15, +1 star) and the **MVP tier** as a setting.
+- **Targets:** the star to stop at for a budget, taking best jumps while they're within it.
+- **Sources:** tadeucci's calculator, checked against masonym's, MathBro's, the wiki and Nexon's v.269 notes; the owner checked the rates in game. Our maths matches tadeucci's engine to the meso (every tap cost for 8 levels × 30 stars, 5 cases with events and MVP) and masonym's solver for the +1 event. The medians and unlucky costs come from 20,000 seeded runs simulated star by star (checked against tapping every run out); 30★ plans in about 0.1 s.
+- **Along the way, from the owner's review of the mockups:** a blended "to here, all in" column was dropped (it credited a dear star with cheaper stars' final damage) for honest per-star figures and running totals; the cost-per-star graph stops at the target; long climbs group their boom counts into ranges (a 30★ plan booms hundreds of thousands of times, which had hung the page).
+- The flames service now shares one "equipped items" helper with Star Force.
+- **Mutation testing** found 90-odd gaps along the way, mostly loose tests (another class's stars, an order that happened to be right already, the graphs' data), now tested; a few lines that can't change anything simplified or marked with why (e.g. "4 4 4 4" at 20–21★, where Mode 4 is the cheapest anyway).
+- **From the review pass** (10 findings, 5 fixed):
+  - Typing a boom cost and ticking a box straight away could lose the cost (the box saved the cost last loaded); the pair is now saved together from the boxes.
+  - The boom cost box and both budget boxes (Flames and Star Force) had no upper limit: a huge budget made the whole page fail to load; now refused in the box.
+  - An MVP tier the list doesn't know (a hand-edited database) made every cost nonsense; it now counts as none.
+  - Tidying: a row's star button set the target twice; a leftover alias and an oddly named type.
+  - **Not changed:** the simulation runs on each click (a tenth of a second at most, for one person on this Mac); reading the gear before checking the character is yours, to save a few milliseconds.
+- **From a final review after the tests and click-through** (the owner's call; 9 findings, 5 fixed, 1 planned):
+  - The item panel could switch items by itself: shown without a click as "the cheapest", a save that re-ordered the row jumped it to another item, with the planned star; **the Flames page had the same flaw**. Both now stay on the item worked on.
+  - Switching world kept the old item and planned star (switching character already reset them).
+  - The MVP menu flipped back to "None" for a moment while saving; it now shows the setting as soon as it's saved, and an unknown saved tier reads as "none" everywhere (checked where settings are read).
+  - The budget box was copied between Flames and Star Force (which is how the earlier upper-limit bug needed fixing twice): one shared box now. The Targets note said "less than" where the rule is "at most".
+
 ## v2.1.0 (2026-10-24): flames, all the way through
 
 - **The Flames page**, under a new **Gear group** in the rail (Gear ▾: Equipment, Flames; a menu above the bar on a narrow window). The flame odds and costs planned for v2.3.0 came with it, so Potential is now v2.3.0 and the best upgrade v2.4.0.

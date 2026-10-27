@@ -622,3 +622,22 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .flame-targets .item-icon { width: 36px; height: 36px; }
 .good { color: var(--good); font-weight: 700; }
 @media (max-width: 900px) { .flame-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* The Star Force page (v2.2.0) */
+.sf-boom { display: grid; gap: 4px; justify-items: end; text-align: right; }
+.sf-boom .row { gap: 10px; }
+.sf-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 6px; }
+.sf-tiles .mid { font-size: 1.05em; font-weight: 700; }
+.sf-steps { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 10px; }
+.sf-steps th { text-align: right; font-weight: 400; font-size: 0.85em; color: var(--text-muted); padding: 5px 8px; white-space: nowrap; }
+.sf-steps td { text-align: right; padding: 5px 8px; border-top: var(--border-width) solid var(--border); white-space: nowrap; cursor: pointer; }
+.sf-steps th:first-child, .sf-steps td:first-child { text-align: left; }
+.sf-steps tr.target td { background: var(--accent-soft); }
+.sf-steps td.jump { text-align: center; vertical-align: middle; border-left: var(--border-width) solid var(--border); background: var(--surface-2); line-height: 1.3; cursor: default; }
+.sf-steps td.jump.first b { color: var(--line); }
+.mode-pill { padding: 1px 7px; border: var(--border-width) solid var(--border); border-radius: 999px; font-size: 0.85em; }
+.link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.chart-note { padding: 30px 0; text-align: center; }
+.flame-chart .bar { fill: var(--accent); opacity: 0.8; }
+.flame-chart .dot-series { fill: var(--accent); }
+@media (max-width: 900px) { .sf-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sf-boom { justify-items: start; text-align: left; } }

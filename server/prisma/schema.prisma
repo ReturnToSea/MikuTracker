@@ -19,6 +19,7 @@ model Settings {
   theme     String   @default("ren") // "ren" | "pochacco"
   worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion
   blackFlamePrice Int @default(3000000) // meso per Black Flame, for the Flames page's costs (v2.1.0)
+  mvp             String @default("none") // the MVP tier, for its Star Force discount (v2.2.0): none | silver | gold | diamond
   updatedAt DateTime @updatedAt
 }
 

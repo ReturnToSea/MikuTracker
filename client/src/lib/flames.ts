@@ -56,6 +56,15 @@ export function withFlames(saved: GearDetailsInput | undefined, starMin: number,
   return { ...(saved ?? { stars: starMin, potential: null, hammers: 0 }), flames };
 }
 
+// A budget box (billions per 1% final damage): meso, or null if it isn't a budget (above 0, at most
+// 1,000,000B: what the server takes).
+export const MAX_BUDGET = 1e15;
+export function budgetFrom(text: string): number | null {
+  // (an empty or blank box reads as 0, nonsense as not a number: neither is above 0)
+  const meso = Math.round(Number(text) * 1e9);
+  return meso > 0 && meso <= MAX_BUDGET ? meso : null;
+}
+
 // The Black Flame price box (in millions): a whole number of meso, or null if it isn't a price.
 export function priceFromMillions(text: string): number | null {
   const n = Number(text);

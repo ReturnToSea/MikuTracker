@@ -30,10 +30,11 @@ export const searchQuery = z.strictObject({ world: worldId, name: characterName 
 export type SearchQuery = z.infer<typeof searchQuery>;
 
 // Saving settings: the theme, the world shown on Home, the price of a Black Flame (meso: at most
-// 2,147,483,647, what the database column holds), or several.
+// 2,147,483,647, what the database column holds), the MVP tier (its Star Force discount), or several.
+export const MVP_TIERS = ["none", "silver", "gold", "diamond"] as const;
 export const settingsInput = z
-  .strictObject({ theme: themeId.optional(), worldId: worldId.optional(), blackFlamePrice: z.number().int().min(0).max(2_147_483_647).optional() })
-  .refine((s) => s.theme !== undefined || s.worldId !== undefined || s.blackFlamePrice !== undefined, { message: "Nothing to save" });
+  .strictObject({ theme: themeId.optional(), worldId: worldId.optional(), blackFlamePrice: z.number().int().min(0).max(2_147_483_647).optional(), mvp: z.enum(MVP_TIERS).optional() })
+  .refine((s) => Object.keys(s).length > 0, { message: "Nothing to save" });
 export type SettingsInput = z.infer<typeof settingsInput>;
 
 // Adding a character: looked up again by the server, never taken from the page as is.
@@ -130,6 +131,10 @@ export const gearDetailsInput = z.strictObject({
   flames: z.record(z.string().max(20), z.number().int().min(1).max(7)).refine((f) => Object.keys(f).length <= 4, { message: "At most 4 flames" }),
   potential: z.strictObject({ rank: z.enum(POTENTIAL_RANKS), lines: z.array(z.string().max(80).nullable()).length(3) }).nullable(),
   hammers: z.number().int().min(0).max(3),
+  // Star Force (v2.2.0): what a boom costs (replacing or restoring it, in meso; none: 0), and the fixed
+  // modes for an item too rare to risk ("1144", "4444"; none: the cheapest per star)
+  boomCost: z.number().int().min(0).max(1e15).optional(),
+  safety: z.enum(["1144", "4444"]).optional(),
   // only for a typed "Other item"
   other: z
     .strictObject({
@@ -158,6 +163,18 @@ export const gearOptionsQuery = z.union([
 // One flame line's score in hundredths of a point (its value × what a point of it is worth), each line
 // rounded on its own: the server and the page add scores up the same way.
 export const flameLinePoints = (worth: number, value: number | null): number => Math.round(worth * (value ?? 0) * 100);
+
+// The Star Force page: the events on (any of them, comma separated), the budget its stop stars are for,
+// and for one item the star to plan to.
+export const SF_EVENTS = ["thirtyOff", "fewerBooms", "fiveTenFifteen", "plusOne"] as const;
+const sfEvents = z
+  .string()
+  .max(100)
+  .default("")
+  .transform((s) => (s ? s.split(",") : []))
+  .pipe(z.array(z.enum(SF_EVENTS)));
+export const starForceQuery = z.strictObject({ events: sfEvents, budget: z.coerce.number().min(0).max(1e15) });
+export const starForceItemQuery = z.strictObject({ events: sfEvents, target: z.coerce.number().int().min(1).max(30) });
 
 // The Flames page: the budget (meso per 1% final damage) its stop scores are for.
 export const flamesQuery = z.strictObject({ budget: z.coerce.number().min(0).max(1e15) });

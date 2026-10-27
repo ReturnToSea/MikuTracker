@@ -4,6 +4,7 @@ import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, ot
 import { getConfig } from "../config";
 import { db } from "../db";
 import { FLAME_KINDS, fits, GEAR_SLOTS, type GearItem, type GearJob, gearFile, itemKey, POTENTIAL_KINDS, RING_SLOTS } from "../gameFigures/gear";
+import { jobStats } from "../gameFigures/jobStats";
 import { potentialOptions } from "../gameFigures/potential";
 import { HttpError } from "../http";
 import { listCharacters, ownCharacter } from "./characters";
@@ -126,6 +127,43 @@ export async function saveGear(ownerId: string, characterId: number, slot: strin
   }
   const kept = rows.find((r) => r.slot === slot && r.item === input.item)?.details ?? null;
   await db().gearSlot.upsert({ where, create: { characterId, slot, item: input.item }, update: { item: input.item, other: null, details: kept } });
+}
+
+// The character's equipped items that count, each with what it is (a listed item, or a typed one whose
+// kind and level have been given) and its saved details: what the Flames and Star Force pages work from.
+// A bottom under an overall doesn't count.
+export interface EquippedItem {
+  slot: string;
+  name: string;
+  icon: string | null; // listed items only
+  di: DetailItem;
+  details: GearDetailsInput | null;
+}
+export async function equippedItems(characterId: number): Promise<EquippedItem[]> {
+  const { items } = gearFile();
+  const rows = await db().gearSlot.findMany({ where: { characterId } });
+  // (a typed item's key is null, which no listed item has)
+  const listed = (item: string | null) => items.find((i) => itemKey(i) === item);
+  const overall = listed(rows.find((r) => r.slot === "top")?.item ?? null)?.overall === true;
+  const out: EquippedItem[] = [];
+  for (const r of rows) {
+    if (r.slot === "bottom" && overall) continue;
+    const details = r.details ? (JSON.parse(r.details) as GearDetailsInput) : null;
+    const item = listed(r.item);
+    const di = item ? detailItem(item) : details?.other ? otherItem(details.other) : null;
+    if (di) out.push({ slot: r.slot, name: item?.name ?? r.other!, icon: item ? `/item-icons/${item.id}.png` : null, di, details });
+  }
+  return out;
+}
+
+// What a character's stats are worth (the Flames and Star Force pages): its job's stats (null: a job
+// the list doesn't know yet) and its stat values.
+export async function characterValues(ownerId: string, characterId: number) {
+  const c = await ownCharacter(ownerId, characterId);
+  const { jobs } = gearFile();
+  const job = jobStats(c.job, Object.hasOwn(jobs, c.job) ? jobs[c.job]!.branches : undefined);
+  const values = statValuesOf((await db().statValues.findUnique({ where: { characterId } })) ?? undefined);
+  return { job, values };
 }
 
 // ── v2.0.0: stars, flames, potential and hammers ──────────────────────────────────────────────

@@ -4,10 +4,9 @@ import { useFlameGraph, useFlames, useGear, useRefreshStatus, useSaveGearDetails
 import type { FlameItem, FlamesBoard, GearCharacter } from "../api/types";
 import { CHART_MODES, type ChartMode, FlameChart } from "../components/FlameChart";
 import { FlameTable, StatValuesBox } from "../components/GearDetails";
-import { GearTop, NoCharacters, useGearCharacter } from "../components/GearTop";
-import { BUDGET_PRESETS, DEFAULT_BUDGET, formatChance, formatMeso, formatScore, priceFromMillions, withFlames } from "../lib/flames";
+import { BudgetBox, GearTop, ItemIcon, NoCharacters, useGearCharacter } from "../components/GearTop";
+import { DEFAULT_BUDGET, formatChance, formatMeso, formatScore, priceFromMillions, withFlames } from "../lib/flames";
 
-const ItemIcon = ({ item }: { item: FlameItem }) => (item.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="slot-text">{item.name}</span>);
 const same = (a: Record<string, number>, b: Record<string, number>) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 
 // The price of a Black Flame (one for the whole site), in millions; saved when you leave the box.
@@ -166,28 +165,9 @@ function Graph({ c, item }: { c: GearCharacter; item: FlameItem }) {
 // Targets: the score to stop flaming each item at, for what 1% final damage is worth spending
 // (mafhcow's "inverse target mode", for the character's own items).
 function Targets({ board, budget, onBudget }: { board: FlamesBoard; budget: number; onBudget: (meso: number) => void }) {
-  const [text, setText] = useState(String(budget / 1e9));
-  useEffect(() => setText(String(budget / 1e9)), [budget]);
-  const commit = () => {
-    const n = Number(text);
-    if (text.trim() !== "" && Number.isFinite(n) && n > 0) onBudget(Math.round(n * 1e9));
-    else setText(String(budget / 1e9));
-  };
   return (
     <section className="block" aria-label="Targets">
-      <div className="row">
-        <label className="small muted">
-          Spend up to{" "}
-          <input className="text-input count" type="number" step="any" min={0} aria-label="Budget (billions per 1% final damage)" value={text} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />B per 1% final damage
-        </label>
-        <div className="segmented" role="group" aria-label="Budgets">
-          {BUDGET_PRESETS.map((b) => (
-            <button key={b} type="button" aria-pressed={budget === b * 1e9} onClick={() => onBudget(b * 1e9)}>
-              {b}B
-            </button>
-          ))}
-        </div>
-      </div>
+      <BudgetBox budget={budget} onBudget={onBudget} />
       <p className="tiny muted">Each item's score to stop flaming at: past it, one more flame costs more than that per 1% final damage.</p>
       <table className="flame-targets">
         <thead>
@@ -248,6 +228,8 @@ export function FlamesPage() {
     saveSettings.reset();
   };
   const save = (it: FlameItem, f: Record<string, number>) => {
+    // stay on this item when the save re-orders the row
+    setSlot(it.slot);
     const details: GearDetailsInput = withFlames(c!.details[it.slot], it.starMin, f);
     saveDetails.mutate({ id: c!.id, slot: it.slot, details });
   };
@@ -259,6 +241,7 @@ export function FlamesPage() {
         world={world}
         onWorld={(w) => {
           resetSaves();
+          setSlot(null);
           saveSettings.mutate({ worldId: w });
         }}
         characters={b?.characters}

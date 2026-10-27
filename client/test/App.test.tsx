@@ -46,10 +46,13 @@ describe("the feature tabs", () => {
     // a wide window has no pop-up menu (its pages are listed under the tab instead)
     expect(gear.closest(".rail-group")!.classList.contains("menu")).toBe(false);
     expect(gear.getAttribute("aria-expanded")).toBe("true");
-    expect(gearPages().map((l) => [l.textContent, l.classList.contains("active")])).toEqual([["Equipment", true], ["Flames", false]]);
+    expect(gearPages().map((l) => [l.textContent, l.classList.contains("active")])).toEqual([["Equipment", true], ["Flames", false], ["Star Force", false]]);
     await userEvent.click(gearPages()[1]!);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Flames");
-    expect(gearPages().map((l) => l.classList.contains("active"))).toEqual([false, true]);
+    expect(gearPages().map((l) => l.classList.contains("active"))).toEqual([false, true, false]);
+    await userEvent.click(gearPages()[2]!);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Star Force");
+    expect(gearPages().map((l) => l.classList.contains("active"))).toEqual([false, false, true]);
     expect(gear.getAttribute("aria-expanded")).toBe("true");
     // leaving the group folds it up
     await userEvent.click(tabs().find((l) => l.textContent === "Home")!);
@@ -67,7 +70,7 @@ describe("the feature tabs", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
     expect(tabs().map((l) => l.getAttribute("href"))).toEqual(["/", "/bosses", "/checklist", "/symbols", "/gear", "/exp-table", "/themes"]);
-    expect(gearPages().map((l) => l.getAttribute("href"))).toEqual(["/gear", "/gear/flames"]);
+    expect(gearPages().map((l) => l.getAttribute("href"))).toEqual(["/gear", "/gear/flames", "/gear/starforce"]);
   });
 
   it("an unknown address goes to Home", async () => {
@@ -86,6 +89,7 @@ describe("the feature tabs", () => {
       ["/symbols", "Symbols"],
       ["/gear", "Gear"],
       ["/gear/flames", "Flames"],
+      ["/gear/starforce", "Star Force"],
       ["/exp-table", "EXP table (GMS)"],
       ["/themes", "Themes"],
     ]) {

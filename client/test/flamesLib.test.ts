@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FlameItem } from "../src/api/types";
-import { atLeast, formatChance, formatMeso, formatScore, liveScore, pointAt, priceFromMillions, scoreBand, withFlames } from "../src/lib/flames";
+import { atLeast, budgetFrom, formatChance, formatMeso, formatScore, liveScore, pointAt, priceFromMillions, scoreBand, withFlames } from "../src/lib/flames";
 
 describe("formatMeso", () => {
   it("k, m, B with two decimals, one from 10B, whole with commas from 1,000B; endless as —", () => {
@@ -63,6 +63,13 @@ describe("withFlames", () => {
 
   it("nothing saved yet: blank details, starting at the stars the item comes with", () => {
     expect(withFlames(undefined, 22, { ATT: 6 })).toEqual({ stars: 22, flames: { ATT: 6 }, potential: null, hammers: 0 });
+  });
+});
+
+describe("budgetFrom", () => {
+  it("billions to meso, above 0 and at most 1,000,000B (what the server takes); otherwise null", () => {
+    expect([budgetFrom("10"), budgetFrom("2.5"), budgetFrom("1000000"), budgetFrom("0.000000001")]).toEqual([10e9, 2.5e9, 1e15, 1]);
+    expect([budgetFrom("1000000.1"), budgetFrom("0"), budgetFrom("-3"), budgetFrom(""), budgetFrom("  "), budgetFrom("x"), budgetFrom("Infinity")]).toEqual([null, null, null, null, null, null, null]);
   });
 });
 

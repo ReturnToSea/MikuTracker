@@ -5,7 +5,7 @@ import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, StarForceBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -21,6 +21,8 @@ export const keys = {
   gearOptions: (query: string | null) => ["gear-options", query],
   flames: (id: number, budget: number) => ["flames", id, budget],
   flameGraph: (id: number, slot: string) => ["flames", id, "graph", slot],
+  starForce: (id: number, events: string, budget: number) => ["starforce", id, events, budget],
+  starForceDetail: (id: number, slot: string, events: string, target: number) => ["starforce", id, "detail", slot, events, target],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -59,8 +61,10 @@ export function useUpdateSettings() {
     mutationFn: (input: SettingsInput) => api<SettingsView>("/settings", { method: "PUT", body: input }),
     onSuccess: (saved, input) => {
       qc.setQueryData(keys.settings, saved);
-      // the Black Flame price changes every cost on the Flames page (the theme or world doesn't)
+      // the Black Flame price changes every cost on the Flames page, the MVP tier on the Star Force page
+      // (the theme or world doesn't)
       if (input.blackFlamePrice !== undefined) void qc.invalidateQueries({ queryKey: ["flames"] });
+      if (input.mvp !== undefined) void qc.invalidateQueries({ queryKey: ["starforce"] });
     },
   });
 }
@@ -161,9 +165,10 @@ export function useSaveSymbol(world: number) {
   });
 }
 
-// After a gear save: the board, and the Flames page's numbers (which follow the items, their flames
-// and the stat values).
-const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) => Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] })]);
+// After a gear save: the board, and the Flames and Star Force pages' numbers (which follow the items,
+// their details and the stat values).
+const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) =>
+  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] })]);
 
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
@@ -226,3 +231,12 @@ export function useSaveStatValues(world: number) {
 export const useFlames = (id: number | undefined, budget: number) =>
   useQuery({ queryKey: keys.flames(id ?? 0, budget), queryFn: () => api<FlamesBoard>(`/gear/${id}/flames?budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
 export const useFlameGraph = (id: number, slot: string) => useQuery({ queryKey: keys.flameGraph(id, slot), queryFn: () => api<FlameGraph>(`/gear/${id}/flames/${slot}`) });
+
+// The Star Force page: a character's items that can take more stars (the stop stars for a budget), and
+// one item for a target star. New settings keep showing the last numbers until the new ones come (only
+// for the same character; an item's panel is made afresh for each item, so its last numbers are always
+// its own).
+export const useStarForce = (id: number | undefined, events: string, budget: number) =>
+  useQuery({ queryKey: keys.starForce(id ?? 0, events, budget), queryFn: () => api<StarForceBoard>(`/gear/${id}/starforce?events=${events}&budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
+export const useStarForceDetail = (id: number, slot: string, events: string, target: number) =>
+  useQuery({ queryKey: keys.starForceDetail(id, slot, events, target), queryFn: () => api<StarForceDetail>(`/gear/${id}/starforce/${slot}?events=${events}&target=${target}`), placeholderData: (previous) => previous });

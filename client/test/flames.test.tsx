@@ -133,6 +133,20 @@ describe("the Flames page: one item", () => {
   });
 });
 
+describe("the Flames page: staying on the item", () => {
+  it("a save that re-orders the row keeps the panel on the item saved", async () => {
+    let saved = false;
+    const first = { ...BOARD, items: [item("hat", "Arcane Hat"), item("gloves", "Arcane Gloves")] };
+    const after = { ...BOARD, items: [item("gloves", "Arcane Gloves"), item("hat", "Arcane Hat", { flames: { ATT: 7 } })] };
+    show(first, { "GET /gear/:id/flames": () => (saved ? after : first), "PUT /gear/:id/hat/details": () => { saved = true; return undefined; } });
+    const p = within(await screen.findByRole("region", { name: "Arcane Hat flames" }));
+    await userEvent.click(p.getByRole("button", { name: "ATT tier 7: 7" }));
+    await userEvent.click(p.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(row().getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Arcane Gloves", "Arcane Hat"]));
+    expect(screen.getByRole("region", { name: "Arcane Hat flames" })).toBeTruthy();
+  });
+});
+
 describe("the Flames page: the graph", () => {
   it("the distribution to start with; the switch changes the series", async () => {
     show();
@@ -259,16 +273,23 @@ describe("the rail on a narrow window", () => {
 });
 
 describe("saving settings", () => {
-  it("only the Black Flame price makes the Flames numbers out of date, not the theme or the world", async () => {
-    fakeServer({ "PUT /settings": (body: object) => ({ theme: "ren", worldId: 45, blackFlamePrice: 3_000_000, ...body }) });
+  it("only the Black Flame price makes the Flames numbers out of date, only the MVP tier the Star Force ones; not the theme or the world", async () => {
+    fakeServer({ "PUT /settings": (body: object) => ({ theme: "ren", worldId: 45, blackFlamePrice: 3_000_000, mvp: "none", ...body }) });
     const qc = new QueryClient();
     qc.setQueryData(["flames", 1, 10e9], BOARD);
+    qc.setQueryData(["starforce", 1, "", 10e9], {});
     qc.setQueryData(["gear", 45], GEAR);
     const { result } = renderHook(() => useUpdateSettings(), { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider> });
     const outOfDate = () => qc.getQueryState(["flames", 1, 10e9])!.isInvalidated;
     await act(() => result.current.mutateAsync({ theme: "pochacco" }));
     await act(() => result.current.mutateAsync({ worldId: 70 }));
     expect(outOfDate()).toBe(false);
+    const sfOutOfDate = () => qc.getQueryState(["starforce", 1, "", 10e9])!.isInvalidated;
+    // the theme and world saves above left both current
+    expect(sfOutOfDate()).toBe(false);
+    await act(() => result.current.mutateAsync({ mvp: "gold" }));
+    // the MVP tier: the Star Force numbers, not the Flames ones
+    expect([sfOutOfDate(), outOfDate()]).toEqual([true, false]);
     await act(() => result.current.mutateAsync({ blackFlamePrice: 4_000_000 }));
     expect(outOfDate()).toBe(true);
     // only the Flames numbers: the gear board is still current

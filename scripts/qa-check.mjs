@@ -604,7 +604,7 @@ try {
   await go("/gear");
   await page.locator(".rail-group").getByRole("link", { name: "Flames" }).click();
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
-  check("Flames", "the Gear group lists Equipment and Flames; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames" && (await page.locator(".rail-page.active").innerText()) === "Flames");
+  check("Flames", "the Gear group lists Equipment and Flames; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames,Star Force" && (await page.locator(".rail-page.active").innerText()) === "Flames");
   const flameBoard = async () => (await api("GET", `/gear/${miku.id}/flames?budget=10000000000`)).json;
   let fb = await flameBoard();
   const rowNames = await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
@@ -651,6 +651,70 @@ try {
     ["flames: a slot without a flameable item", "GET", `/gear/${miku.id}/flames/ring1`, undefined, 404],
     ["flames: an unknown character", "GET", "/gear/99999/flames?budget=1", undefined, 404],
     ["settings: a negative Black Flame price", "PUT", "/settings", { blackFlamePrice: -1 }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
+  // ---------- the Star Force page (v2.2.0) ----------
+  await api("PUT", "/settings", { mvp: "none" });
+  await go("/gear");
+  await page.locator(".rail-group").getByRole("link", { name: "Star Force" }).click();
+  const sfRow = page.getByRole("group", { name: /Items, cheapest/ });
+  await sfRow.waitFor();
+  const sfNames = await sfRow.getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+  check("Star Force", "the Gear group's third page; the fixed-star Genesis fan isn't listed, the crown is", (await text("h1")) === "Star Force" && (await page.locator(".rail-page.active").innerText()) === "Star Force" && !sfNames.some((n) => /Genesis/.test(n)) && sfNames.includes("AbsoLab Mage Crown"), sfNames.join(", "));
+  await sfRow.getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  const crownSf = page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" });
+  await crownSf.getByRole("group", { name: "Summary" }).waitFor();
+  const firstRow = async () => (await crownSf.locator("tbody tr").first().innerText()).replace(/\s+/g, " ");
+  check("Star Force", "the crown at 22★: its first row 22→23★ at 15.75% / 16.85% (the rates unrounded)", /^22→23★ — 15\.75% 16\.85%/.test(await firstRow()), await firstRow());
+  await crownSf.getByRole("group", { name: "Star Force" }).getByRole("button", { name: "17 stars" }).click();
+  check("Star Force", "picking stars is unsaved until Save", (await crownSf.getByText(/Unsaved/).count()) === 1);
+  await crownSf.getByRole("button", { name: "Save", exact: true }).click();
+  await settle(900);
+  const savedStars = (await api("GET", "/gear?world=45")).json.characters.find((c) => c.name === "MikuBeam").details.hat.stars;
+  check("Star Force", "saved: the crown is at 17★ here and on the Equipment page", savedStars === 17 && /^17→18★ Mode 1 15\.75% 6\.74%/.test(await (async () => (await page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" }).locator("tbody tr").first().innerText()).replace(/\s+/g, " "))()), String(savedStars));
+  const crown2 = page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" });
+  const tapAt17 = async () => Number((await crown2.locator("tbody tr").first().locator("td").nth(4).innerText()).replace("m", "")) * 1e6;
+  const plainTap = await tapAt17();
+  await page.getByRole("checkbox", { name: "30% off" }).check();
+  await settle(900);
+  const offTap = await tapAt17();
+  check("Star Force", "30% off: the 17→18★ tap costs 70% (to the shown million)", Math.abs(offTap / plainTap - 0.7) < 0.02, `${plainTap} → ${offTap}`);
+  await page.getByRole("checkbox", { name: "30% off" }).uncheck();
+  const boomBox = crown2.getByRole("spinbutton", { name: "Boom cost (meso)" });
+  await boomBox.fill("500000000");
+  await boomBox.press("Enter");
+  await settle(700);
+  await page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" }).getByRole("checkbox", { name: "Modes 4 4 4 4" }).check();
+  await settle(900);
+  const hatDetails = (await api("GET", "/gear?world=45")).json.characters.find((c) => c.name === "MikuBeam").details.hat;
+  const pick17 = (await page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" }).locator("tbody tr").first().innerText()).replace(/\s+/g, " ");
+  check("Star Force", "the boom cost (500m) and Modes 4 4 4 4 are saved with the crown, and 17→18★ is Safeguarded", hatDetails.boomCost === 500_000_000 && hatDetails.safety === "4444" && /Safeguard/.test(pick17), `${JSON.stringify({ boomCost: hatDetails.boomCost, safety: hatDetails.safety })} ${pick17}`);
+  await page.getByRole("combobox", { name: "MVP" }).selectOption("gold");
+  await settle(600);
+  check("Star Force", "the MVP tier is a saved setting", (await api("GET", "/settings")).json.mvp === "gold");
+  const sfGraph = page.getByRole("region", { name: "Star Force graph" });
+  const sfStart = Date.now();
+  await page.getByRole("region", { name: "AbsoLab Mage Crown Star Force" }).getByRole("button", { name: "29→30★" }).click();
+  await page.waitForFunction(() => document.body.innerText.includes("17★ → 30★"), null, { timeout: 20000 });
+  await sfGraph.getByRole("button", { name: "Booms on the way" }).click();
+  check("Star Force", "planning to 30★ is quick, and its booms come in ranges", Date.now() - sfStart < 8000 && (await sfGraph.getByRole("img", { name: "Booms on the way" }).count()) === 1, `${Date.now() - sfStart} ms`);
+  await sfGraph.getByRole("button", { name: "Cost per star" }).click();
+  check("Star Force", "the cost per star graph, up to the target", (await sfGraph.getByRole("heading").innerText()) === "Each next star, up to 30★");
+  await shot("15-star-force");
+  await page.getByRole("button", { name: "Targets", exact: true }).click();
+  const sfTargets = page.getByRole("region", { name: "Targets" });
+  await sfTargets.waitFor();
+  check("Star Force", "Targets: a stop star for every listed item", (await sfTargets.locator("tbody tr").count()) === sfNames.length);
+  await shot("16-star-force-targets");
+  await api("PUT", "/settings", { mvp: "none" });
+  for (const [what, method, where, body, status] of [
+    ["star force: an event it doesn't know", "GET", `/gear/${miku.id}/starforce?events=halfOff&budget=1`, undefined, 400],
+    ["star force: the fixed-star weapon", "GET", `/gear/${miku.id}/starforce/weapon?target=23`, undefined, 404],
+    ["details: boxes it doesn't know", "PUT", `/gear/${miku.id}/hat/details`, { stars: 17, flames: {}, potential: null, hammers: 0, safety: "4441" }, 400],
+    ["settings: an MVP tier it doesn't know", "PUT", "/settings", { mvp: "red" }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -796,6 +860,13 @@ try {
   await page.locator(".rail-page", { hasText: "Equipment" }).click();
   await settle(300);
   check("Layout", "picking Equipment from the menu opens it and closes the menu", (await text("h1")) === "Gear" && !(await page.locator(".rail-group.menu").count()));
+  await page.setViewportSize({ width: 900, height: 900 });
+  await go("/gear/starforce");
+  await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
+  check("Layout", "the Star Force page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 390, height: 800 });
+  await settle(400);
+  check("Layout", "the Star Force page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await page.setViewportSize({ width: 900, height: 900 });
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);

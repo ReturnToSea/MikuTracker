@@ -1,5 +1,6 @@
 import { worldName } from "@miku/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { BUDGET_PRESETS, budgetFrom } from "../lib/flames";
 import type { GearCharacter } from "../api/types";
 import { Avatar } from "./Avatar";
 import { WorldSwitcher } from "./WorldSwitcher";
@@ -60,3 +61,33 @@ export const NoCharacters = ({ world }: { world: number }) => (
     <p className="notice muted">No characters on {worldName(world)} yet. Add them on Home first.</p>
   </section>
 );
+
+// An item's icon on a Gear page (a typed item without one: its name).
+export const ItemIcon = ({ item }: { item: { icon: string | null; name: string } }) => (item.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="slot-text">{item.name}</span>);
+
+// The Targets views' budget: what 1% final damage is worth spending (billions; presets or typed, a typed
+// one used when the box is left).
+export function BudgetBox({ budget, onBudget }: { budget: number; onBudget: (meso: number) => void }) {
+  const [text, setText] = useState(String(budget / 1e9));
+  useEffect(() => setText(String(budget / 1e9)), [budget]);
+  const commit = () => {
+    const meso = budgetFrom(text);
+    if (meso !== null) onBudget(meso);
+    else setText(String(budget / 1e9));
+  };
+  return (
+      <div className="row">
+        <label className="small muted">
+          Spend up to{" "}
+          <input className="text-input count" type="number" step="any" min={0} aria-label="Budget (billions per 1% final damage)" value={text} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />B per 1% final damage
+        </label>
+        <div className="segmented" role="group" aria-label="Budgets">
+          {BUDGET_PRESETS.map((b) => (
+            <button key={b} type="button" aria-pressed={budget === b * 1e9} onClick={() => onBudget(b * 1e9)}>
+              {b}B
+            </button>
+          ))}
+        </div>
+      </div>
+  );
+}

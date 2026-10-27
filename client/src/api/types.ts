@@ -13,5 +13,6 @@ export type { ChecklistBoard, ChecklistCharacter, LimitUse, TaskView } from "../
 export type { SymbolInfo, SymbolsBoard, SymbolsCharacter } from "../../../server/src/services/symbols";
 export type { DetailOptions, GearBoard, GearCharacter, GearItemView } from "../../../server/src/services/gear";
 export type { FlameGraph, FlameItem, FlamesBoard } from "../../../server/src/services/flames";
+export type { StarForceBoard, StarForceDetail, StarForceItem, StarForceRow } from "../../../server/src/services/starForce";
 
 export type ThemeArt = Record<ThemeId, string | null>;

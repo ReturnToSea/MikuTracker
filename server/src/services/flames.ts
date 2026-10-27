@@ -1,12 +1,7 @@
-import type { GearDetailsInput } from "@miku/shared";
 import { bestFlameScore, chanceAtLeast, type FlameMetrics, flameCurves, flameDistribution, flameMetrics, flameScore, type FlameWeights, flameWeights, stopScore } from "../calc/flames";
 import { type FlameRow, flameGrid } from "../calc/gearDetails";
-import { db } from "../db";
-import { gearFile, itemKey } from "../gameFigures/gear";
-import { type JobStats, jobStats } from "../gameFigures/jobStats";
 import { HttpError } from "../http";
-import { ownCharacter } from "./characters";
-import { detailItem, otherItem, statValuesOf } from "./gear";
+import { characterValues, equippedItems } from "./gear";
 import { getSettings } from "./settings";
 
 // The Flames page (v2.1.0): a character's equipped items that can have flames, each with its saved
@@ -49,31 +44,11 @@ interface Flameable {
 }
 
 // The character's items that can have flames: listed ones whose list entry says so, and typed ones
-// whose kind, level and boss tick have been given. A bottom under an overall doesn't count.
+// whose kind, level and boss tick have been given.
 async function flameable(characterId: number): Promise<Flameable[]> {
-  const { items } = gearFile();
-  const rows = await db().gearSlot.findMany({ where: { characterId } });
-  // (a typed item's key is null, which no listed item has)
-  const listed = (item: string | null) => items.find((i) => itemKey(i) === item);
-  const overall = listed(rows.find((r) => r.slot === "top")?.item ?? null)?.overall === true;
-  const out: Flameable[] = [];
-  for (const r of rows) {
-    if (r.slot === "bottom" && overall) continue;
-    const details = r.details ? (JSON.parse(r.details) as GearDetailsInput) : null;
-    const item = listed(r.item);
-    const di = item ? detailItem(item) : details?.other ? otherItem(details.other) : null;
-    if (!di?.flames) continue;
-    out.push({ slot: r.slot, name: item?.name ?? r.other!, icon: item ? `/item-icons/${item.id}.png` : null, level: di.level, boss: di.flames === "boss", starMin: Math.min(di.starMin, di.starMax), weapon: di.slot === "weapon", grid: flameGrid(di), flames: details?.flames ?? {} });
-  }
-  return out;
-}
-
-async function character(ownerId: string, characterId: number) {
-  const c = await ownCharacter(ownerId, characterId);
-  const { jobs } = gearFile();
-  const job: JobStats | null = jobStats(c.job, Object.hasOwn(jobs, c.job) ? jobs[c.job]!.branches : undefined);
-  const values = statValuesOf((await db().statValues.findUnique({ where: { characterId } })) ?? undefined);
-  return { job, values };
+  return (await equippedItems(characterId))
+    .filter((e) => e.di.flames)
+    .map(({ slot, name, icon, di, details }) => ({ slot, name, icon, level: di.level, boss: di.flames === "boss", starMin: Math.min(di.starMin, di.starMax), weapon: di.slot === "weapon", grid: flameGrid(di), flames: details?.flames ?? {} }));
 }
 
 // Where to stop, and the flames to get there: each flame has the chance of rolling at least the stop
@@ -84,7 +59,7 @@ function toStop(dist: [number, number][], stop: number, score: number, price: nu
 }
 
 export async function flamesBoard(ownerId: string, characterId: number, budget: number): Promise<FlamesBoard> {
-  const { job, values } = await character(ownerId, characterId);
+  const { job, values } = await characterValues(ownerId, characterId);
   const { blackFlamePrice: price } = await getSettings(ownerId);
   if (!job) return { known: false, price, budget, items: [] };
   const items = (await flameable(characterId)).map((it): FlameItem => {
@@ -120,7 +95,7 @@ export interface FlameGraph {
 }
 
 export async function flameGraph(ownerId: string, characterId: number, slot: string): Promise<FlameGraph> {
-  const { job, values } = await character(ownerId, characterId);
+  const { job, values } = await characterValues(ownerId, characterId);
   if (!job) throw new HttpError(404, "No flame score for this job yet");
   const it = (await flameable(characterId)).find((i) => i.slot === slot);
   if (!it) throw new HttpError(404, "That slot has no item that can have flames");
