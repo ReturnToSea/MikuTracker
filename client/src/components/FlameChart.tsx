@@ -12,7 +12,9 @@ export const CHART_MODES: [ChartMode, string][] = [
 // The graph for one item: one series at a time, the current score marked. Distribution: every score a
 // flame can give (no grouping), dim up to the current score and accent past it; the curves: what a
 // flame adds on average, and the meso per point it costs, from each score. Hovering shows the point's
-// values (on the distribution, the tallest point near the pointer, so spikes are easy to hit).
+// values (on the distribution, the tallest point near the pointer, so spikes are easy to hit). The
+// Potential page uses it too (v2.3.0), per cube instead of per flame, where clicking the distribution
+// picks a target score, marked on it.
 const W = 720;
 const H = 240;
 const L = 58;
@@ -20,9 +22,11 @@ const R = 12;
 const T = 12;
 const B = 30;
 
-export function FlameChart({ graph, current, mode }: { graph: FlameGraph; current: number; mode: ChartMode }) {
+export function FlameChart({ graph, current, mode, per = "flame", target = null, onPick }: { graph: FlameGraph; current: number; mode: ChartMode; per?: string; target?: number | null; onPick?: (score: number) => void }) {
   const svg = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<number | null>(null);
+  // the score under the pointer (a target can be any score, not only one a roll gives)
+  const under = useRef<number | null>(null);
   const dist = graph.distribution;
   const atLeastOf = useMemo(() => atLeast(dist), [dist]);
 
@@ -43,6 +47,7 @@ export function FlameChart({ graph, current, mode }: { graph: FlameGraph; curren
     const box = svg.current!.getBoundingClientRect();
     const vx = ((e.clientX - box.left) / box.width) * W;
     const score = ((vx - L) / (W - L - R)) * xmax;
+    under.current = score;
     const i = pointAt(points, score, (6 / (W - L - R)) * xmax, mode === "dist");
     setHover(i < 0 ? null : i);
   };
@@ -52,7 +57,7 @@ export function FlameChart({ graph, current, mode }: { graph: FlameGraph; curren
       ? mode === "dist"
         ? [`score ${formatScore(h[0])}: ${(h[1] * 100).toFixed(h[1] < 0.01 ? 3 : 2)}%`, `at least this: ${formatChance(atLeastOf[hover!]!)}`]
         : mode === "gain"
-          ? [`at score ${formatScore(h[0])}`, `+${h[1].toFixed(2)} score a flame`]
+          ? [`at score ${formatScore(h[0])}`, `+${h[1].toFixed(2)} score a ${per}`]
           : [`at score ${formatScore(h[0])}`, `${formatMeso(h[1])} per +1 score`]
       : null;
   const curX = X(current);
@@ -91,6 +96,14 @@ export function FlameChart({ graph, current, mode }: { graph: FlameGraph; curren
         ) : (
           <path className="series better" d={line} />
         )}
+        {mode === "dist" && target !== null && (
+          <>
+            <line className="target" x1={X(target)} x2={X(target)} y1={T} y2={H - B} />
+            <text className="target-label" x={X(target) + 4} y={T + 26}>
+              target {formatScore(target)}
+            </text>
+          </>
+        )}
         <line className="current" x1={curX} x2={curX} y1={T} y2={H - B} />
         <text className="current-label" x={curX + (nearRight ? -5 : 5)} y={T + 12} textAnchor={nearRight ? "end" : "start"}>
           your score {formatScore(current)}
@@ -101,7 +114,22 @@ export function FlameChart({ graph, current, mode }: { graph: FlameGraph; curren
             <circle className="dot" cx={X(h[0])} cy={Y(h[1])} r={4.5} />
           </>
         )}
-        <rect x={L} y={T} width={W - L - R} height={H - T - B} fill="transparent" onMouseMove={move} onMouseLeave={() => setHover(null)} />
+        <rect
+          x={L}
+          y={T}
+          width={W - L - R}
+          height={H - T - B}
+          fill="transparent"
+          className={mode === "dist" && onPick ? "pickable" : undefined}
+          onMouseMove={move}
+          onMouseLeave={() => setHover(null)}
+          onClick={() => {
+            if (mode !== "dist" || !onPick) return;
+            // the point picked, else the score under the pointer, to a tenth
+            if (h) onPick(h[0]);
+            else if (under.current !== null) onPick(Math.round(Math.max(0, under.current) * 10) / 10);
+          }}
+        />
       </svg>
       {tip && h && (
         <div className="chart-tip" style={{ left: `${(X(h[0]) / W) * 100}%`, top: `${(Y(h[1]!) / H) * 100}%` }}>

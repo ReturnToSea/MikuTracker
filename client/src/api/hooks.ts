@@ -5,7 +5,7 @@ import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, StarForceBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, PotentialBoard, PotentialGraph, StarForceBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -23,6 +23,8 @@ export const keys = {
   flameGraph: (id: number, slot: string) => ["flames", id, "graph", slot],
   starForce: (id: number, events: string, budget: number) => ["starforce", id, events, budget],
   starForceDetail: (id: number, slot: string, events: string, target: number) => ["starforce", id, "detail", slot, events, target],
+  potential: (id: number, events: string, budget: number) => ["potential", id, events, budget],
+  potentialGraph: (id: number, slot: string, events: string, target: number | null) => ["potential", id, "graph", slot, events, target],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -165,10 +167,10 @@ export function useSaveSymbol(world: number) {
   });
 }
 
-// After a gear save: the board, and the Flames and Star Force pages' numbers (which follow the items,
-// their details and the stat values).
+// After a gear save: the board, and the Flames, Star Force and Potential pages' numbers (which follow
+// the items, their details and the stat values).
 const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) =>
-  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] })]);
+  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] })]);
 
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
@@ -240,3 +242,12 @@ export const useStarForce = (id: number | undefined, events: string, budget: num
   useQuery({ queryKey: keys.starForce(id ?? 0, events, budget), queryFn: () => api<StarForceBoard>(`/gear/${id}/starforce?events=${events}&budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
 export const useStarForceDetail = (id: number, slot: string, events: string, target: number) =>
   useQuery({ queryKey: keys.starForceDetail(id, slot, events, target), queryFn: () => api<StarForceDetail>(`/gear/${id}/starforce/${slot}?events=${events}&target=${target}`), placeholderData: (previous) => previous });
+
+// The Potential page: a character's items that can have potential with what cubes would do (the stop
+// scores for a budget), and one item's graph (with what reaching a target score costs, when one is
+// picked; only once there's an item, which means a character too). New settings keep showing the last
+// numbers until the new ones come (only for the same character, and the same item).
+export const usePotential = (id: number | undefined, events: string, budget: number) =>
+  useQuery({ queryKey: keys.potential(id ?? 0, events, budget), queryFn: () => api<PotentialBoard>(`/gear/${id}/potential?events=${events}&budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
+export const usePotentialGraph = (id: number | undefined, slot: string | undefined, events: string, target: number | null) =>
+  useQuery({ queryKey: keys.potentialGraph(id ?? 0, String(slot), events, target), queryFn: () => api<PotentialGraph>(`/gear/${id}/potential/${slot}?events=${events}${target === null ? "" : `&target=${target}`}`), enabled: slot !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id && query?.queryKey[3] === slot ? previous : undefined) });

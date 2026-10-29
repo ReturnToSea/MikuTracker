@@ -7,9 +7,9 @@ import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // A made-up character with two items that can take stars. The numbers are the server's to work out
 // (tested there); here, what the page shows and sends.
-const VALUES = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 };
+const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null };
 const SLOTS = ["ring1", "hat", "emblem", "ring2", "pendant1", "face", "badge", "ring3", "pendant2", "eye", "earrings", "medal", "ring4", "weapon", "top", "shoulder", "secondary", "pocket", "belt", "bottom", "gloves", "android", "shoes", "cape", "heart", "ringP", "totem1", "totem2", "totem3"].map((key) => ({ key, label: key, kind: key.replace(/\d$|P$/, "") }));
-const char = (id: number, name: string, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statValues: VALUES, ...extra });
+const char = (id: number, name: string, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: { pct: [{ stat: "STR" as const, field: "strPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: VALUES, ...extra });
 const GEAR: GearBoard = { generated: "2026-10-27", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit", { details: { hat: { stars: 17, flames: { STR: 6 }, potential: null, hammers: 1 } } }), char(2, "Second")] };
 
 const item = (slot: string, name: string, over: Partial<StarForceItem> = {}): StarForceItem => ({

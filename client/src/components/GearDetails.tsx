@@ -4,10 +4,9 @@ import { useGearOptions } from "../api/hooks";
 import type { DetailOptions, FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
 import { formatScore, liveScore, scoreBand } from "../lib/flames";
 import { SLOT_ORDER } from "../lib/gear";
-import { clickStar, draftOf, fitDraft, isDirty, lineChoices, summary, toggleFlame, withRank } from "../lib/gearDetails";
+import { clickStar, draftOf, fitDraft, isDirty, lineChoices, summary, toggleFlame, withRank, rankName } from "../lib/gearDetails";
 
 const Icon = ({ item }: { item: GearItemView | undefined }) => (item?.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="no-icon">no icon</span>);
-const rankName = (r: string) => r[0]!.toUpperCase() + r.slice(1);
 
 // Whether a listed item takes nothing at all (stars, flames, potential, hammers).
 const takesNothing = (i: GearItemView | undefined) => Boolean(i) && !i!.starMax && !i!.flames && !i!.potential && !i!.hammers;
@@ -343,27 +342,44 @@ export function FlameTable({ rows, flames, onChange }: { rows: DetailOptions["fl
   );
 }
 
-// What each stat is worth to the character, typed in; saved when you leave a box.
-const FIELDS: [keyof StatValuesInput, string, string][] = [
-  ["att", "1 ATT =", "main stat"],
-  ["allStat", "1% All Stat =", "main stat"],
-  ["secRatio", "Secondary stat ratio", ""],
-  ["bossDmg", "1% Boss / Damage =", "main stat"],
-  ["fdPer100", "Final damage per 100 flame score", "%"],
-];
-function ValueBox({ value, label, onCommit }: { value: number; label: string; onCommit: (n: number) => void }) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
+// What each stat is worth to the character, typed in; saved when you leave a box. One set for every
+// page (Flames, Star Force, Potential): the potential lines' values from v2.3.0. Only the boxes the
+// character needs, in its own stats' names (the server lists them: statBoxes).
+type NumberField = "att" | "allStat" | "secRatio" | "bossDmg" | "fdPer100" | "attPct" | "critDmg" | "ied300" | "ied380";
+function fieldsFor(c: GearCharacter): [NumberField, string, string][] {
+  const b = c.statBoxes;
+  const attack = b?.magic ? "Magic ATT" : "ATT";
+  const fields: ([NumberField, string, string] | false)[] = [
+    ["att", `1 ${attack} =`, "main stat"],
+    (b?.allStat ?? true) && ["allStat", "1% All Stat =", "main stat"],
+    (b?.secondary ?? true) && ["secRatio", "Secondary stat ratio", ""],
+    ["bossDmg", "1% Boss / Damage =", "main stat"],
+    ["fdPer100", "Final damage per 100 score", "%"],
+    ["attPct", `1% ${attack} =`, "main stat"],
+    ["critDmg", "1% Crit Damage =", "main stat"],
+    ["ied300", "1% IED (300% defense) =", "main stat"],
+    ["ied380", "1% IED (380% defense) =", "main stat"],
+  ];
+  return fields.filter((f): f is [NumberField, string, string] => f !== false);
+}
+// A typed number (an empty box only where `empty` allows it: then null).
+// (`hint`: what an empty box means, shown greyed in it)
+function ValueBox({ value, label, onCommit, empty = false, hint }: { value: number | null; label: string; onCommit: (n: number | null) => void; empty?: boolean; hint?: string }) {
+  const shown = value === null ? "" : String(value);
+  const [text, setText] = useState(shown);
+  useEffect(() => setText(shown), [shown]);
   const commit = () => {
     const n = Number(text);
-    if (text.trim() !== "" && Number.isFinite(n) && n >= 0 && n !== value) onCommit(n);
-    else setText(String(value));
+    if (text.trim() === "" && empty && value !== null) onCommit(null);
+    else if (text.trim() !== "" && Number.isFinite(n) && n >= 0 && n !== value) onCommit(n);
+    else setText(shown);
   };
-  return <input className="text-input count" type="number" step="any" min={0} aria-label={label} value={text} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
+  return <input className="text-input count" type="number" step="any" min={0} aria-label={label} value={text} placeholder={empty ? (hint ?? "—") : undefined} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
 }
+
 export function StatValuesBox({ c, onSave }: { c: GearCharacter; onSave: (v: StatValuesInput) => void }) {
   const v = c.statValues;
-  const changed = FIELDS.some(([k]) => v[k] !== STAT_VALUE_DEFAULTS[k]);
+  const changed = (Object.keys(STAT_VALUE_DEFAULTS) as (keyof StatValuesInput)[]).some((k) => v[k] !== STAT_VALUE_DEFAULTS[k]);
   return (
     <div className="stat-values" role="group" aria-label="Stat values">
       <div className="row between">
@@ -372,18 +388,48 @@ export function StatValuesBox({ c, onSave }: { c: GearCharacter; onSave: (v: Sta
           Reset to defaults
         </button>
       </div>
-      <p className="tiny muted">What each stat is worth to this character, in main stat. Used for the flame scores (Flames page). Get yours from MapleScouter's "Enter Directly" page.</p>
+      <p className="tiny muted">What each stat is worth to this character, in main stat: one set for the Flames, Star Force and Potential pages. Get yours from MapleScouter's "Enter Directly" page.</p>
       <div className="value-grid">
-        {FIELDS.map(([k, label, unit]) => (
+        {c.statBoxes?.pct.map(({ stat, field, main, default: d }) => {
+          const label = `1% ${stat} =`;
+          // empty: the job's default (greyed in the box; emptying a typed value goes back to it)
+          const shown = String(Math.round(d * 100) / 100);
+          return (
+            <label key={field} className="small">
+              <span>{label}</span>
+              <ValueBox value={v[field]} label={label} empty hint={shown} onCommit={(n) => onSave({ ...v, [field]: n })} />
+              <span className="tiny muted">
+                main stat · {main ? "main" : "secondary"}
+                {v[field] !== null && <span className="gold"> (default {shown})</span>}
+              </span>
+            </label>
+          );
+        })}
+        {fieldsFor(c).map(([k, label, unit]) => (
           <label key={k} className="small">
             <span>{label}</span>
-            <ValueBox value={v[k]} label={label} onCommit={(n) => onSave({ ...v, [k]: n })} />
+            <ValueBox value={v[k]} label={label} onCommit={(n) => onSave({ ...v, [k]: n! })} />
             <span className="tiny muted">
               {unit}
               {v[k] !== STAT_VALUE_DEFAULTS[k] && <span className="gold"> (default {STAT_VALUE_DEFAULTS[k]})</span>}
             </span>
           </label>
         ))}
+        <label className="small">
+          <span>1 s skill cooldown =</span>
+          <ValueBox value={v.cooldown} label="1 s skill cooldown =" empty onCommit={(n) => onSave({ ...v, cooldown: n })} />
+          <span className="tiny muted">% final damage{v.cooldown === null && " (empty: counts as nothing; it depends on the class)"}</span>
+        </label>
+        <div className="small value-switch">
+          <span>Bosses' defense (for IED)</span>
+          <div className="segmented" role="group" aria-label="Bosses' defense">
+            {([300, 380] as const).map((d) => (
+              <button key={d} type="button" aria-pressed={v.bossDef === d} onClick={() => v.bossDef !== d && onSave({ ...v, bossDef: d })}>
+                {d}%
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

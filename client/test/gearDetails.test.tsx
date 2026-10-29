@@ -164,8 +164,8 @@ const HAT = view("1000001", "Test Hat", "hat", { stats: { str: 40, dex: 40, att:
 const MEDAL = view("1000002", "Test Medal", "medal", { stats: { str: 10 }, starMax: 0, flames: "boss", hammers: OPTIONS.hammers! });
 const OZ = view("1000003-4", "Test Oz Ring Lv. 4", "ring", { oz: { kind: "active", level: 4 }, starMax: 0 });
 const HAT2 = view("1000004", "Other Hat", "hat", { stats: { str: 10 }, starMax: 5, flames: "boss", potential: "hat" });
-const DEFAULTS = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 };
-const char = (over: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: [HAT.key, MEDAL.key, OZ.key, HAT2.key], equipped: { hat: { item: HAT.key }, medal: { item: MEDAL.key }, ring1: { item: OZ.key } }, details: {}, statValues: DEFAULTS, ...over });
+const DEFAULTS = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null };
+const char = (over: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: [HAT.key, MEDAL.key, OZ.key, HAT2.key], equipped: { hat: { item: HAT.key }, medal: { item: MEDAL.key }, ring1: { item: OZ.key } }, details: {}, statBoxes: { pct: [{ stat: "LUK" as const, field: "lukPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: DEFAULTS, ...over });
 const gearBoard = (c: GearCharacter): GearBoard => ({ generated: "2026-10-24", slots: SLOTS, items: [HAT, MEDAL, OZ, HAT2], jobs: {}, characters: [c] });
 
 async function show(c: GearCharacter, routes: Record<string, unknown> = {}) {
@@ -459,7 +459,7 @@ describe("stat values", () => {
     const s = await show(char());
     const box = within(await screen.findByRole("group", { name: "Stat values" }));
     const att = box.getByRole("spinbutton", { name: "1 ATT =" }) as HTMLInputElement;
-    expect([att.value, (box.getByRole("spinbutton", { name: "Final damage per 100 flame score" }) as HTMLInputElement).value]).toEqual(["4", "0.785"]);
+    expect([att.value, (box.getByRole("spinbutton", { name: "Final damage per 100 score" }) as HTMLInputElement).value]).toEqual(["4", "0.785"]);
     expect(box.getByRole("button", { name: "Reset to defaults" })).toHaveProperty("disabled", true);
     await userEvent.clear(att);
     await userEvent.type(att, "2.6{Enter}");
@@ -467,6 +467,54 @@ describe("stat values", () => {
     expect(await box.findByText("(default 4)")).toBeTruthy();
     await userEvent.click(box.getByRole("button", { name: "Reset to defaults" }));
     await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, att: 2.6 }, DEFAULTS]));
+  });
+
+  it("the potential lines' values (v2.3.0): a box each, the skill cooldown left empty until typed (and emptied again), and the bosses' defense for IED", async () => {
+    const s = await show(char());
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const value = (name: string) => (box.getByRole("spinbutton", { name }) as HTMLInputElement).value;
+    // a Night Walker: LUK its main stat, DEX its secondary (the job's defaults until typed)
+    expect(["1% LUK =", "1% DEX =", "1% ATT =", "1% Crit Damage =", "1% IED (300% defense) =", "1% IED (380% defense) =", "1 s skill cooldown ="].map(value)).toEqual(["", "", "53.82", "42.38", "15.6", "20.52", ""]);
+    // the job's defaults, greyed in the empty boxes
+    expect(["1% LUK =", "1% DEX ="].map((name) => box.getByRole("spinbutton", { name }).getAttribute("placeholder"))).toEqual(["12.97", "1.68"]);
+    expect(box.queryByRole("spinbutton", { name: "1% STR =" })).toBeNull();
+    const cooldown = box.getByRole("spinbutton", { name: "1 s skill cooldown =" });
+    await userEvent.type(cooldown, "2.5{Enter}");
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }]));
+    await userEvent.clear(cooldown);
+    await userEvent.tab();
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }, DEFAULTS]));
+    const defense = within(box.getByRole("group", { name: "Bosses' defense" }));
+    expect(defense.getByRole("button", { name: "380%" }).getAttribute("aria-pressed")).toBe("true");
+    await userEvent.click(defense.getByRole("button", { name: "380%" }));
+    await userEvent.click(defense.getByRole("button", { name: "300%" }));
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }, DEFAULTS, { ...DEFAULTS, bossDef: 300 }]));
+  });
+
+  it("a stat's 1% value: its job's default until typed, then saved as typed and marked against the default", async () => {
+    const s = await show(char());
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const luk = box.getByRole("spinbutton", { name: "1% LUK =" });
+    await userEvent.type(luk, "13.5{Enter}");
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, lukPct: 13.5 }]));
+    expect(await box.findByText("(default 12.97)")).toBeTruthy();
+    // emptied: back to the job's default, without resetting anything else
+    await userEvent.clear(luk);
+    await userEvent.tab();
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, lukPct: 13.5 }, DEFAULTS]));
+  });
+
+  it.each([
+    ["Xenon: its three main stats, each its own box; no secondary stat", { pct: [{ stat: "STR", field: "strPct", main: true, default: 12.97 / 3 }, { stat: "DEX", field: "dexPct", main: true, default: 12.97 / 3 }, { stat: "LUK", field: "lukPct", main: true, default: 12.97 / 3 }], magic: false, secondary: false, allStat: true }, ["1% STR =", "1% DEX =", "1% LUK =", "1% All Stat =", "1 ATT ="], ["Secondary stat ratio", "1% INT ="]],
+    ["Demon Avenger: HP; no all stat or secondary stat", { pct: [{ stat: "HP", field: "hpPct", main: true, default: 12.97 }], magic: false, secondary: false, allStat: false }, ["1% HP =", "1 ATT ="], ["1% All Stat =", "Secondary stat ratio", "1% STR ="]],
+    ["a mage: Magic ATT", { pct: [{ stat: "INT", field: "intPct", main: true, default: 12.97 }, { stat: "LUK", field: "lukPct", main: false, default: 1.68 }], magic: true, secondary: true, allStat: true }, ["1% INT =", "1% LUK =", "1 Magic ATT =", "1% Magic ATT ="], ["1 ATT =", "1% ATT ="]],
+  ] as const)("only the boxes a character needs: %s", async (_, statBoxes, shown, hidden) => {
+    await show(char({ statBoxes: statBoxes as unknown as GearCharacter["statBoxes"] }));
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    for (const name of shown) expect(box.getByRole("spinbutton", { name })).toBeTruthy();
+    for (const name of hidden) expect(box.queryByRole("spinbutton", { name })).toBeNull();
+    // a default shown rounded (Xenon's 12.97 ÷ 3 = 4.3233…)
+    if (statBoxes.pct[0]!.default < 5) expect(box.getByRole("spinbutton", { name: "1% STR =" }).getAttribute("placeholder")).toBe("4.32");
   });
 
   it("an emptied or negative box is put back, not saved", async () => {

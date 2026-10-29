@@ -1,9 +1,10 @@
-import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, starForceItemQuery, starForceQuery, statValuesInput } from "@miku/shared";
+import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, potentialItemQuery, potentialQuery, starForceItemQuery, starForceQuery, statValuesInput } from "@miku/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { currentOwner } from "../owner";
 import { flameGraph, flamesBoard } from "../services/flames";
 import { gearBoard, listedItemOptions, otherItemOptions, saveGear, saveGearDetails, saveStatValues } from "../services/gear";
+import { potentialBoard, potentialGraph } from "../services/potential";
 import { starForceBoard, starForceDetail } from "../services/starForce";
 
 const idParam = z.coerce.number().int().positive();
@@ -43,6 +44,17 @@ gearRouter.get("/:characterId/starforce", async (req, res) => {
 gearRouter.get("/:characterId/starforce/:slot", async (req, res) => {
   const q = starForceItemQuery.parse(req.query);
   res.json(await starForceDetail(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot, q.events, q.target));
+});
+
+// The Potential page: a character's items that can have potential with what cubes would do, and one
+// item's graph (with the cost of reaching a score, when one is asked for).
+gearRouter.get("/:characterId/potential", async (req, res) => {
+  const q = potentialQuery.parse(req.query);
+  res.json(await potentialBoard(currentOwner(res), idParam.parse(req.params.characterId), q.events, q.budget));
+});
+gearRouter.get("/:characterId/potential/:slot", async (req, res) => {
+  const q = potentialItemQuery.parse(req.query);
+  res.json(await potentialGraph(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot, q.events, q.target));
 });
 
 // An item's stars, flames, potential and hammers.

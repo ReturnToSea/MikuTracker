@@ -44,7 +44,7 @@ const ITEMS = [HAT, ROYAL, SUIT, SHIRT, PANTS, SHOES, GLOVES, GENESIS, CLAW, SWO
 // Built by hand (not with byKey, which is tested on its own below).
 const items = new Map(ITEMS.map((i) => [i.key, i]));
 
-const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, details: {}, statValues: { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 }, ...extra });
+const walker = (equipped: Equipped = {}, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: ITEMS.filter((i) => i !== SWORD).map((i) => i.key), equipped, details: {}, statBoxes: { pct: [{ stat: "LUK" as const, field: "lukPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null }, ...extra });
 const board = (characters: GearCharacter[]): GearBoard => ({ generated: "2026-10-23", slots: SLOTS, items: ITEMS, jobs: { "Night Walker": { branches: ["Thief"], weapons: ["Claw"] } }, characters });
 const on = (...pairs: [string, GearItemView | string][]): Equipped => Object.fromEntries(pairs.map(([slot, x]) => [slot, typeof x === "string" ? { other: x } : { item: x.key }]));
 

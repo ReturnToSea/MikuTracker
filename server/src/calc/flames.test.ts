@@ -7,7 +7,8 @@ import { type DetailItem, type FlameRow, flameGrid } from "./gearDetails";
 
 // Numbers worked out by hand (written next to each), and checked against mafhcow's flame calculator's
 // own engine (js/flameEngine.js, run on the same items: 2026-10-24), not by running the same code.
-const V = { ...STAT_VALUE_DEFAULTS }; // 1 ATT = 4, 1% all stat = 10, secondary 0.125, 1% boss/damage = 12
+// the v2.1.0 defaults the hand-worked numbers below use (all stat % became 14.65 in v2.3.0)
+const V = { ...STAT_VALUE_DEFAULTS, allStat: 10 }; // 1 ATT = 4, 1% all stat = 10, secondary 0.125, 1% boss/damage = 12
 const warrior = jobStats("Ren", ["Warrior"])!;
 const item = (over: Partial<DetailItem>): DetailItem => ({ slot: "hat", level: 200, stats: {}, classStats: ["str", "dex"], starMin: 0, starMax: 30, flames: "boss", ...over });
 const hatGrid = flameGrid(item({}));
@@ -54,7 +55,7 @@ describe("flameWeights", () => {
   });
 
   it("follows the character's own values", () => {
-    const w = flameWeights(warrior, { att: 3, allStat: 11, secRatio: 0.1, bossDmg: 9, fdPer100: 1 }, true);
+    const w = flameWeights(warrior, { ...STAT_VALUE_DEFAULTS, att: 3, allStat: 11, secRatio: 0.1, bossDmg: 9, fdPer100: 1 }, true);
     expect([w.DEX, w["STR+DEX"], w.ATT, w["All Stats %"], w["Damage %"]]).toEqual([0.1, 1.1, 3, 11, 9]);
   });
 });

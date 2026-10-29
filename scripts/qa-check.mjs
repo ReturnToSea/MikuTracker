@@ -580,11 +580,11 @@ try {
   await pickIcon("AbsoLab Mage Crown");
   check("Gear details", "switching items drops unsaved changes, without asking", (await details().getByText("Saved", { exact: true }).count()) === 1 && /\(\+22★\)/.test(await tipText()));
   const values = page.getByRole("group", { name: "Stat values" });
-  await values.getByRole("spinbutton", { name: "1 ATT =" }).fill("2.6");
-  await values.getByRole("spinbutton", { name: "1 ATT =" }).press("Enter");
+  await values.getByRole("spinbutton", { name: "1 Magic ATT =" }).fill("2.6");
+  await values.getByRole("spinbutton", { name: "1 Magic ATT =" }).press("Enter");
   await settle();
   await go("/gear");
-  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "10");
+  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 Magic ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "14.65");
   await pickIcon("AbsoLab Mage Crown");
   await details().getByRole("button", { name: "22 stars" }).waitFor();
   await shot("11-gear-details");
@@ -594,7 +594,7 @@ try {
     ["details: a potential line it can't have", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Boss Damage +40%", null, null] }, hammers: 0 }, 400],
     ["details: an empty slot", "PUT", `/gear/${miku.id}/android/details`, { stars: 0, flames: {}, potential: null, hammers: 0 }, 404],
     ["options: an unknown item", "GET", "/gear/options?item=1234567", undefined, 404],
-    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 12, secRatio: 0.1, bossDmg: 10, fdPer100: 0.8 }, 400],
+    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cooldown: null }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -604,7 +604,7 @@ try {
   await go("/gear");
   await page.locator(".rail-group").getByRole("link", { name: "Flames" }).click();
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
-  check("Flames", "the Gear group lists Equipment and Flames; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames,Star Force" && (await page.locator(".rail-page.active").innerText()) === "Flames");
+  check("Flames", "the Gear group lists its pages; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames,Star Force,Potential" && (await page.locator(".rail-page.active").innerText()) === "Flames");
   const flameBoard = async () => (await api("GET", `/gear/${miku.id}/flames?budget=10000000000`)).json;
   let fb = await flameBoard();
   const rowNames = await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
@@ -612,14 +612,14 @@ try {
   check("Flames", "only the flameable items, cheapest per 1% final damage first", rowNames.join("|") === fb.items.map((i) => i.name).join("|") && costs.every((c, i) => i === 0 || costs[i - 1] <= c) && !rowNames.some((n) => /Ring|Medal|Emblem|Badge|Talisman/.test(n)), rowNames.join(", "));
   await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
   const crown = page.getByRole("region", { name: "AbsoLab Mage Crown flames" });
-  // by hand (a Kanna: INT main, LUK secondary, Magic ATT): INT T7 63; the best: all stats T7 70 + INT 63 + INT+LUK 35 × 1.125 + INT+STR 35 = 207.375
-  check("Flames", "the crown's score worked out by hand: 63 of a best of 207.4", /^63 \/ 207\.4 best/.test(await crown.locator(".flame-tile.wide .big").first().innerText()), await crown.locator(".flame-tile.wide .big").first().innerText());
+  // by hand (a Kanna: INT main, LUK secondary, Magic ATT; 1% all stat = 14.65 from v2.3.0): INT T7 63; the best: all stats T7 7 × 14.65 = 102.55 + INT 63 + INT+LUK 35 × 1.125 = 39.38 + INT+STR 35 = 239.93
+  check("Flames", "the crown's score worked out by hand: 63 of a best of 239.9", /^63 \/ 239\.9 best/.test(await crown.locator(".flame-tile.wide .big").first().innerText()), await crown.locator(".flame-tile.wide .big").first().innerText());
   await crown.getByRole("button", { name: "All Stats % tier 7: 7" }).click();
   check("Flames", "a click is unsaved: the numbers stay until Save", (await crown.getByText(/Unsaved changes/).count()) === 1 && /^63 /.test(await crown.locator(".flame-tile.wide .big").first().innerText()));
   await crown.getByRole("button", { name: "Save", exact: true }).click();
   await settle(800);
-  // 63 + all stats T7 7 × 10 = 133
-  check("Flames", "saved: the score is 63 + 70 = 133, and the row is sorted again", /^133 /.test(await page.getByRole("region", { name: "AbsoLab Mage Crown flames" }).locator(".flame-tile.wide .big").first().innerText()));
+  // 63 + all stats T7 7 × 14.65 = 165.55
+  check("Flames", "saved: the score is 63 + 102.55 = 165.55, and the row is sorted again", /^165\.6 /.test(await page.getByRole("region", { name: "AbsoLab Mage Crown flames" }).locator(".flame-tile.wide .big").first().innerText()));
   fb = await flameBoard();
   check("Flames", "the same flames as the Equipment page (one saved set)", JSON.stringify(fb.items.find((i) => i.slot === "hat").flames) === JSON.stringify({ INT: 7, "All Stats %": 7 }));
   const graph = page.getByRole("region", { name: "One flame's score" });
@@ -645,7 +645,7 @@ try {
   await go("/gear");
   await page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name: "AbsoLab Mage Crown", exact: true }).waitFor();
   const crownScore = await page.getByRole("group", { name: "Equipped items" }).getByRole("button", { name: "AbsoLab Mage Crown", exact: true }).locator("xpath=..").locator(".icon-score").innerText().catch(() => null);
-  check("Flames", "the Equipment page shows the crown's score (133) under its icon", crownScore === "133", String(crownScore));
+  check("Flames", "the Equipment page shows the crown's score (165.55, rounded: 166) under its icon", crownScore === "166", String(crownScore));
   for (const [what, method, where, body, status] of [
     ["flames: no budget", "GET", `/gear/${miku.id}/flames`, undefined, 400],
     ["flames: a slot without a flameable item", "GET", `/gear/${miku.id}/flames/ring1`, undefined, 404],
@@ -715,6 +715,90 @@ try {
     ["star force: the fixed-star weapon", "GET", `/gear/${miku.id}/starforce/weapon?target=23`, undefined, 404],
     ["details: boxes it doesn't know", "PUT", `/gear/${miku.id}/hat/details`, { stars: 17, flames: {}, potential: null, hammers: 0, safety: "4441" }, 400],
     ["settings: an MVP tier it doesn't know", "PUT", "/settings", { mvp: "red" }, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
+  // ---------- the Potential page (v2.3.0) ----------
+  await go("/gear");
+  await page.locator(".rail-group").getByRole("link", { name: "Potential" }).click();
+  await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
+  const potBoard = async (events = "") => (await api("GET", `/gear/${miku.id}/potential?events=${events}&budget=10000000000`)).json;
+  let pb = await potBoard();
+  const potNames = await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+  const potCosts = pb.items.map((i) => (i.cheaper ? i.cubes[i.cheaper].mesoPerFd : Infinity));
+  check("Potential", "the Gear group's fourth page: the items that can have potential, cheapest per 1% final damage first", (await text("h1")) === "Potential" && (await page.locator(".rail-page.active").innerText()) === "Potential" && potNames.join("|") === pb.items.map((i) => i.name).join("|") && potNames.includes("AbsoLab Mage Crown") && potCosts.every((c, i) => i === 0 || potCosts[i - 1] <= c), potNames.join(", "));
+  await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  const crownPot = () => page.getByRole("region", { name: "AbsoLab Mage Crown potential" });
+  // by hand (a Kanna, INT main): the line saved on the Equipment page, INT +13% × 12.97 = 168.61
+  check("Potential", "the crown's saved line (from the Equipment page) scored by hand: INT +13% × 12.97 = 168.6", /Score 168\.6 /.test(await crownPot().locator(".page-head").innerText()), await crownPot().locator(".page-head").innerText());
+  const chanceTile = async () => (await crownPot().locator(".flame-tile", { hasText: "Chance per cube of better" }).innerText()).replace(/\n/g, " ");
+  const cheaperCube = pb.items.find((i) => i.slot === "hat").cheaper;
+  const better = pb.items.find((i) => i.slot === "hat").cubes[cheaperCube].better;
+  check("Potential", "the chance per cube as 1 in X cubes, from the cheaper cube", (await chanceTile()).includes(`1 in ${Math.round(1 / better).toLocaleString("en-US")}`), await chanceTile());
+  await crownPot().getByRole("combobox", { name: "Potential line 2" }).selectOption("INT +10%");
+  check("Potential", "a line picked is unsaved: 168.61 + INT +10% × 12.97 = 298.3", (await crownPot().getByText(/Unsaved: 298\.3 score/).count()) === 1 && /Score 168\.6 /.test(await crownPot().locator(".page-head").innerText()));
+  const gearBefore = (await api("GET", "/gear?world=45")).json.characters.find((c) => c.id === miku.id).details.hat;
+  await crownPot().getByRole("button", { name: "Save", exact: true }).click();
+  await settle(800);
+  await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  const gearAfter = (await api("GET", "/gear?world=45")).json.characters.find((c) => c.id === miku.id).details.hat;
+  check("Potential", "saved: 298.3 here, and the same lines on the Equipment page (one saved set, the stars and flames kept)", /Score 298\.3 /.test(await crownPot().locator(".page-head").innerText()) && JSON.stringify(gearAfter.potential) === JSON.stringify({ rank: "legendary", lines: ["INT +13%", "INT +10%", null] }) && gearAfter.stars === gearBefore.stars && JSON.stringify(gearAfter.flames) === JSON.stringify(gearBefore.flames), JSON.stringify(gearAfter));
+  const otherCube = cheaperCube === "glowing" ? "Bright" : "Glowing";
+  await crownPot().getByRole("group", { name: "Cube" }).getByRole("button", { name: otherCube, exact: true }).click();
+  pb = await potBoard();
+  const otherKey = otherCube.toLowerCase();
+  const mesoTile = async () => (await crownPot().locator(".flame-tile", { hasText: "Meso / 1% FD" }).innerText()).replace(/\n/g, " ");
+  check("Potential", "switching cubes shows the other cube's figures", (await crownPot().getByRole("group", { name: "Cube" }).getByRole("button", { name: otherCube, exact: true }).getAttribute("aria-pressed")) === "true" && (await mesoTile()).length > 0 && (await page.getByRole("region", { name: "One cube's result" }).getByRole("heading").innerText()).includes(otherCube), `${otherKey}: ${await mesoTile()}`);
+  await page.getByRole("checkbox", { name: "Cube sale (25% off)" }).check();
+  await settle(600);
+  check("Potential", "a cube sale: Glowing 9m and Bright 16.5m a cube", /Glowing 9m · Bright 16\.5m a cube/.test(await page.locator("section.block").first().innerText()) || /Glowing 9m · Bright 16\.5m a cube/.test(await page.locator("main").innerText()), (await potBoard("sale")).prices && JSON.stringify((await potBoard("sale")).prices));
+  await page.getByRole("checkbox", { name: "Cube sale (25% off)" }).uncheck();
+  const unsaved = pb.items.find((i) => i.rank === null);
+  if (unsaved) {
+    await page.getByRole("checkbox", { name: "Double Miracle Time" }).check();
+    await settle(600);
+    await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: unsaved.name, exact: true }).click();
+    const tile = (await page.getByRole("region", { name: `${unsaved.name} potential` }).locator(".flame-tile", { hasText: "Chance per cube of better" }).innerText()).replace(/\n/g, " ");
+    check("Potential", "an item with no potential counts as Rare; Double Miracle Time doubles its rank-up chance (14% → 28% with Glowing)", /rank-up (28|34)% a cube/.test(tile) && /No potential saved/.test(await page.getByRole("region", { name: `${unsaved.name} potential` }).innerText()), tile);
+    await page.getByRole("checkbox", { name: "Double Miracle Time" }).uncheck();
+    await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  } else check("Potential", "an item with no potential to show the rank-up on", false, "every item has potential saved");
+  const potGraph = page.getByRole("region", { name: "One cube's result" });
+  await potGraph.getByRole("img", { name: "Distribution" }).waitFor();
+  // (the graph is below the window: scroll to it, or the mouse lands outside the page)
+  await potGraph.locator("svg rect[fill='transparent']").scrollIntoViewIfNeeded();
+  const plot = await potGraph.locator("svg rect[fill='transparent']").boundingBox();
+  await page.mouse.move(plot.x + plot.width * 0.9, plot.y + plot.height * 0.6);
+  await page.mouse.click(plot.x + plot.width * 0.9, plot.y + plot.height * 0.6);
+  const targetTile = crownPot().getByLabel("Target");
+  const targetShown = await targetTile.waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check("Potential", "clicking the distribution, even between its points, shows what reaching that score costs with each cube", targetShown && /Glowing[\s\S]*Bright/.test(await targetTile.innerText().catch(() => "")), (await targetTile.innerText().catch(() => "")).replace(/\n/g, " "));
+  await shot("17-potential");
+  await targetTile.getByRole("button", { name: "Clear" }).click().catch(() => {});
+  await page.getByRole("button", { name: "Targets", exact: true }).click();
+  const potTargets = page.getByRole("region", { name: "Targets" });
+  await potTargets.waitFor();
+  check("Potential", "Targets: a stop score for every item", (await potTargets.locator("tbody tr").count()) === pb.items.length);
+  await shot("18-potential-targets");
+  const values2 = page.getByRole("group", { name: "Stat values" });
+  await values2.getByRole("spinbutton", { name: "1% INT =" }).fill("10");
+  await values2.getByRole("spinbutton", { name: "1% INT =" }).press("Enter");
+  await settle(800);
+  pb = await potBoard();
+  check("Stat values", "only the boxes a Kanna needs, in its own stats: INT and LUK, Magic ATT", (await values2.getByRole("spinbutton", { name: "1% LUK =" }).count()) === 1 && (await values2.getByRole("spinbutton", { name: "1% STR =" }).count()) === 0 && (await values2.getByRole("spinbutton", { name: "1% Magic ATT =" }).count()) === 1 && (await values2.getByRole("spinbutton", { name: "1% ATT =" }).count()) === 0);
+  // INT +13% and +10% at 10 a percent = 230
+  check("Potential", "the stat values change the scores: 1% main stat = 10 makes the crown 230", pb.items.find((i) => i.slot === "hat").score === 230, String(pb.items.find((i) => i.slot === "hat").score));
+  await values2.getByRole("spinbutton", { name: "1% INT =" }).fill("12.97");
+  await values2.getByRole("spinbutton", { name: "1% INT =" }).press("Enter");
+  await settle(600);
+  for (const [what, method, where, body, status] of [
+    ["potential: no budget", "GET", `/gear/${miku.id}/potential`, undefined, 400],
+    ["potential: an event it doesn't know", "GET", `/gear/${miku.id}/potential?events=free&budget=1`, undefined, 400],
+    ["potential: a slot without an item that can have potential", "GET", `/gear/${miku.id}/potential/android`, undefined, 404],
+    ["potential: a negative target", "GET", `/gear/${miku.id}/potential/hat?target=-1`, undefined, 400],
+    ["stat values: a bosses' defense it doesn't know", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 350, cooldown: null }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -867,6 +951,14 @@ try {
   await page.setViewportSize({ width: 390, height: 800 });
   await settle(400);
   check("Layout", "the Star Force page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 900, height: 900 });
+  await go("/gear/potential");
+  await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
+  check("Layout", "the Potential page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 390, height: 800 });
+  await settle(400);
+  check("Layout", "the Potential page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await shot("19-potential-phone");
   await page.setViewportSize({ width: 900, height: 900 });
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);

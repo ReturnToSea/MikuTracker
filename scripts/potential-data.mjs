@@ -1,16 +1,16 @@
 // node scripts/potential-data.mjs: turns Nexon Korea's potential tables (downloaded by
-// scripts/potential-fetch.mjs into tempdata/nexon-potential/) into server/src/gameFigures/potential-lines.json:
-// for each kind of item, rank and level range, the lines each of the 3 potential lines can roll, with
+// scripts/potential-fetch.mjs into tempdata/nexon-potential/ for the black cube and
+// tempdata/nexon-potential-red/ for the red one) into server/src/gameFigures/potential-lines.json: for
+// each cube, kind of item, rank and level range, the lines each of the 3 potential lines can roll, with
 // their chance, in English. By hand, after a patch. Never part of the app or its tests.
 //
-// GMS differs from Korea in one known way: GMS items from Lv. 151 get the values Korea gives from
-// Lv. 201 (a GMS bug report on Nexon's forum, brendonmay's cubing calculator, and the wiki's
-// level table). The app applies that when it picks a level range (server/src/gameFigures/potential.ts).
+// GMS differs from Korea in one known way, applied by the app (server/src/gameFigures/potential.ts):
+// items from Lv. 151 get +1% on some lines. Korea's Lv. 201+ tables aren't GMS's, so they're left out.
 // Lines it can't translate are listed, never guessed.
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-const IN = path.resolve(import.meta.dirname, "../tempdata/nexon-potential");
+const FOLDERS = { black: "nexon-potential", red: "nexon-potential-red" };
 const OUT = path.resolve(import.meta.dirname, "../server/src/gameFigures/potential-lines.json");
 const unescape = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, " ");
 const text = (html) => unescape(html.replace(/<[^>]+>/g, "")).trim();
@@ -65,11 +65,12 @@ const ref = (line) => {
 };
 const tableList = [];
 const tableIndex = new Map();
-const data = {};
+const data = { black: {}, red: {} };
 let files = 0;
-for (const file of readdirSync(IN).filter((f) => f.endsWith(".html"))) {
+for (const [cube, folder] of Object.entries(FOLDERS)) for (const file of readdirSync(path.resolve(import.meta.dirname, "../tempdata", folder)).filter((f) => f.endsWith(".html"))) {
   const [part, rank, level] = file.replace(/\.html$/, "").split("_");
-  const html = readFileSync(path.join(IN, file), "utf8");
+  if (level === "201") continue;
+  const html = readFileSync(path.resolve(import.meta.dirname, "../tempdata", folder, file), "utf8");
   const tables = [...html.matchAll(/<table class="cube_data[^"]*">([\s\S]*?)<\/table>/g)].map((t) => t[1]);
   if (tables.length !== 3) continue;
   const positions = tables.map((t) => {
@@ -87,9 +88,9 @@ for (const file of readdirSync(IN).filter((f) => f.endsWith(".html"))) {
     tableIndex.set(key, tableList.length);
     tableList.push(positions);
   }
-  ((data[part.replace("-", " ")] ??= {})[level] ??= {})[rank] = tableIndex.get(key);
+  ((data[cube][part.replace("-", " ")] ??= {})[level] ??= {})[rank] = tableIndex.get(key);
   files += 1;
 }
-writeFileSync(OUT, `${JSON.stringify({ source: "Nexon Korea's official potential tables (maplestory.nexon.com/Guide/OtherProbability/cube/black), read by hand with scripts/potential-fetch.mjs", read: new Date().toISOString().slice(0, 10), levels: "the lowest level of each of Nexon's level ranges: 0 (0–9), 10, 11 (11–19), 20, 21 (21–29), …, 110, 111 (111–119), 120 (120–200), 201 (201–250)", chances: "1/10,000 %", lines: lineList, tables: tableList, parts: data })}\n`);
+writeFileSync(OUT, `${JSON.stringify({ source: "Nexon Korea's official potential tables (maplestory.nexon.com/Guide/OtherProbability/cube/black and /red), read by hand with scripts/potential-fetch.mjs", read: new Date().toISOString().slice(0, 10), levels: "the lowest level of each of Nexon's level ranges: 0 (0–9), 10, 11 (11–19), 20, 21 (21–29), …, 110, 111 (111–119), 120 (120 and up)", chances: "1/10,000 %", lines: lineList, tables: tableList, cubes: data })}\n`);
 console.log(`${files} tables → ${OUT}`);
 console.log(untranslated.size ? `Not translated (left out):\n- ${[...untranslated.values()].join("\n- ")}` : "Every line translated.");

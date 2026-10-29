@@ -164,6 +164,11 @@ export const gearOptionsQuery = z.union([
 // rounded on its own: the server and the page add scores up the same way.
 export const flameLinePoints = (worth: number, value: number | null): number => Math.round(worth * (value ?? 0) * 100);
 
+// An item's ignore defense lines combined as in game (v2.3.0): each line leaves 1 − its share of the enemy's
+// defense, multiplied in the lines' order (`left`); the combined share is worth `worth` main stat a percent.
+// In hundredths of a point, so the server and the page add a score up the same way.
+export const iedLinePoints = (worth: number, left: number): number => Math.round(worth * (1 - left) * 100 * 100);
+
 // The Star Force page: the events on (any of them, comma separated), the budget its stop stars are for,
 // and for one item the star to plan to.
 export const SF_EVENTS = ["thirtyOff", "fewerBooms", "fiveTenFifteen", "plusOne"] as const;
@@ -180,11 +185,49 @@ export const starForceItemQuery = z.strictObject({ events: sfEvents, target: z.c
 export const flamesQuery = z.strictObject({ budget: z.coerce.number().min(0).max(1e15) });
 export type FlamesQuery = z.infer<typeof flamesQuery>;
 
-// What each stat is worth to a character, in main stat (typed in on the gear tab).
-export const STAT_VALUE_DEFAULTS = { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 } as const;
+// The Potential page (v2.3.0): the events on (Double Miracle Time, a cube sale), the budget its stop
+// scores are for, and for one item's graph a score to see the cost of reaching.
+export const CUBE_EVENTS = ["miracle", "sale"] as const;
+const cubeEvents = z
+  .string()
+  .max(100)
+  .default("")
+  .transform((s) => (s ? s.split(",") : []))
+  .pipe(z.array(z.enum(CUBE_EVENTS)));
+export const potentialQuery = z.strictObject({ events: cubeEvents, budget: z.coerce.number().min(0).max(1e15) });
+export const potentialItemQuery = z.strictObject({ events: cubeEvents, target: z.coerce.number().min(0).max(1e6).optional() });
+
+// What each stat is worth to a character, in main stat (typed in on the gear tab), one set shared by
+// every page. The first five from v2.1.0 (all stat % was 10 until v2.3.0: below a main stat % line,
+// which it includes); the potential lines' from v2.3.0, from the owner's MapleScouter sheet. 1% of each
+// stat (STR, DEX, INT, LUK, and HP for a Demon Avenger) is its own value, empty until typed: then the
+// job's default (STAT_PCT_DEFAULTS). Ignore defense is worth more against tougher bosses: one value for
+// 300% defense, one for 380%, and which applies. Skill cooldown is worth a share of final damage per
+// second, which depends on the class: none until typed (it counts as nothing).
 const statValue = z.number().min(0).max(10000);
-export const statValuesInput = z.strictObject({ att: statValue, allStat: statValue, secRatio: statValue, bossDmg: statValue, fdPer100: statValue });
+export const statValuesInput = z.strictObject({
+  att: statValue,
+  allStat: statValue,
+  secRatio: statValue,
+  bossDmg: statValue,
+  fdPer100: statValue,
+  strPct: statValue.nullable(),
+  dexPct: statValue.nullable(),
+  intPct: statValue.nullable(),
+  lukPct: statValue.nullable(),
+  hpPct: statValue.nullable(),
+  attPct: statValue,
+  critDmg: statValue,
+  ied300: statValue,
+  ied380: statValue,
+  bossDef: z.union([z.literal(300), z.literal(380)]),
+  cooldown: statValue.nullable(),
+});
 export type StatValuesInput = z.infer<typeof statValuesInput>;
+// 1% of a stat until typed: a main stat 12.97, a secondary stat 1.68 (the owner's sheet); Xenon's three
+// main stats a third of a main stat each.
+export const STAT_PCT_DEFAULTS = { main: 12.97, secondary: 1.68 } as const;
+export const STAT_VALUE_DEFAULTS: Readonly<StatValuesInput> = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cooldown: null };
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({

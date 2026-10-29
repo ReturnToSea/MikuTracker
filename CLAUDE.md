@@ -98,7 +98,13 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - **The page** (`client/src/components/`, `client/src/pages/`): normal tests of what you see and click; **screenshots of every changed screen**; and **`npm run qa:check` before each version**. Not mutation-tested (it mostly pinned exact wording and class names).
   - **The always-on app's updates:** `app:restart` rehearses the new version on a copy of the real data first, and stops before touching anything real if the rehearsal fails.
   - **Reality checks**, which tests can't do (they share our assumptions): compare our numbers with real characters and another site after real use; re-check game figures after each GMS patch; check calculators against published examples.
-  - **A review pass** (`/code-review`) on each version's changes before committing, for design-level mistakes tests don't find.
+  - **A review pass** (`/code-review`) on each version's changes, for design-level mistakes tests don't find, **at the end** (decided 2026-10-28: it reviews what actually ships; v2.2.0's final review found a bug in code an earlier review had passed). The order before each commit:
+    1. tests and typecheck, mutation testing (the changed files), `npm run qa:check`;
+    2. the code review of the final changes;
+    3. its fixes, each with a test that fails on the old code; then mutation testing on the files they touched, every test and `qa:check` again;
+    4. the owner agrees to the version, then the commit.
+
+    One review is enough; a second only when its fixes are large, or when the owner asks.
 - **Mutation testing** (`/mutation-audit`), decided 2026-10-24: incremental while working; **before each version, the files whose code changed** since the last version (`git diff <last version tag> --name-only -- server/src shared/src client/src/lib client/src/api`, run with `--force --mutate "<those files>"`; no changes there, no run), at 100%.
   - **A full run** (`npm run test:mutate:full`) **only for a major version** (X.0.0), **or when something shared changed**: the test setup or helpers (`server/test/`, `client/test/server.tsx`, setup files), a config (`vitest.config.ts`, `stryker*.mjs`), or a helper many files use (e.g. `server/src/http.ts`, `db.ts`, `config.ts`, `calc/utcDays.ts`). Those are the changes that can quietly turn untouched files' results stale.
   - **Every mutant must be caught**, or, only if it provably can't change behavior, marked with `// Stryker disable next-line <Mutator>: <reason>` on the line above.

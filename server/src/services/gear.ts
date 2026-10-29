@@ -5,7 +5,8 @@ import { getConfig } from "../config";
 import { db } from "../db";
 import { FLAME_KINDS, fits, GEAR_SLOTS, type GearItem, type GearJob, gearFile, itemKey, POTENTIAL_KINDS, RING_SLOTS } from "../gameFigures/gear";
 import { jobStats } from "../gameFigures/jobStats";
-import { potentialOptions } from "../gameFigures/potential";
+import { type StatBoxes, statBoxes } from "../calc/potential";
+import { nearestLine, potentialOptions } from "../gameFigures/potential";
 import { HttpError } from "../http";
 import { listCharacters, ownCharacter } from "./characters";
 
@@ -24,6 +25,7 @@ export interface GearCharacter {
   equipped: Record<string, { item: string } | { other: string }>; // by slot
   details: Record<string, GearDetailsInput>; // each slot's stars, flames, potential and hammers (none: blank)
   statValues: StatValuesInput; // what each stat is worth to it (the defaults until changed)
+  statBoxes: StatBoxes | null; // the stat value boxes it needs (null: a job the list doesn't know yet)
 }
 
 export interface GearBoard {
@@ -69,8 +71,9 @@ export async function gearBoard(ownerId: string, worldId: number): Promise<GearB
       knownJob: Object.hasOwn(jobs, c.job),
       fits: items.filter((i) => fits(i, c.job)).map(itemKey),
       equipped: Object.fromEntries(rows.filter((r) => r.characterId === c.id).map((r) => [r.slot, r.item ? { item: r.item } : { other: r.other! }])),
-      details: Object.fromEntries(rows.filter((r) => r.characterId === c.id && r.details).map((r) => [r.slot, JSON.parse(r.details!) as GearDetailsInput])),
+      details: Object.fromEntries(rows.filter((r) => r.characterId === c.id && r.details).map((r) => [r.slot, readDetails(JSON.parse(r.details!) as GearDetailsInput, r.item)])),
       statValues: statValuesOf(values.find((v) => v.characterId === c.id)),
+      statBoxes: boxesFor(c.job),
     })),
   };
 }
@@ -137,6 +140,7 @@ export interface EquippedItem {
   name: string;
   icon: string | null; // listed items only
   di: DetailItem;
+  potential: string | null; // the kind of item its potential lines are (null: it can't have potential)
   details: GearDetailsInput | null;
 }
 export async function equippedItems(characterId: number): Promise<EquippedItem[]> {
@@ -148,12 +152,19 @@ export async function equippedItems(characterId: number): Promise<EquippedItem[]
   const out: EquippedItem[] = [];
   for (const r of rows) {
     if (r.slot === "bottom" && overall) continue;
-    const details = r.details ? (JSON.parse(r.details) as GearDetailsInput) : null;
+    const raw = r.details ? (JSON.parse(r.details) as GearDetailsInput) : null;
     const item = listed(r.item);
-    const di = item ? detailItem(item) : details?.other ? otherItem(details.other) : null;
-    if (di) out.push({ slot: r.slot, name: item?.name ?? r.other!, icon: item ? `/item-icons/${item.id}.png` : null, di, details });
+    const di = item ? detailItem(item) : raw?.other ? otherItem(raw.other) : null;
+    if (di) out.push({ slot: r.slot, name: item?.name ?? r.other!, icon: item ? `/item-icons/${item.id}.png` : null, di, potential: potentialOf(r.item, raw)?.part ?? null, details: raw && readDetails(raw, r.item) });
   }
   return out;
+}
+
+// The stat value boxes a job needs (null: a job the list doesn't know yet).
+function boxesFor(job: string): StatBoxes | null {
+  const { jobs } = gearFile();
+  const stats = jobStats(job, Object.hasOwn(jobs, job) ? jobs[job]!.branches : undefined);
+  return stats ? statBoxes(stats) : null;
 }
 
 // What a character's stats are worth (the Flames and Star Force pages): its job's stats (null: a job
@@ -168,10 +179,40 @@ export async function characterValues(ownerId: string, characterId: number) {
 
 // ── v2.0.0: stars, flames, potential and hammers ──────────────────────────────────────────────
 
-export const statValuesOf = (row: StatValuesInput | undefined): StatValuesInput => {
+// The potential kind of a typed item: its kind, when that kind has potential (the one rule for typed items).
+const typedPotential = (kind: string): string | null => (POTENTIAL_KINDS.has(kind) ? kind : null);
+
+// What kind of item a saved item's potential lines are, and its level: a listed item's potential
+// category, or a typed item's kind when that kind has potential (null: no potential).
+function potentialOf(item: string | null, details: GearDetailsInput | null): { part: string; level: number } | null {
+  if (item !== null) {
+    const listed = gearFile().items.find((i) => itemKey(i) === item);
+    return listed?.potential ? { part: listed.potential, level: listed.level ?? 0 } : null;
+  }
+  // (a typed item's details say what it is: saving them requires it)
+  const other = details!.other!;
+  const part = typedPotential(other.kind);
+  // Stryker disable next-line ConditionalExpression: a kind without potential has no lines either way (its options are empty)
+  return part === null ? null : { part, level: other.level };
+}
+
+// Saved details as they're shown and worked from: a potential line the item can no longer roll (v2.3.0
+// corrected the Lv. 151+ values, e.g. no Boss +45%) reads as the nearest line it can (Boss +40%); the
+// saved text changes the next time the item is saved. A line with no line of its kind left stays as saved
+// (never dropped without a word: saving the item then says it can't have it).
+function readDetails(details: GearDetailsInput, item: string | null): GearDetailsInput {
+  const p = details.potential;
+  const of = potentialOf(item, details);
+  const options = p && of ? potentialOptions(of.part, of.level)[p.rank] : undefined;
+  if (!p || !options) return details;
+  return { ...details, potential: { ...p, lines: p.lines.map((l, i) => (l === null ? null : (nearestLine(l, options[i]!.map((o) => o.line)) ?? l))) } };
+}
+
+// A saved row's values (the database keeps the bosses' defense as a plain number: 300 or 380).
+export const statValuesOf = (row: (Omit<StatValuesInput, "bossDef"> & { bossDef: number }) | undefined): StatValuesInput => {
   if (!row) return { ...STAT_VALUE_DEFAULTS };
-  const { att, allStat, secRatio, bossDmg, fdPer100 } = row;
-  return { att, allStat, secRatio, bossDmg, fdPer100 };
+  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef, cooldown } = row;
+  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cooldown };
 };
 
 export async function saveStatValues(ownerId: string, characterId: number, input: StatValuesInput) {
@@ -219,7 +260,7 @@ export function listedItemOptions(key: string): DetailOptions {
 
 export function otherItemOptions(other: NonNullable<GearDetailsInput["other"]>): DetailOptions {
   if (!GEAR_SLOTS.some((s) => s.kind === other.kind)) throw new HttpError(400, "Unknown kind of item");
-  return optionsFor(otherItem(other), POTENTIAL_KINDS.has(other.kind) ? other.kind : null, null);
+  return optionsFor(otherItem(other), typedPotential(other.kind), null);
 }
 
 // Saves an item's details, each value checked against what the item can have.

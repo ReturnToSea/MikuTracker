@@ -223,7 +223,8 @@ model GearSlot {
 
 // What each stat is worth to a character, in main stat, typed in (the gear tab; the defaults are the
 // owner's: shared/src/index.ts STAT_VALUE_DEFAULTS). Used for flame scores and final damage from
-// v2.1.0. No row: the defaults.
+// v2.1.0, potential lines from v2.3.0 (the new columns start at the defaults on saved rows). No row:
+// the defaults.
 model StatValues {
   characterId Int       @id
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
@@ -232,4 +233,15 @@ model StatValues {
   secRatio    Float // secondary stat ratio
   bossDmg     Float // 1% boss or damage
   fdPer100    Float // % final damage per 100 flame score
+  strPct      Float? // 1% STR (null: the job's default, shared/src/index.ts STAT_PCT_DEFAULTS)
+  dexPct      Float? // 1% DEX
+  intPct      Float? // 1% INT
+  lukPct      Float? // 1% LUK
+  hpPct       Float? // 1% HP (Demon Avenger)
+  attPct      Float   @default(53.82) // 1% ATT (mages: Magic ATT)
+  critDmg     Float   @default(42.38) // 1% critical damage
+  ied300      Float   @default(15.6) // 1% ignore defense against 300% boss defense
+  ied380      Float   @default(20.52) // 1% ignore defense against 380% boss defense
+  bossDef     Int     @default(380) // which of the two applies: 300 or 380
+  cooldown    Float? // % final damage per second of skill cooldown (null: not typed, counts as nothing)
 }

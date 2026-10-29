@@ -7,6 +7,7 @@ import { ExpTablePage } from "./pages/ExpTablePage";
 import { SymbolsPage } from "./pages/SymbolsPage";
 import { HomePage } from "./pages/HomePage";
 import { FlamesPage } from "./pages/FlamesPage";
+import { PotentialPage } from "./pages/PotentialPage";
 import { StarForcePage } from "./pages/StarForcePage";
 import { GearPage } from "./pages/GearPage";
 import { TbdPage } from "./pages/TbdPage";
@@ -27,6 +28,7 @@ export function App() {
             <Route path="/gear" element={<GearPage />} />
             <Route path="/gear/flames" element={<FlamesPage />} />
             <Route path="/gear/starforce" element={<StarForcePage />} />
+            <Route path="/gear/potential" element={<PotentialPage />} />
             <Route path="/tbd/:n" element={<TbdPage />} />
             <Route path="/exp-table" element={<ExpTablePage />} />
             <Route path="/themes" element={<ThemesPage />} />

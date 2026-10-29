@@ -1,3 +1,4 @@
+import { STAT_VALUE_DEFAULTS } from "@miku/shared";
 import { describe, expect, it } from "vitest";
 import { db } from "../src/db";
 import { SOLE_OWNER } from "../src/owner";
@@ -16,10 +17,14 @@ const SILVER_BLOSSOM_RING = "1113149"; // rings can't have flames
 const ETERNAL_KNIGHT_ARMOR = "1042433"; // a normal top (not an overall)
 const GENESIS_LAZULI = "1572010"; // Zero's weapon
 
+// The hand-worked numbers below use the v2.1.0 stat values (1% all stat = 10; the default became
+// 14.65 in v2.3.0, tested on its own below), so each character starts with them saved.
+const V210 = { ...STAT_VALUE_DEFAULTS, allStat: 10 };
 let made = 0;
-async function character(job = "Ren", ownerId = SOLE_OWNER) {
+async function character(job = "Ren", ownerId = SOLE_OWNER, saved: typeof V210 | null = V210) {
   const name = `Char${++made}`;
   const c = await db().character.create({ data: { ownerId, worldId: 45, name, nameKey: name.toLowerCase(), job, level: 270, exp: 0n, worldRank: 1, sortOrder: made, addedAt: NOW, checkedAt: NOW } });
+  if (saved) await db().statValues.create({ data: { characterId: c.id, ...saved } });
   return c.id;
 }
 const wear = (id: number, slot: string, body: object) => ok(api().put(`/api/gear/${id}/${slot}`).send(body));
@@ -52,6 +57,14 @@ describe("GET /api/gear/:id/flames", () => {
     const costs = items.map((i) => i.metrics.mesoPerFd ?? Infinity);
     expect(costs).toEqual([...costs].sort((a, b) => a - b));
     expect(items[0]!.slot).not.toBe("hat");
+  });
+
+  it("a character with no stat values saved scores with the defaults: 1% all stat = 14.65 (v2.3.0)", async () => {
+    const id = await character("Ren", SOLE_OWNER, null);
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    // STR T6 66 + STR+DEX T5 30 × 1.125 + ATT T5 5 × 4 + all stat T4 4 × 14.65 = 66 + 33.75 + 20 + 58.6
+    await details(id, "hat", { STR: 6, "STR+DEX": 5, ATT: 5, "All Stats %": 4 });
+    expect((await board(id)).items[0].score).toBe(178.35);
   });
 
   it("an item whose flames can't be improved goes last (no cost at all)", async () => {
@@ -88,7 +101,7 @@ describe("GET /api/gear/:id/flames", () => {
     expect(doubled.metrics.mesoToBetter).toBeCloseTo(before.metrics.mesoToBetter! * 2, 0);
     expect(doubled.metrics.better).toBe(before.metrics.better);
     // ATT worth 3 to this character only: 66 + 15 = 81, the other still 66 + 20 = 86
-    await ok(api().put(`/api/gear/${id}/stat-values`).send({ att: 3, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785 }));
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...V210, att: 3 }));
     expect([(await board(id)).items[0].score, (await board(other)).items[0].score]).toEqual([81, 86]);
   });
 

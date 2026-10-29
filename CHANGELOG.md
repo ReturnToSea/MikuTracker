@@ -2,6 +2,33 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.3.0 (2026-10-28): Potential
+
+- **The Potential page**, the Gear group's fourth page (layout A of 5 mockups): each item that can have potential, cheapest per 1% final damage first, with **both cubes the Heroic Cube Shop sells**, **Glowing** (12m) and **Bright** (22m), worked out and the cheaper one marked. Below each icon, which cube and **"1/X"**: 1 in how many cubes beats the current lines.
+- **For the picked item:** its rank and lines, saved from here too (the same potential as Equipment, with Save / Cancel); each cube's meso per 1% final damage, mesos to any better roll, average gain, the **chance per cube as "1 in X cubes"** (the owner's idea) with the exact percent, the rank-up chance, and the cubes for a 25/50/70/99% chance; the graph per cube (distribution, cost curve, average gain), where **clicking a score shows what reaching it costs** with each cube.
+- **Rank-ups included:** an Epic item's figures count the chance of ranking up on the way (community rates, Glowing 14/6/2.5% and Bright 17/11/5%, marked as estimates: Nexon publishes none for GMS). **Double Miracle Time** and a **cube sale** (25% off) as checkboxes. An item with no potential saved counts as Rare with no lines.
+- **Targets:** the score to stop cubing at for a budget, with the cheaper cube's way there.
+- **Every damage line counts:** each stat %, all stats %, ATT % and flat ATT, boss and damage %, ignore defense (an item's IED lines multiply, as in game), critical damage and skill cooldown, through **new stat values** in the box every Gear page shares (defaults from the owner's MapleScouter sheet): 1% of each stat the character uses (the job's default until typed), 1% ATT and critical damage, ignore defense against 300% and 380% boss defense with a switch for which applies, and **skill cooldown in % final damage a second** (empty until typed: it depends on the class).
+- **1% All Stat now defaults to 14.65** (was 10, which counted an All Stats line below the main stat % line it includes). Characters whose values were saved keep them; flame scores with all stat % flames rise for the others.
+- **Corrected: potential values on Lv. 151+ items.** v2.0.0 used Korea's Lv. 201+ tables, which aren't GMS's: a Genesis weapon cubed on video rolled crit rate 12% and boss and IED at most 40%. From Lv. 151, GMS adds 1% to main stat, all stats, ATT, Magic ATT and damage % lines only. **Saved lines that no longer exist read as the nearest real one** (for example Boss +45% → +40%, Ignore Enemy DEF +45% → +40%, Critical Rate +13% → +12%, Max HP / MP +13% → +12%, DEF +7% → +6%, MP Cost −35% / −17% → −30% / −15%) on every page, and save that way next time.
+- **Checked against brendonmay's cubing calculator:** Korea's red and black tables match its data exactly, and its own engine run beside ours gives the same chances (to a millionth of a percent) on 152 cases; the cubing maths also matches a simulation. Korea's red cube tables (for Glowing) were downloaded for every level.
+- The download script takes the cube (`node scripts/potential-fetch.mjs black|red`); the Flames graph also serves Potential (per cube, with a target).
+- **Mutation testing** found test gaps (whole lines only, two kinds of limited line on one item, rank-ups while the lower rank can also win, the page's loading rules, items that can't have potential, which cube is cheaper and how the stop score is reached) and some code that couldn't change anything (simplified away; a few ties and safety bounds marked with why). The graph's click, which only worked on one of its points, now picks any score.
+- **From the review pass** (9 findings, 6 acted on, the owner deciding 3):
+  - **Ignore defense now works as in game:** an item's IED lines multiply (40/40/30% is 74.8%, not 110%). Two-IED rolls scored too high before, which made Glowing look cheaper for the Genesis weapon in the tests; Bright is.
+  - **Characters still at the old 1% All Stat (10)** move to 14.65; a typed value stays.
+  - **Each character sees only the stat value boxes it needs, in its own stats' names** (the owner's idea): 1% STR, DEX, INT, LUK each its own value (Xenon's three separately), Magic ATT for mages, 1% HP for Demon Avenger, no secondary stat or all stats where a job has none. Xenon's All Stats % potential lines use the 1% All Stat box, as on Flames.
+  - With final damage per 100 score at 0, every item read "best"; it now says "—".
+  - Tidying: each saved item's details are read once per request; one rule for which typed items have potential.
+  - **Not changed:** a target or a new budget recomputes the whole graph or board (well under a second for one person); the new defaults are in both the database and the code (the database needs them to fill saved rows).
+- **From a second review** of those fixes (the owner's call; 9 findings, 7 fixed):
+  - A typed 1% STR (or DEX, INT, LUK, HP) couldn't go back to the job's default without resetting every value; emptying the box now does it, and the default shows greyed in the box (Xenon's rounded: 4.32, not 4.3233333).
+  - A saved line with no line of its kind left would have been dropped without a word the next time the item was saved; it now stays as saved (saving then says the item can't have it).
+  - The three new database changes are one now (one rebuild of the stat values table on the real database instead of two), checked from v2.2.0's database shape.
+  - The page's unsaved score and the server's saved score combined IED lines separately and could differ by 0.01; one shared calculation now.
+  - Each potential table is built once and reused; a click-through check that no longer tested a negative stat value does again.
+  - **Not changed (the owner):** 1% All Stat stays one typed value (14.65 to start, the owner's own): everyone types their own for now, and v5.0.0's stat sheet will work it out.
+
 ## v2.2.0 (2026-10-27): Star Force
 
 - **The Star Force page**, the Gear group's third page (layout A of 5 mockups): each item that can still take stars, cheapest per 1% final damage first by its **best jump** (from where it stands, the target with the cheapest meso per 1% FD for that jump alone; e.g. 19→21★ together when 20→21★ is cheap), with the next tap's success chance.

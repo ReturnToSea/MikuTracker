@@ -583,6 +583,8 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .stat-values p { margin: 0; }
 .value-grid { display: grid; grid-template-columns: max-content 80px auto; gap: 6px 8px; align-items: center; }
 .value-grid label { display: contents; }
+.value-grid .value-switch { display: contents; }
+.value-grid .value-switch .segmented { grid-column: span 2; justify-self: start; }
 
 /* The Flames page (v2.1.0) */
 .flame-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 6px; }
@@ -622,6 +624,23 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .flame-targets .item-icon { width: 36px; height: 36px; }
 .good { color: var(--good); font-weight: 700; }
 @media (max-width: 900px) { .flame-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* The Potential page (v2.3.0) */
+.pot-cell .gear-icon { border-width: 2px; }
+.pot-cell .gear-icon.rank-border-rare { border-color: var(--rank-rare); }
+.pot-cell .gear-icon.rank-border-epic { border-color: var(--rank-epic); }
+.pot-cell .gear-icon.rank-border-unique { border-color: var(--rank-unique); }
+.pot-cell .gear-icon.rank-border-legendary { border-color: var(--rank-legendary); }
+.pot-cell .gear-icon.rank-border-none { border-style: dashed; }
+.pot-editor { display: grid; gap: 8px; }
+.pot-editor label { display: grid; grid-template-columns: 56px minmax(0, 1fr) 64px; gap: 8px; align-items: center; }
+.pot-editor select { width: 100%; min-width: 0; }
+.pot-editor .pts { text-align: right; }
+.cube-chip { display: inline-block; padding: 0 6px; border: var(--border-width) solid var(--border); border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 15px; }
+.flame-chart .target { stroke: var(--good); stroke-width: 2; }
+.flame-chart .target-label { fill: var(--good); font-size: 11px; }
+.flame-chart .pickable { cursor: crosshair; }
+.kv-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: var(--border-width) solid var(--border); }
 
 /* The Star Force page (v2.2.0) */
 .sf-boom { display: grid; gap: 4px; justify-items: end; text-align: right; }

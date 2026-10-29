@@ -36,6 +36,9 @@ export function clickStar(current: number, star: number, min: number, max: numbe
   return Math.min(max, Math.max(min, next));
 }
 
+// A potential rank as shown ("legendary" → "Legendary").
+export const rankName = (r: string) => r[0]!.toUpperCase() + r.slice(1);
+
 // Changing the potential rank keeps only the lines that rank can also have.
 export function withRank(potential: GearDetailsInput["potential"], rank: NonNullable<GearDetailsInput["potential"]>["rank"], options: DetailOptions): GearDetailsInput["potential"] {
   const lines = options.potential?.[rank];

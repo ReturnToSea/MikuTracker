@@ -14,5 +14,8 @@ export type { SymbolInfo, SymbolsBoard, SymbolsCharacter } from "../../../server
 export type { DetailOptions, GearBoard, GearCharacter, GearItemView } from "../../../server/src/services/gear";
 export type { FlameGraph, FlameItem, FlamesBoard } from "../../../server/src/services/flames";
 export type { StarForceBoard, StarForceDetail, StarForceItem, StarForceRow } from "../../../server/src/services/starForce";
+export type { PotentialBoard, PotentialGraph, PotentialItem } from "../../../server/src/services/potential";
+export type { CubeMetrics } from "../../../server/src/calc/potential";
+export type { Cube } from "../../../server/src/gameFigures/cubes";
 
 export type ThemeArt = Record<ThemeId, string | null>;
