@@ -5,8 +5,7 @@ import { type Jump, jumps, percentile, type Row, rows, type SfOptions, simulate,
 import type { JobStats } from "../gameFigures/jobStats";
 import type { SfEvent } from "../gameFigures/starForceCosts";
 import { HttpError } from "../http";
-import { characterValues, type EquippedItem, equippedItems } from "./gear";
-import { getSettings } from "./settings";
+import { type CharacterGear, characterGear, type EquippedItem } from "./gear";
 
 // The Star Force page (v2.2.0): a character's items that can still take stars, each with what its next
 // stars cost and add, cheapest per 1% final damage first; and one item in detail.
@@ -45,9 +44,9 @@ interface Listed {
 
 // The items that can still take stars: not fixed at their stars (Genesis, Destiny Stage 1), not at their
 // limit. Their stars as saved (an item with nothing saved: the stars it comes with).
-async function starrable(characterId: number): Promise<Listed[]> {
+function starrable(equipped: EquippedItem[]): Listed[] {
   const out: Listed[] = [];
-  for (const e of await equippedItems(characterId)) {
+  for (const e of equipped) {
     const [min, max] = starRange(e.di);
     const star = Math.min(max, Math.max(min, e.details?.stars ?? min));
     // (an item fixed at its stars, min = max, is at its limit too)
@@ -78,12 +77,13 @@ function worked(l: Listed, job: JobStats, values: StatValuesInput, o: SfOptions)
 
 const totals = (r: Row[], to: number) => r.filter((x) => x.to <= to).reduce((a, x) => ({ cost: a.cost + x.tap.avgCost, fd: a.fd + x.fd, booms: a.booms + x.tap.avgBooms }), { cost: 0, fd: 0, booms: 0 });
 
-export async function starForceBoard(ownerId: string, characterId: number, events: SfEvent[], budget: number): Promise<StarForceBoard> {
-  const { job, values } = await characterValues(ownerId, characterId);
-  const { mvp } = await getSettings(ownerId);
+export const starForceBoard = async (ownerId: string, characterId: number, events: SfEvent[], budget: number): Promise<StarForceBoard> => starForceFrom(await characterGear(ownerId, characterId), events, budget);
+// (from a character's gear already read: the Upgrades page reads it once for every page)
+export function starForceFrom({ job, values, settings, equipped }: CharacterGear, events: SfEvent[], budget: number): StarForceBoard {
+  const { mvp } = settings;
   if (!job) return { known: false, mvp, events, budget, items: [] };
   const o: SfOptions = { events, mvp };
-  const items = (await starrable(characterId)).map((l): StarForceItem => {
+  const items = starrable(equipped).map((l): StarForceItem => {
     const { t, r, j } = worked(l, job, values, o);
     const stop = stopStar(j, l.star, budget);
     const { cost, fd } = totals(r, stop);
@@ -136,11 +136,11 @@ export interface StarForceDetail {
 const RUNS = 20000;
 
 export async function starForceDetail(ownerId: string, characterId: number, slot: string, events: SfEvent[], wanted: number): Promise<StarForceDetail> {
-  const { job, values } = await characterValues(ownerId, characterId);
+  const { job, values, settings, equipped } = await characterGear(ownerId, characterId);
   if (!job) throw new HttpError(404, "No final damage for this job yet");
-  const l = (await starrable(characterId)).find((x) => x.e.slot === slot);
+  const l = starrable(equipped).find((x) => x.e.slot === slot);
   if (!l) throw new HttpError(404, "That slot has no item that can take more stars");
-  const { mvp } = await getSettings(ownerId);
+  const { mvp } = settings;
   const { t, r, j } = worked(l, job, values, { events, mvp });
   // the first star a run reaches at or past the one asked for
   const target = r.find((x) => x.to >= wanted)?.to ?? l.max;

@@ -22,6 +22,15 @@ export function formatMeso(meso: number | null): string {
 }
 
 // A chance as a percentage: whole above 10%, one decimal below, and never a misleading 0% or 100%.
+// A chance on a graph's scale or its hover note: whole percents from 10%, one decimal from 1%, below that
+// two significant figures (0.063%, 0.0000041%), so a scale of small chances (a hat's rolls that keep its
+// minimum cooldown, v2.4.1) doesn't read 0.0% all the way up; never "e" notation.
+export function chanceTick(p: number): string {
+  const pct = p * 100;
+  if (pct >= 10) return `${pct.toFixed(0)}%`;
+  if (pct >= 1) return `${pct.toFixed(1)}%`;
+  return `${pct.toLocaleString("en-US", { maximumSignificantDigits: 2 })}%`;
+}
 export function formatChance(p: number): string {
   if (p <= 0) return "0%";
   if (p >= 1) return "100%";

@@ -243,5 +243,12 @@ model StatValues {
   ied300      Float   @default(15.6) // 1% ignore defense against 300% boss defense
   ied380      Float   @default(20.52) // 1% ignore defense against 380% boss defense
   bossDef     Int     @default(380) // which of the two applies: 300 or 380
-  cooldown    Float? // % final damage per second of skill cooldown (null: not typed, counts as nothing)
+  // % final damage at 2 to 6 s of skill cooldown in all (v2.4.1; null: not typed, the nearest typed one
+  // below counts; none: cooldown counts as nothing), and the seconds a hat must keep (0: none)
+  cd2         Float?
+  cd3         Float?
+  cd4         Float?
+  cd5         Float?
+  cd6         Float?
+  cdMin       Int     @default(0)
 }

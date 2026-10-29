@@ -1,8 +1,9 @@
 import type { CUBE_EVENTS, SF_EVENTS } from "@miku/shared";
 import type { Cube } from "../gameFigures/cubes";
-import { flamesBoard } from "./flames";
-import { potentialBoard } from "./potential";
-import { starForceBoard } from "./starForce";
+import { flamesFrom } from "./flames";
+import { characterGear } from "./gear";
+import { potentialFrom } from "./potential";
+import { starForceFrom } from "./starForce";
 
 // The Upgrades page (v2.4.0): each item's next step in each system, exactly as the Flames, Star Force
 // and Potential pages work it out, in one list, cheapest per 1% final damage first. No maths of its own:
@@ -17,13 +18,13 @@ export interface UpgradeStep {
   name: string;
   icon: string | null;
   step: string; // "Black Flame", "17→18★", "Glowing Cube"
-  perFd: number; // meso per 1% final damage
+  perFd: number | null; // meso per 1% final damage (null: a hat's cube needed for its minimum cooldown that adds nothing)
   cost: number; // the whole step, on average
   fd: number; // the final damage it adds, % (on average, when it's reached)
   chance: number; // the next try's chance: of a better flame or roll; of the next star
   boom: number | null; // Star Force: the next tap's boom chance
   // what the item is now: its flame score and best, its stars and boom price, its rank and the other cube's cost
-  now: { score: number; best: number } | { star: number; boomCost: number } | { rank: string | null; cube: Cube; otherPerFd: number | null };
+  now: { score: number; best: number } | { star: number; boomCost: number } | { rank: string | null; cube: Cube; otherPerFd: number | null; cooldown: { sec: number; min: number } | null };
 }
 
 export interface UpgradesBoard {
@@ -31,14 +32,15 @@ export interface UpgradesBoard {
   blackFlamePrice: number;
   mvp: string;
   prices: Record<Cube, number>; // a cube's price with the events on
-  steps: UpgradeStep[]; // cheapest per 1% final damage first; a step that adds nothing isn't listed
+  steps: UpgradeStep[]; // cheapest per 1% final damage first; a step that adds nothing isn't listed (but a hat's cube its minimum cooldown needs is, last)
 }
 
 const CUBE_NAME: Record<Cube, string> = { glowing: "Glowing Cube", bright: "Bright Cube" };
 
 export async function upgradesBoard(ownerId: string, characterId: number, sf: (typeof SF_EVENTS)[number][], cubes: (typeof CUBE_EVENTS)[number][]): Promise<UpgradesBoard> {
-  // (no budget: the pages' Targets aren't part of this list)
-  const [flames, stars, potential] = await Promise.all([flamesBoard(ownerId, characterId, 0), starForceBoard(ownerId, characterId, sf, 0), potentialBoard(ownerId, characterId, cubes, 0)]);
+  // (read once for all three pages; no budget: the pages' Targets aren't part of this list)
+  const gear = await characterGear(ownerId, characterId);
+  const [flames, stars, potential] = [flamesFrom(gear, 0), starForceFrom(gear, sf, 0), potentialFrom(gear, cubes, 0)];
   const head = { blackFlamePrice: flames.price, mvp: stars.mvp, prices: potential.prices };
   if (!flames.known) return { known: false, ...head, steps: [] };
   const steps: UpgradeStep[] = [];
@@ -56,9 +58,9 @@ export async function upgradesBoard(ownerId: string, characterId: number, sf: (t
     if (it.cheaper === null) continue;
     const m = it.cubes[it.cheaper];
     const other = it.cubes[it.cheaper === "glowing" ? "bright" : "glowing"];
-    steps.push({ system: "potential", slot: it.slot, name: it.name, icon: it.icon, step: CUBE_NAME[it.cheaper], perFd: m.mesoPerFd!, cost: m.mesoToBetter!, fd: m.fdIfBetter!, chance: m.better, boom: null, now: { rank: it.rank, cube: it.cheaper, otherPerFd: other.mesoPerFd } });
+    steps.push({ system: "potential", slot: it.slot, name: it.name, icon: it.icon, step: CUBE_NAME[it.cheaper], perFd: m.mesoPerFd, cost: m.mesoToBetter!, fd: m.fdIfBetter!, chance: m.better, boom: null, now: { rank: it.rank, cube: it.cheaper, otherPerFd: other.mesoPerFd, cooldown: it.cooldown && { sec: it.cooldown.sec, min: it.cooldown.min } } });
   }
-  // Stryker disable next-line ArrayCallback: see the order's test (cheapest first)
-  steps.sort((a, b) => a.perFd - b.perFd);
+  // Stryker disable next-line ArrayCallback: see the order's test (cheapest first, a needed cube that adds nothing last)
+  steps.sort((a, b) => (a.perFd ?? Infinity) - (b.perFd ?? Infinity));
   return { known: true, ...head, steps };
 }

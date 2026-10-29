@@ -59,10 +59,36 @@ export function linePoints(line: string, job: JobStats, values: StatValuesInput)
   // (one line on its own; an item's IED lines combine: linesPoints)
   if ((m = /^Ignore Enemy DEF \+(\d+)%$/.exec(line))) return flameLinePoints(iedWorth(values), Number(m[1]));
   if ((m = /^Critical Damage \+(\d+)%$/.exec(line))) return flameLinePoints(values.critDmg, Number(m[1]));
-  // cooldown is typed as final damage per second; as score, that's ÷ (final damage per point)
-  if ((m = /^Skill Cooldown -(\d+) sec$/.exec(line))) return values.cooldown && values.fdPer100 > 0 ? flameLinePoints((values.cooldown * 100) / values.fdPer100, Number(m[1])) : 0;
+  // (one line on its own; an item's cooldown lines add up first: linesPoints; any other line is 0 s, worth 0)
+  return cooldownPoints(values, cooldownSeconds(line));
+}
+
+// Skill cooldown (v2.4.1) isn't worth the same each second: the final damage typed for each total from
+// 2 to 6 s; a total with none typed takes the nearest typed one below (more is never worth less, and
+// nothing is made up); 1 s, or none typed, is worth nothing. As score: ÷ (final damage per point).
+export function cooldownSeconds(line: string): number {
+  const m = /^Skill Cooldown -(\d+) sec$/.exec(line);
+  return m ? Number(m[1]) : 0;
+}
+export function cooldownFd(values: StatValuesInput, sec: number): number {
+  const typed = [values.cd2, values.cd3, values.cd4, values.cd5, values.cd6];
+  // (2 s is typed[0]; past 6 s, 6 s's)
+  for (let i = Math.min(sec, 6) - 2; i >= 0; i--) if (typed[i] !== null) return typed[i]!;
   return 0;
 }
+export const cooldownPoints = (values: StatValuesInput, sec: number): number => (values.fdPer100 > 0 ? flameLinePoints((cooldownFd(values, sec) * 100) / values.fdPer100, 1) : 0);
+// (an empty line, "null", is no cooldown line either)
+export const linesCooldown = (lines: (string | null)[]): number => lines.reduce((sum, l) => sum + cooldownSeconds(String(l)), 0);
+
+// A roll that doesn't keep the hat's minimum cooldown (v2.4.1) doesn't qualify: a score below every real
+// one (scores are never negative), so nothing counts it as better and any roll that qualifies beats it.
+export const SHORT = -1;
+// How a roll's cooldown counts: the score its total seconds add, and the seconds it must keep (0: none).
+export interface CooldownRule {
+  points: (sec: number) => number;
+  min: number;
+}
+export const NO_COOLDOWN: CooldownRule = { points: () => 0, min: 0 };
 
 // Ignore defense, as in game: an item's IED lines multiply, so 40%, 40% and 30% are 1 − 0.6 × 0.6 × 0.7 =
 // 74.8% (the owner, 2026-10-28), worth the character's 1% IED value (at the bosses' defense picked).
@@ -72,7 +98,7 @@ export function iedPercent(line: string): number {
   return m ? Number(m[1]) : 0;
 }
 // Some lines' score, in hundredths: each line on its own (rounded to the hundredth, like flame lines),
-// except the IED lines, which combine first.
+// except the IED lines, which combine first, and the cooldown lines, whose seconds add up first.
 export function linesPoints(lines: (string | null)[], job: JobStats, values: StatValuesInput): number {
   let sum = 0;
   let left = 1;
@@ -81,9 +107,9 @@ export function linesPoints(lines: (string | null)[], job: JobStats, values: Sta
     if (line === null) continue;
     const ied = iedPercent(line);
     if (ied > 0) left *= 1 - ied / 100;
-    else sum += linePoints(line, job, values);
+    else if (cooldownSeconds(line) === 0) sum += linePoints(line, job, values);
   }
-  return sum + iedLinePoints(iedWorth(values), left);
+  return sum + iedLinePoints(iedWorth(values), left) + cooldownPoints(values, linesCooldown(lines));
 }
 
 // Nexon Korea: an item rolls at most 1 Decent skill line and 1 invincibility-time line, and 2 of the
@@ -104,38 +130,41 @@ export interface LineOption {
 }
 
 // One cube's 3 lines at a rank: every score it can give (in hundredths, lowest first) with its chance,
-// worked out exactly over every roll. IED lines combine (as linesPoints) at `ied` main stat per 1%; the
-// other lines add their points. Lines Korea's page lists that aren't translated are left out of
+// worked out exactly over every roll. IED lines combine (as linesPoints) at `ied` main stat per 1%, and
+// cooldown lines' seconds add up, then count by the rule (a roll under its minimum: SHORT); the other
+// lines add their points. Lines Korea's page lists that aren't translated are left out of
 // the table (none is a damage line): what's missing from 100% counts as a line worth 0. Korea's chances
 // are rounded to 4 decimals, so a line's can add up to a hair over 100%: then they're shared out of
 // their own total.
-export function rollDistribution(table: LineOption[][], points: (line: string) => number, ied = 0): [score: number, chance: number][] {
+export function rollDistribution(table: LineOption[][], points: (line: string) => number, ied = 0, cd: CooldownRule = NO_COOLDOWN): [score: number, chance: number][] {
   // each line's options grouped by score and limited kind (-1: none)
   const slots = table.map((options) => {
-    const groups = new Map<string, { score: number; kind: number; ied: number; chance: number }>();
+    const groups = new Map<string, { score: number; kind: number; ied: number; sec: number; chance: number }>();
     const listed = options.reduce((sum, o) => sum + o.chance, 0);
     const whole = Math.max(100, listed);
     for (const o of options) {
       const share = iedPercent(o.line);
-      const score = share > 0 ? 0 : points(o.line);
+      const sec = cooldownSeconds(o.line);
+      const score = share > 0 || sec > 0 ? 0 : points(o.line);
       const kind = limitOf(o.line);
-      const key = `${score}|${kind}|${share}`;
+      const key = `${score}|${kind}|${share}|${sec}`;
       const g = groups.get(key);
       if (g) g.chance += o.chance / whole;
-      else groups.set(key, { score, kind, ied: share, chance: o.chance / whole });
+      else groups.set(key, { score, kind, ied: share, sec, chance: o.chance / whole });
     }
     const out = [...groups.values()];
     // (a share too small to matter is rounding, not a line)
     const rest = (100 - listed) / 100;
     // Stryker disable next-line EqualityOperator: the rest is never exactly 1e-9
-    if (rest > 1e-9) out.push({ score: 0, kind: -1, ied: 0, chance: rest });
+    if (rest > 1e-9) out.push({ score: 0, kind: -1, ied: 0, sec: 0, chance: rest });
     return out;
   });
   const out = new Map<number, number>();
   // (defense: the share of the enemy's defense the IED lines so far leave)
-  const walk = (i: number, score: number, chance: number, counts: number[], defense: number) => {
+  // (sec: the cooldown lines' seconds so far)
+  const walk = (i: number, score: number, chance: number, counts: number[], defense: number, sec: number) => {
     if (i === slots.length) {
-      const total = score + iedLinePoints(ied, defense);
+      const total = sec < cd.min ? SHORT : score + iedLinePoints(ied, defense) + cd.points(sec);
       out.set(total, (out.get(total) ?? 0) + chance);
       return;
     }
@@ -143,10 +172,10 @@ export function rollDistribution(table: LineOption[][], points: (line: string) =
     const left = slots[i]!.reduce((sum, g) => (full(g.kind) ? sum - g.chance : sum), 1);
     for (const g of slots[i]!) {
       if (full(g.kind)) continue;
-      walk(i + 1, score + g.score, (chance * g.chance) / left, counts.map((c, k) => (k === g.kind ? c + 1 : c)), defense * (1 - g.ied / 100));
+      walk(i + 1, score + g.score, (chance * g.chance) / left, counts.map((c, k) => (k === g.kind ? c + 1 : c)), defense * (1 - g.ied / 100), sec + g.sec);
     }
   };
-  walk(0, 0, 1, LIMITS.map(() => 0), 1);
+  walk(0, 0, 1, LIMITS.map(() => 0), 1, 0);
   return [...out].sort((a, b) => a[0] - b[0]);
 }
 
@@ -263,10 +292,12 @@ export interface CubeMetrics {
   mesoPerFd: number | null; // meso per 1% final damage, cubing until a better roll
   cubesForChance: { chance: number; cubes: number | null }[];
 }
-export function cubeMetrics(rolls: CubeRolls, from: number, current: number, price: number, fdPer100: number): CubeMetrics {
+// (`current` is what a roll must beat: SHORT when the item doesn't keep its minimum cooldown; `real` is
+// its lines' score, what a better roll's gain is counted from)
+export function cubeMetrics(rolls: CubeRolls, from: number, current: number, price: number, fdPer100: number, real = current): CubeMetrics {
   const c = cubeUntil(rolls, from, current);
   const ends = Number.isFinite(c.cubes);
-  const gain = ends ? (c.final - current) / 100 : null;
+  const gain = ends ? (c.final - real) / 100 : null;
   const fd = ((gain ?? 0) * fdPer100) / 100;
   const counts = cubesForChance(c, CHANCES);
   return {
@@ -296,4 +327,14 @@ export function cubesToReach(rolls: CubeRolls, from: number, score: number): num
   // rolls score whole hundredths: at least 12.34 is above 12.33
   const c = cubeUntil(rolls, from, Math.ceil(score * 100 - 1e-9) - 1);
   return Number.isFinite(c.cubes) ? c.cubes : null;
+}
+
+// A roll's scores for the graph and the stop score, where a roll that doesn't qualify counts as nothing
+// (0: never above a score), its share given separately.
+export function counted(dist: [number, number][]): { dist: [number, number][]; short: number } {
+  const short = dist.filter(([s]) => s === SHORT).reduce((sum, [, p]) => sum + p, 0);
+  const rest = dist.filter(([s]) => s !== SHORT);
+  if (short === 0) return { dist: rest, short };
+  const zero = rest.find(([s]) => s === 0);
+  return { dist: zero ? rest.map(([s, p]): [number, number] => (s === 0 ? [0, p + short] : [s, p])) : [[0, short], ...rest], short };
 }

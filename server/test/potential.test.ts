@@ -29,7 +29,7 @@ const potential = (id: number, slot: string, rank: string, lines: (string | null
   ok(api().put(`/api/gear/${id}/${slot}/details`).send({ stars, flames: {}, potential: { rank, lines }, hammers: 0, ...(other ? { other } : {}) }));
 const board = async (id: number, query = "budget=10000000000") => (await ok(api().get(`/api/gear/${id}/potential?${query}`))).body;
 type Metrics = { better: number; rankUp: number; cubesToBetter: number | null; mesoToBetter: number | null; gainIfBetter: number | null; mesoPerFd: number | null; price: number; cubesForChance: { chance: number; cubes: number | null }[] };
-type Item = { slot: string; name: string; level: number; starMin: number; ied: number; rank: string | null; lines: (string | null)[]; options: Record<string, string[][]>; points: Record<string, number>; score: number; best: number; cubes: { glowing: Metrics; bright: Metrics }; cheaper: string | null; stop: { score: number; reached: boolean; cube: string; cubes: number; meso: number } | null };
+type Item = { slot: string; name: string; level: number; starMin: number; ied: number; rank: string | null; lines: (string | null)[]; options: Record<string, string[][]>; points: Record<string, number>; score: number; best: number; cubes: { glowing: Metrics; bright: Metrics }; cooldown: { sec: number; min: number; points: number[] } | null; cheaper: string | null; stop: { score: number; reached: boolean; cube: string; cubes: number; meso: number } | null };
 const item = (b: { items: Item[] }, slot: string) => b.items.find((i) => i.slot === slot)!;
 
 describe("GET /api/gear/:id/potential", () => {
@@ -164,20 +164,120 @@ describe("GET /api/gear/:id/potential", () => {
     expect((await api().get(`/api/gear/${id}/potential?budget=1&events=free`)).status).toBe(400);
   });
 
-  it("the character's stat values change the scores: a typed cooldown value, and the bosses' defense", async () => {
+  it("the character's stat values change the scores: a typed cooldown value (2 s), and the bosses' defense", async () => {
     const id = await character();
     await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
     await wear(id, "weapon", { item: GENESIS_SWORD });
     await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
     const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
-    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cooldown: 3, bossDef: 300 }));
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 6, bossDef: 300 }));
     const b = await board(id);
-    // + 2 s × 3% ÷ 0.785 × 100 = 764.33
+    // + 2 s at 6% ÷ 0.785 × 100 = 764.33
     expect(item(b, "hat").score).toBe(1062.64);
     // IED 35% × 15.6 (300% defense) = 546
     expect(item(b, "weapon").score).toBe(1725.66);
     expect(item(b, "weapon").ied).toBe(15.6);
+  });
+
+  it("skill cooldown as a table (v2.4.1): a hat's seconds add up and count by the table; a blank box takes the one below", async () => {
+    const id = await character();
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    await potential(id, "hat", "legendary", ["STR +13%", "Skill Cooldown -2 sec", "Skill Cooldown -2 sec"]);
+    await wear(id, "weapon", { item: GENESIS_SWORD });
+    await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    // the Ren Discord's 2 and 4 s (3, 5 and 6 s left blank)
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34 }));
+    const b = await board(id);
+    // STR 13% 168.61 + 4 s 3.34 ÷ 0.785 × 100 = 425.48 (not twice 2 s's 174.52)
+    expect(item(b, "hat").score).toBe(594.09);
+    expect(item(b, "hat").cooldown).toEqual({ sec: 4, min: 0, points: [0, 0, 174.52, 174.52, 425.48, 425.48, 425.48] });
+    expect(item(b, "weapon").cooldown).toBeNull();
+  });
+
+  it("a hat's minimum cooldown: only rolls that keep it count; a hat under it takes any that does (brendonmay's odds)", async () => {
+    const id = await character();
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
+    await wear(id, "weapon", { item: GENESIS_SWORD });
+    await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const before = await board(id);
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34, cdMin: 4 }));
+    const b = await board(id);
+    const hat = item(b, "hat");
+    // 2 s, 4 needed: any roll with 4 s or more beats it. Lv. 200 Legendary hats roll at least 4 s 0.062523%
+    // of the time with Bright, 0.026487% with Glowing (brendonmay's engine gives the same)
+    expect(hat.cooldown).toMatchObject({ sec: 2, min: 4 });
+    expect(hat.cubes.bright.better).toBeCloseTo(0.00062523, 8);
+    expect(hat.cubes.glowing.better).toBeCloseTo(0.00026487, 8);
+    expect(hat.cubes.bright.mesoToBetter).toBeCloseTo(22e6 / hat.cubes.bright.better, -3);
+    // the gain is from its real score (STR 23% 298.31 + 2 s 174.52): a 4 s roll's 425.48 and a little stat is less
+    expect(hat.score).toBe(472.83);
+    expect(hat.cubes.bright.gainIfBetter).toBeLessThan(0);
+    expect([hat.cubes.bright.mesoPerFd, hat.cubes.glowing.mesoPerFd]).toEqual([null, null]);
+    // so the cheaper way to a roll that keeps it: Bright (1 in 1,599 at 22m) over Glowing (1 in 3,775 at 12m)
+    expect(hat.cheaper).toBe("bright");
+    // listed last (no meso per 1%); the weapon is untouched
+    expect(b.items.at(-1).slot).toBe("hat");
+    expect(item(b, "weapon").cubes).toEqual(item(before, "weapon").cubes);
+    // its graph leaves out the rolls that don't keep it, giving their share
+    const g = (await ok(api().get(`/api/gear/${id}/potential/hat`))).body;
+    expect(g.cubes.bright.short).toBeCloseTo(1 - 0.00062523, 8);
+    expect(g.cubes.bright.distribution.reduce((sum: number, [, p]: [number, number]) => sum + p, 0)).toBeCloseTo(0.00062523, 8);
+    expect(Math.min(...g.cubes.bright.distribution.map(([s]: [number, number]) => s))).toBeGreaterThanOrEqual(425.48);
+    expect(item(before, "hat").cheaper).not.toBeNull();
+    // Targets: under its minimum it hasn't reached its stop score, whatever its lines score
+    // (a budget so low the stop score is the lowest: any lines would have reached it)
+    const targets = await board(id, "budget=1");
+    expect(item(targets, "hat").stop).toMatchObject({ reached: false });
+    expect(item(targets, "hat").stop!.cubes).toBeGreaterThan(1000);
+  });
+
+  it("a hat under a 2 s minimum, no table typed: Glowing is the cheaper way to a roll that keeps it (1 in ~18 at 12m)", async () => {
+    const id = await character();
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", null]);
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cdMin: 2 }));
+    const hat = item(await board(id), "hat");
+    // a roll that keeps 2 s has one stat line fewer: less than its lines, so neither cube is priced per 1%
+    expect([hat.cubes.glowing.mesoPerFd, hat.cubes.bright.mesoPerFd]).toEqual([null, null]);
+    expect(hat.cubes.glowing.mesoToBetter!).toBeLessThan(hat.cubes.bright.mesoToBetter!);
+    expect(hat.cheaper).toBe("glowing");
+  });
+
+  it("no final damage value (0 per 100 score) and no minimum: no cube is the cheaper on any item", async () => {
+    const id = await character();
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", null]);
+    await wear(id, "belt", { item: GOLLUX_BELT });
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, fdPer100: 0 }));
+    const b = await board(id);
+    expect(b.items.map((i: Item) => i.cheaper)).toEqual([null, null]);
+    expect(item(b, "hat").cubes.bright.mesoToBetter).not.toBeNull();
+  });
+
+  it("a hat that keeps its minimum: a better roll must keep it too", async () => {
+    const id = await character();
+    await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
+    await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34 }));
+    const free = item(await board(id), "hat");
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34, cdMin: 2 }));
+    const kept = item(await board(id), "hat");
+    // the same score to beat, fewer rolls that beat it (some better ones have no cooldown line)
+    expect(kept.score).toBe(free.score);
+    expect(kept.cubes.bright.better).toBeLessThan(free.cubes.bright.better);
+    expect(kept.cubes.bright.better).toBeGreaterThan(0);
+    expect(kept.cubes.bright.mesoPerFd).not.toBeNull();
+    const g = (await ok(api().get(`/api/gear/${id}/potential/hat`))).body;
+    expect(g.cubes.bright.short).toBeGreaterThan(0.9);
+    const free0 = (await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34 })), (await ok(api().get(`/api/gear/${id}/potential/hat`))).body);
+    expect(free0.cubes.bright.short).toBe(0);
   });
 
   it("an item's ignore defense lines multiply, as in game", async () => {

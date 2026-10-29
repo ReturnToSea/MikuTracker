@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { rankName } from "../src/lib/gearDetails";
-import { changed, cubeEventsParam, cubePrice, fineChance, liveScore, oneIn, withPotential, withRank } from "../src/lib/potential";
+import { STAT_VALUE_DEFAULTS } from "@miku/shared";
+import { changed, cooldownBelow, cooldownText, lineText, cubeEventsParam, cubePrice, fineChance, liveScore, oneIn, signedScore, withPotential, withRank } from "../src/lib/potential";
 
 describe("the Potential page's display rules", () => {
   it("cubeEventsParam: the events in a fixed order, whatever order they were ticked in", () => {
@@ -28,6 +29,49 @@ describe("the Potential page's display rules", () => {
     expect(liveScore(points, [], 20.52)).toBe(0);
     // added the way the server adds hundredths (0.1 + 0.2 would be 0.30000000000000004)
     expect(liveScore({ a: 0.1, b: 0.2 }, ["a", "b"], 20.52)).toBe(0.3);
+  });
+
+  it("liveScore: a hat's cooldown lines add up first, then count once by its table (v2.4.1)", () => {
+    // the hat's points at 0 to 6 s (2 s 174.52, 4 s 425.48, blanks taking the one below)
+    const cd = [0, 0, 174.52, 174.52, 425.48, 425.48, 425.48];
+    expect(liveScore({ "STR +13%": 168.61, "Skill Cooldown -2 sec": 174.52 }, ["STR +13%", "Skill Cooldown -2 sec", "Skill Cooldown -2 sec"], 20.52, cd)).toBe(594.09);
+    // two 1 s lines make 2 s; 1 s alone nothing
+    expect(liveScore({}, ["Skill Cooldown -1 sec", "Skill Cooldown -1 sec", null], 20.52, cd)).toBe(174.52);
+    expect(liveScore({}, ["Skill Cooldown -1 sec", null, null], 20.52, cd)).toBe(0);
+    // past the table's end: its last (the server's 6 s)
+    expect(liveScore({}, ["Skill Cooldown -2 sec", "Skill Cooldown -2 sec", "Skill Cooldown -2 sec", "Skill Cooldown -2 sec"], 0, cd)).toBe(425.48);
+    // not a hat (no table): each line by its own points, as before
+    expect(liveScore({ "Skill Cooldown -2 sec": 5 }, ["Skill Cooldown -2 sec", "Skill Cooldown -2 sec"], 0)).toBe(10);
+    // only whole cooldown lines count as seconds; every number of digits counts (a made-up 10 s line: 6 s's)
+    expect(liveScore({ "Skill Cooldown -2 sec when hit": 7 }, ["Skill Cooldown -2 sec when hit"], 0, cd)).toBe(7);
+    expect(liveScore({ "Max Skill Cooldown -2 sec": 7 }, ["Max Skill Cooldown -2 sec"], 0, cd)).toBe(7);
+    expect(liveScore({}, ["Skill Cooldown -10 sec"], 0, cd)).toBe(425.48);
+  });
+
+  it("cooldownBelow: what an empty cooldown box counts as: the nearest filled box below, else nothing", () => {
+    const v = { ...STAT_VALUE_DEFAULTS, cd2: 1.37, cd4: 3.34 };
+    expect([2, 3, 4, 5, 6].map((s) => cooldownBelow(v, s))).toEqual([null, { sec: 2, value: 1.37 }, { sec: 2, value: 1.37 }, { sec: 4, value: 3.34 }, { sec: 4, value: 3.34 }]);
+    expect(cooldownBelow({ ...STAT_VALUE_DEFAULTS, cd5: 4 }, 6)).toEqual({ sec: 5, value: 4 });
+    expect(cooldownBelow({ ...STAT_VALUE_DEFAULTS, cd2: 0 }, 3)).toEqual({ sec: 2, value: 0 });
+    expect(cooldownBelow(STAT_VALUE_DEFAULTS, 6)).toBeNull();
+  });
+
+  it("lineText: a picked line's points; a hat's cooldown line its seconds (they add up before they count)", () => {
+    const hat = { points: { "STR +13%": 168.61, "Skill Cooldown -1 sec": 0, "Skill Cooldown -2 sec": 174.52 }, cooldown: { sec: 0, min: 0, points: [0, 0, 174.52, 174.52, 425.48, 425.48, 425.48] } };
+    expect(["STR +13%", "Skill Cooldown -1 sec", "Skill Cooldown -2 sec", "Unknown line"].map((l) => lineText(hat, l))).toEqual(["+168.6", "1 s, adds up", "2 s, adds up", "+0"]);
+    expect(lineText(hat, null)).toBe("");
+    // not a hat: points, as for any line
+    expect(lineText({ ...hat, cooldown: null }, "Skill Cooldown -2 sec")).toBe("+174.5");
+    // only whole cooldown lines; every number of digits
+    expect(["Skill Cooldown -2 sec when hit", "Max Skill Cooldown -2 sec", "Skill Cooldown -10 sec"].map((l) => lineText(hat, l))).toEqual(["+0", "+0", "10 s, adds up"]);
+  });
+
+  it("cooldownText and signedScore", () => {
+    expect(cooldownText(null)).toBeNull();
+    expect(cooldownText({ sec: 2, min: 0 })).toBe("cooldown 2 s");
+    expect(cooldownText({ sec: 2, min: 4 })).toBe("cooldown 2 s, under the 4 s it must keep: any roll that keeps 4 s is better");
+    expect(cooldownText({ sec: 4, min: 4 })).toBe("cooldown 4 s, must keep 4 s: only rolls that keep it count");
+    expect([12.3, 0, -5].map(signedScore)).toEqual(["+12.3", "+0", "−5"]);
   });
 
   it("liveScore: ignore defense lines multiply, as in game, then take the IED value", () => {

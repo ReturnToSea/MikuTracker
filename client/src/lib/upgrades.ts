@@ -25,8 +25,7 @@ export function eventsFrom<K extends string>(text: string | null, known: readonl
 }
 // Each system's own page, opened with the item picked and that page's events from here (Star Force's for
 // Star Force, the cubes' for Potential; Flames has none), so it shows the figures the row did.
-export const pageFor = (s: Pick<UpgradeStep, "system" | "slot">, sf = "", cubes = ""): string =>
-  `/gear/${s.system}${pageQuery(s.slot, s.system === "starforce" ? sf : s.system === "potential" ? cubes : "")}`;
+export const pageFor = (s: Pick<UpgradeStep, "system" | "slot">, sf = "", cubes = ""): string => `/gear/${s.system}${pageQuery(s.slot, s.system === "starforce" ? sf : s.system === "potential" ? cubes : "")}`;
 
 // What the item is now, under its name: its flame score of its best, its stars and boom price, its rank and
 // the other cube's cost.
@@ -36,7 +35,9 @@ export function nowText(s: UpgradeStep): string {
   if ("star" in n) return `${n.star}★ · ${n.boomCost > 0 ? `booms at ${formatMeso(n.boomCost)}` : "booms not priced"}`;
   const rank = n.rank === null ? "no potential" : n.rank[0]!.toUpperCase() + n.rank.slice(1);
   const other = n.cube === "glowing" ? "Bright" : "Glowing";
-  return `${rank} · ${other} ${n.otherPerFd === null ? "can't beat it" : `${formatMeso(n.otherPerFd)} per 1%`}`;
+  // (a hat with a minimum cooldown: its seconds and the minimum)
+  const cd = n.cooldown && n.cooldown.min > 0 ? ` · cooldown ${n.cooldown.sec} s, ${n.cooldown.min} s needed` : "";
+  return `${rank} · ${other} ${n.otherPerFd === null ? "can't beat it" : `${formatMeso(n.otherPerFd)} per 1%`}${cd}`;
 }
 
 // The next try's chance, as a player says it: 1 in X flames or cubes better; the next tap's success and boom.
@@ -63,8 +64,13 @@ export const along = ([lo, hi]: [number, number], v: number): number => (Math.lo
 export const SAME_PER_FD = [1e8, 1e9, 1e10, 1e11] as const;
 
 // The final damage a step adds: two decimals, or two significant figures when it's small (+0.0074%), never
-// in "e" notation (+0.0000003%).
-// Stryker disable next-line EqualityOperator: at exactly 0.1 both read "0.10"
-export const formatFd = (fd: number): string => `+${fd >= 0.1 ? fd.toFixed(2) : fd.toLocaleString("en-US", { maximumSignificantDigits: 2 })}%`;
+// in "e" notation (+0.0000003%); less than nothing (a hat's cube needed for its minimum cooldown) −0.42%.
+export function formatFd(fd: number): string {
+  const n = Math.abs(fd);
+  // Stryker disable next-line EqualityOperator: at exactly 0.1 both read "0.10"
+  return `${fd < 0 ? "−" : "+"}${n >= 0.1 ? n.toFixed(2) : n.toLocaleString("en-US", { maximumSignificantDigits: 2 })}%`;
+}
+// A step's meso per 1% final damage, or "needed" for a hat's cube its minimum cooldown needs that adds nothing.
+export const perFdText = (s: Pick<UpgradeStep, "perFd">): string => (s.perFd === null ? "needed" : formatMeso(s.perFd));
 // A chart tick of final damage: 10,000%, 10%, 1%, 0.01%.
 export const formatTick = (v: number): string => `${v.toLocaleString("en-US", { maximumSignificantDigits: 2 })}%`;

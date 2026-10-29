@@ -6,7 +6,7 @@ import type { GearBoard, GearCharacter, UpgradesBoard, UpgradeStep } from "../sr
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // A made-up board: the numbers are the server's to work out (tested there); here, what the page shows and does.
-const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null };
+const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
 const char = (id: number, name: string): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: null, statValues: VALUES });
 const SLOTS = ["hat", "weapon", "belt"].map((key) => ({ key, label: key, kind: key }));
 const GEAR: GearBoard = { generated: "2026-10-24", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit"), char(2, "Second")] };
@@ -15,7 +15,7 @@ const BOARD: UpgradesBoard = {
   known: true, blackFlamePrice: 3_000_000, mvp: "none", prices: { glowing: 12_000_000, bright: 22_000_000 },
   steps: [
     step({}),
-    step({ system: "potential", slot: "belt", name: "Gollux Belt", icon: null, step: "Glowing Cube", perFd: 277_900_000, cost: 437_400_000, fd: 1.57, chance: 1 / 86, now: { rank: "unique", cube: "glowing", otherPerFd: 303_800_000 } }),
+    step({ system: "potential", slot: "belt", name: "Gollux Belt", icon: null, step: "Glowing Cube", perFd: 277_900_000, cost: 437_400_000, fd: 1.57, chance: 1 / 86, now: { rank: "unique", cube: "glowing", otherPerFd: 303_800_000, cooldown: null } }),
     step({ system: "starforce", step: "17→18★", perFd: 1_540_000_000, cost: 755_500_000, fd: 0.49, chance: 0.158, boom: 0.0674, now: { star: 17, boomCost: 0 } }),
   ],
 };
@@ -109,6 +109,31 @@ describe("the Upgrades page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Chart" }));
     const dots = within(await screen.findByRole("region", { name: "Cost against gain" })).getByRole("img").querySelectorAll("circle");
     for (const d of dots) expect(Number.isFinite(Number(d.getAttribute("cx")))).toBe(true);
+  });
+
+  it("a hat's cube its minimum cooldown needs, adding nothing: last, 'needed', its loss signed; not on the chart, but named", async () => {
+    const needed = step({ system: "potential", step: "Bright Cube", perFd: null, cost: 35_200_000_000, fd: -0.1, chance: 0.00062523, now: { rank: "legendary", cube: "bright", otherPerFd: null, cooldown: { sec: 2, min: 4 } } });
+    show({ ...BOARD, steps: [...BOARD.steps, needed] });
+    const last = (await rows()).at(-1)!;
+    expect(last.textContent).toContain("needed");
+    expect(last.textContent).toContain("−0.10%");
+    expect(last.textContent).toContain("cooldown 2 s, 4 s needed");
+    await userEvent.click(screen.getByRole("button", { name: "Chart" }));
+    const chart = within(await screen.findByRole("region", { name: "Cost against gain" }));
+    // three dots, not four; the needed one named under the chart
+    expect(chart.getByRole("img").querySelectorAll("circle")).toHaveLength(3);
+    expect(chart.getByText(/Not on the chart/).textContent).toContain("Arcane Hat's Bright Cube");
+  });
+
+  it("only a needed cube: nothing to chart, said why", async () => {
+    show({ ...BOARD, steps: [step({ system: "potential", step: "Bright Cube", perFd: null, cost: 35_200_000_000, fd: -0.1, chance: 0.00062523, now: { rank: "legendary", cube: "bright", otherPerFd: null, cooldown: { sec: 2, min: 4 } } })] });
+    await rows();
+    // not the cheapest, though first: it has no meso per 1%
+    const first = (await rows())[0]!;
+    expect(first.classList.contains("cheapest")).toBe(false);
+    expect(first.querySelector(".gold")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Chart" }));
+    expect((await screen.findByText(/Nothing to chart/)).textContent).toContain("Arcane Hat");
   });
 
   it("a job the item list doesn't know yet, or nothing to upgrade: a note", async () => {

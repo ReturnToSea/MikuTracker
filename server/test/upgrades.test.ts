@@ -60,12 +60,30 @@ describe("GET /api/gear/:id/upgrades", () => {
       const m = p.cubes[p.cheaper];
       const s = steps.find((x) => x.system === "potential" && x.slot === p.slot)!;
       const other = p.cubes[p.cheaper === "glowing" ? "bright" : "glowing"];
-      expect(s).toMatchObject({ step: p.cheaper === "glowing" ? "Glowing Cube" : "Bright Cube", perFd: m.mesoPerFd, cost: m.mesoToBetter, chance: m.better, now: { rank: p.rank, cube: p.cheaper, otherPerFd: other.mesoPerFd } });
+      expect(s).toMatchObject({ step: p.cheaper === "glowing" ? "Glowing Cube" : "Bright Cube", perFd: m.mesoPerFd, cost: m.mesoToBetter, chance: m.better, now: { rank: p.rank, cube: p.cheaper, otherPerFd: other.mesoPerFd, cooldown: p.cooldown && { sec: p.cooldown.sec, min: p.cooldown.min } } });
       expect(other.mesoPerFd).not.toBe(m.mesoPerFd);
       expect(s.fd).toBeCloseTo(fd(m.gainIfBetter), 12);
     }
     // the hat, the weapon and the belt in flames and potential; Star Force: the hat and the belt (a Genesis weapon is fixed)
     expect(steps.map((s) => `${s.system} ${s.slot}`).sort()).toEqual(["flames belt", "flames hat", "flames weapon", "potential belt", "potential hat", "potential weapon", "starforce belt", "starforce hat"]);
+  });
+
+  it("a hat under its minimum cooldown: its cube is listed, last, with no meso per 1% when a roll that keeps it adds nothing", async () => {
+    const id = await geared();
+    // the hat: Unique, no cooldown; 4 s needed (Legendary only rolls cooldown), worth little (blank table: nothing)
+    const defaults = (await get("/api/gear?world=45")).characters[0].statValues;
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cdMin: 4 }));
+    const steps: Step[] = (await get(`/api/gear/${id}/upgrades`)).steps;
+    const potential = await get(`/api/gear/${id}/potential?events=&budget=0`);
+    const hat = potential.items.find((i: { slot: string }) => i.slot === "hat");
+    expect(hat.cubes[hat.cheaper].mesoPerFd).toBeNull();
+    expect(steps.at(-1)).toMatchObject({ system: "potential", slot: "hat", perFd: null, cost: hat.cubes[hat.cheaper].mesoToBetter, now: { rank: "unique", cooldown: { sec: 0, min: 4 } } });
+    // the rest still cheapest first
+    const per = steps.slice(0, -1).map((s) => s.perFd);
+    expect(per.every((p) => p !== null)).toBe(true);
+    expect(per).toEqual([...per].sort((x, y) => x - y));
+    // a step needed but worth nothing doesn't push the others down: a null left in the middle would read as 0
+    expect(steps.filter((s) => s.perFd === null)).toHaveLength(1);
   });
 
   it("a step that adds nothing isn't listed: the best flames, the best lines, the last star", async () => {

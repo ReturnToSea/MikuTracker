@@ -1,9 +1,11 @@
 import { STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
 import { describe, expect, it } from "vitest";
 import { jobStats } from "../gameFigures/jobStats";
-import { type CubeRolls, cubeMetrics, cubesForChance, cubesToReach, cubeUntil, iedPercent, linePoints, linesPoints, oneCube, pctDefault, pctWorth, rollDistribution, statBoxes } from "./potential";
+import { cooldownFd, cooldownPoints, cooldownSeconds, counted, type CubeRolls, cubeMetrics, cubesForChance, cubesToReach, cubeUntil, iedPercent, linePoints, linesCooldown, linesPoints, oneCube, pctDefault, pctWorth, rollDistribution, SHORT, statBoxes } from "./potential";
 
-const V: StatValuesInput = { ...STAT_VALUE_DEFAULTS }; // main stat % 12.97, secondary % 1.68, all stat % 14.65, ATT % 53.82, 1 ATT 4, boss 12, crit damage 42.38, IED 20.52 at 380%
+const V: StatValuesInput = { ...STAT_VALUE_DEFAULTS };
+// the Ren Discord's cooldown figures (% final damage at 2, 3, 4 and 5 s; 6 s left blank)
+const CD: StatValuesInput = { ...V, cd2: 1.37, cd3: 2.76, cd4: 3.34, cd5: 4.26 }; // main stat % 12.97, secondary % 1.68, all stat % 14.65, ATT % 53.82, 1 ATT 4, boss 12, crit damage 42.38, IED 20.52 at 380%
 const ren = jobStats("Ren", ["Warrior"])!; // STR main, DEX secondary
 const mage = jobStats("Bishop", ["Magician"])!;
 const xenon = jobStats("Xenon", ["Thief", "Pirate"])!;
@@ -29,23 +31,44 @@ describe("linePoints: one potential line in hundredths of main stat", () => {
     expect(["Boss Damage +40%", "Damage +13%", "Ignore Enemy DEF +40%", "Critical Damage +8%"].map((l) => linePoints(l, ren, V))).toEqual([48000, 15600, 82080, 33904]);
     expect(linePoints("Ignore Enemy DEF +40%", ren, { ...V, bossDef: 300 })).toBe(62400);
   });
-  it("skill cooldown: 0 until its value is typed, then that final damage as score", () => {
+  it("skill cooldown: 0 until typed, then the final damage typed for its seconds, as score", () => {
     expect(linePoints("Skill Cooldown -2 sec", ren, V)).toBe(0);
-    // 2 s × 3% FD a second = 6% FD = 6 ÷ 0.785 × 100 = 764.33 score
-    expect(linePoints("Skill Cooldown -2 sec", ren, { ...V, cooldown: 3 })).toBe(76433);
-    expect(linePoints("Skill Cooldown -2 sec", ren, { ...V, cooldown: 3, fdPer100: 0 })).toBe(0);
+    // 2 s at 1.37% FD (the Ren Discord's) = 1.37 ÷ 0.785 × 100 = 174.52 score
+    expect(linePoints("Skill Cooldown -2 sec", ren, CD)).toBe(17452);
+    // 1 s is worth nothing; no final damage value: nothing
+    expect(linePoints("Skill Cooldown -1 sec", ren, CD)).toBe(0);
+    expect(linePoints("Skill Cooldown -2 sec", ren, { ...CD, fdPer100: 0 })).toBe(0);
   });
   it("only whole lines count: a line with more around it (\"STR +2 per 10 character levels\") is another line", () => {
     const lines = ["STR +13%", "All Stats +10%", "Max HP +12%", "ATT +13%", "Boss Damage +40%", "Damage +13%", "Ignore Enemy DEF +40%", "Critical Damage +8%", "Skill Cooldown -2 sec"];
-    const values = { ...V, cooldown: 3 };
+    const values = CD;
     for (const job of [ren, da]) {
       for (const line of lines) {
         expect(linePoints(`Max ${line}`, job, values)).toBe(0);
         expect(linePoints(`${line} per 10 character levels`, job, values)).toBe(0);
       }
     }
-    // and every number of digits counts: 12% critical damage, a 10 s cooldown (made-up values)
-    expect([linePoints("Critical Damage +12%", ren, V), linePoints("Skill Cooldown -10 sec", ren, { ...V, cooldown: 0.785 })]).toEqual([50856, 100000]);
+    // and every number of digits counts: 12% critical damage, a 10 s cooldown (made-up: past 6 s, 6 s's value)
+    expect([linePoints("Critical Damage +12%", ren, V), linePoints("Skill Cooldown -10 sec", ren, { ...V, cd6: 0.785 })]).toEqual([50856, 10000]);
+  });
+
+  it("cooldown isn't the same each second: each total's own value; a blank one takes the nearest typed below", () => {
+    // the Ren Discord's: 2 s 1.37, 3 s 2.76, 4 s 3.34, 5 s 4.26 (6 s left blank)
+    expect([0, 1, 2, 3, 4, 5, 6].map((s) => cooldownFd(CD, s))).toEqual([0, 0, 1.37, 2.76, 3.34, 4.26, 4.26]);
+    // 3 s blank: 2 s's; 2 s blank too: nothing below it typed, so nothing
+    expect([2, 3, 4].map((s) => cooldownFd({ ...CD, cd3: null }, s))).toEqual([1.37, 1.37, 3.34]);
+    expect([2, 3, 4].map((s) => cooldownFd({ ...CD, cd2: null, cd3: null }, s))).toEqual([0, 0, 3.34]);
+    expect([2, 6].map((s) => cooldownFd(V, s))).toEqual([0, 0]);
+    // as score: 4 s = 3.34 ÷ 0.785 × 100 = 425.48
+    expect([cooldownPoints(CD, 4), cooldownPoints({ ...CD, fdPer100: 0 }, 4)]).toEqual([42548, 0]);
+  });
+  it("an item's cooldown lines add up first, then count once: 2 + 2 s is 4 s's 3.34%, not twice 2 s's", () => {
+    expect(linesPoints(["Skill Cooldown -2 sec", "Skill Cooldown -2 sec", "STR +13%"], ren, CD)).toBe(42548 + 16861);
+    // two 1 s lines make 2 s; one is worth nothing
+    expect(linesPoints(["Skill Cooldown -1 sec", "Skill Cooldown -1 sec", null], ren, CD)).toBe(17452);
+    expect(linesPoints(["Skill Cooldown -1 sec", null, null], ren, CD)).toBe(0);
+    expect([linesCooldown(["Skill Cooldown -2 sec", null, "Skill Cooldown -1 sec"]), linesCooldown([null, "STR +13%"])]).toEqual([3, 0]);
+    expect(["Skill Cooldown -2 sec", "Skill Cooldown -2 sec when hit", "Max Skill Cooldown -2 sec", "STR +2"].map(cooldownSeconds)).toEqual([2, 0, 0, 0]);
   });
 
   it("an item's ignore defense lines multiply, as in game: 40, 40 and 30% are 74.8%, not 110%", () => {
@@ -124,6 +147,35 @@ describe("rollDistribution: one cube's 3 lines, exactly", () => {
       [6400, 0.25],
     ]);
     // no IED value: IED lines worth nothing
+    expect(rollDistribution([slot, slot], pts)).toEqual([
+      [0, 0.25],
+      [100, 0.5],
+      [200, 0.25],
+    ]);
+  });
+
+  it("cooldown lines' seconds add up in a roll, then count by the rule; under its minimum a roll doesn't qualify", () => {
+    const slot = [
+      { line: "Skill Cooldown -2 sec", chance: 50 },
+      { line: "A", chance: 50 },
+    ];
+    // not the same each second (made up: 2 s 500, 4 s 2000): A A 200; a cooldown and A 500 + 100; both 4 s
+    const points = (sec: number) => [0, 0, 500, 0, 2000][sec]!;
+    expect(rollDistribution([slot, slot], pts, 0, { points, min: 0 })).toEqual([
+      [200, 0.25],
+      [600, 0.5],
+      [2000, 0.25],
+    ]);
+    expect(rollDistribution([slot, slot], pts, 0, { points, min: 2 })).toEqual([
+      [SHORT, 0.25],
+      [600, 0.5],
+      [2000, 0.25],
+    ]);
+    expect(rollDistribution([slot, slot], pts, 0, { points, min: 4 })).toEqual([
+      [SHORT, 0.75],
+      [2000, 0.25],
+    ]);
+    // no rule: cooldown worth nothing
     expect(rollDistribution([slot, slot], pts)).toEqual([
       [0, 0.25],
       [100, 0.5],
@@ -389,6 +441,21 @@ describe("cubeMetrics", () => {
   });
   it("below the top rank: its rank-up chance", () => {
     expect(cubeMetrics(twoRanks, 0, 0, 10e6, 1).rankUp).toBe(0.2);
+  });
+  it("a hat under its minimum: any qualifying roll beats it; the gain is counted from its real score", () => {
+    // 1 in 4 rolls keeps the minimum (scoring 2000): 4 cubes to one
+    const hat: CubeRolls = { ranks: [[[SHORT, 0.75], [2000, 0.25]]], rankUp: [] };
+    const m = cubeMetrics(hat, 0, SHORT, 10e6, 1, 1000);
+    expect(m).toMatchObject({ better: 0.25, cubesToBetter: expect.closeTo(4, 12), mesoToBetter: expect.closeTo(40e6, 5), gainIfBetter: expect.closeTo(10, 12), fdIfBetter: expect.closeTo(0.1, 12), mesoPerFd: expect.closeTo(4e8, 1) });
+    // its lines already score more than the qualifying roll: needed, but it adds nothing per 1%
+    expect(cubeMetrics(hat, 0, SHORT, 10e6, 1, 2500)).toMatchObject({ mesoToBetter: expect.closeTo(40e6, 5), gainIfBetter: expect.closeTo(-5, 12), mesoPerFd: null });
+  });
+  it("counted: for the graph and the stop score a roll that doesn't qualify counts as 0, its share given", () => {
+    expect(counted([[SHORT, 0.25], [0, 0.1], [600, 0.65]])).toEqual({ dist: [[0, 0.35], [600, 0.65]], short: 0.25 });
+    expect(counted([[SHORT, 0.25], [600, 0.75]])).toEqual({ dist: [[0, 0.25], [600, 0.75]], short: 0.25 });
+    expect(counted([[0, 0.25], [600, 0.75]])).toEqual({ dist: [[0, 0.25], [600, 0.75]], short: 0 });
+    // nothing short and no 0: as it was (no empty 0 added)
+    expect(counted([[600, 1]])).toEqual({ dist: [[600, 1]], short: 0 });
   });
   it("nothing to gain: no meso figures", () => {
     expect(cubeMetrics(legendary, 0, 200, 10e6, 1)).toMatchObject({ better: 0, cubesToBetter: null, mesoToBetter: null, gainIfBetter: null, fdIfBetter: null, mesoPerFd: null });

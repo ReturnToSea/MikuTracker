@@ -1,11 +1,11 @@
 import { CUBE_EVENTS, POTENTIAL_RANKS, type StatValuesInput } from "@miku/shared";
 import { flameCurves, stopScore } from "../calc/flames";
-import { type CubeMetrics, type CubeRolls, cubeMetrics, cubesToReach, iedWorth, linePoints, linesPoints, oneCube, rollDistribution } from "../calc/potential";
+import { type CooldownRule, cooldownPoints, counted, type CubeMetrics, type CubeRolls, cubeMetrics, cubesToReach, iedWorth, linePoints, linesCooldown, linesPoints, NO_COOLDOWN, oneCube, rollDistribution, SHORT } from "../calc/potential";
 import { type Cube, CUBE_PRICE, CUBE_TABLE, CUBES, MIRACLE, RANK_UP, SALE } from "../gameFigures/cubes";
 import type { JobStats } from "../gameFigures/jobStats";
 import { potentialOptions } from "../gameFigures/potential";
 import { HttpError } from "../http";
-import { characterValues, equippedItems } from "./gear";
+import { type CharacterGear, characterGear, type EquippedItem } from "./gear";
 
 // The Potential page (v2.3.0): a character's equipped items that can have potential, each with its
 // saved lines' score and what Glowing and Bright Cubes would do, cheapest to upgrade first.
@@ -27,7 +27,12 @@ export interface PotentialItem {
   score: number; // in points
   best: number; // the best Legendary lines' score
   cubes: Record<Cube, CubeMetrics & { price: number }>;
-  cheaper: Cube | null; // the cube with the lower meso per 1% final damage (null: neither can improve it)
+  // a hat's skill cooldown (v2.4.1; null: not a hat): its lines' seconds, the seconds it must keep (0:
+  // none), and what each total from 0 to 6 s adds, in points (the page adds them up as it's edited)
+  cooldown: { sec: number; min: number; points: number[] } | null;
+  // the cube with the lower meso per 1% final damage (null: neither can improve it); a hat under its
+  // minimum: a roll that keeps it is needed even if it adds nothing, so then the cheaper way to one
+  cheaper: Cube | null;
   // where to stop for the budget asked for, and the cheaper cube's way there (null: no budget)
   stop: { score: number; reached: boolean; cube: Cube; cubes: number; meso: number } | null;
 }
@@ -54,8 +59,8 @@ interface Cubeable {
 
 // The character's items that can have potential: listed ones whose list entry has a potential kind,
 // and typed ones of a kind that has it (with their level given).
-async function cubeable(characterId: number): Promise<Cubeable[]> {
-  return (await equippedItems(characterId)).flatMap(({ slot, name, icon, di, potential, details }) =>
+function cubeable(equipped: EquippedItem[]): Cubeable[] {
+  return equipped.flatMap(({ slot, name, icon, di, potential, details }) =>
     potential === null ? [] : [{ slot, name, icon, level: di.level, starMin: Math.min(di.starMin, di.starMax), part: potential, rank: details?.potential?.rank ?? null, lines: details?.potential?.lines ?? [null, null, null] }],
   );
 }
@@ -65,27 +70,44 @@ function rollsOf(it: Cubeable, cube: Cube, job: JobStats, values: StatValuesInpu
   const tables = potentialOptions(it.part, it.level, CUBE_TABLE[cube]);
   const points = (line: string) => linePoints(line, job, values);
   // (every level range Nexon has lists all four ranks: gameFigures/potential.test.ts)
-  return { ranks: POTENTIAL_RANKS.map((r) => rollDistribution(tables[r]!, points, iedWorth(values))), rankUp: RANK_UP[cube].map((u) => u * (events.includes("miracle") ? MIRACLE : 1)) };
+  return { ranks: POTENTIAL_RANKS.map((r) => rollDistribution(tables[r]!, points, iedWorth(values), cooldownRule(it, values))), rankUp: RANK_UP[cube].map((u) => u * (events.includes("miracle") ? MIRACLE : 1)) };
 }
+
+// How a hat's cooldown lines count: by the character's table, with its minimum (only hats roll cooldown
+// lines; another item's minimum would rule out every roll).
+const isHat = (it: Cubeable) => it.part === "hat";
+const cooldownRule = (it: Cubeable, values: StatValuesInput): CooldownRule => (isHat(it) ? { points: (sec) => cooldownPoints(values, sec), min: values.cdMin } : NO_COOLDOWN);
+// What a roll must beat: its lines' score, or SHORT when a hat doesn't keep its minimum.
+const toBeat = (it: Cubeable, values: StatValuesInput, score: number) => (isHat(it) && linesCooldown(it.lines) < values.cdMin ? SHORT : score);
 
 const fromRank = (it: Cubeable) => (it.rank === null ? 0 : POTENTIAL_RANKS.indexOf(it.rank));
 
-export async function potentialBoard(ownerId: string, characterId: number, events: CubeEvent[], budget: number): Promise<PotentialBoard> {
-  const { job, values } = await characterValues(ownerId, characterId);
+export const potentialBoard = async (ownerId: string, characterId: number, events: CubeEvent[], budget: number): Promise<PotentialBoard> => potentialFrom(await characterGear(ownerId, characterId), events, budget);
+// (from a character's gear already read: the Upgrades page reads it once for every page)
+export function potentialFrom({ job, values, equipped }: CharacterGear, events: CubeEvent[], budget: number): PotentialBoard {
   const prices = { glowing: price("glowing", events), bright: price("bright", events) };
   if (!job) return { known: false, budget, prices, items: [] };
   const points = (line: string) => linePoints(line, job, values);
-  const items = (await cubeable(characterId)).map((it): PotentialItem => {
+  const items = cubeable(equipped).map((it): PotentialItem => {
     const score = linesPoints(it.lines, job, values);
+    const beat = toBeat(it, values, score);
     const from = fromRank(it);
     const rolls = { glowing: rollsOf(it, "glowing", job, values, events), bright: rollsOf(it, "bright", job, values, events) };
-    const cubes = Object.fromEntries(CUBES.map((c) => [c, { ...cubeMetrics(rolls[c], from, score, prices[c], values.fdPer100), price: prices[c] }])) as PotentialItem["cubes"];
+    const cubes = Object.fromEntries(CUBES.map((c) => [c, { ...cubeMetrics(rolls[c], from, beat, prices[c], values.fdPer100, score), price: prices[c] }])) as PotentialItem["cubes"];
     const costs = CUBES.filter((c) => cubes[c].mesoPerFd !== null);
-    // Stryker disable next-line EqualityOperator: two cubes' costs never tie to the last digit (on a tie, either is as cheap)
-    const cheaper = costs.length === 0 ? null : costs.reduce((a, b) => (cubes[b].mesoPerFd! < cubes[a].mesoPerFd! ? b : a));
+    // the cheaper per 1% final damage; else, a hat under its minimum whose qualifying rolls add nothing: the
+    // cheaper way to one (always there: Legendary hats roll up to 6 s with either cube); else none
+    const cheaper =
+      costs.length > 0
+        ? // Stryker disable next-line EqualityOperator: two cubes' costs never tie to the last digit (on a tie, either is as cheap)
+          costs.reduce((a, b) => (cubes[b].mesoPerFd! < cubes[a].mesoPerFd! ? b : a))
+        : beat === SHORT
+          ? // Stryker disable next-line EqualityOperator: two cubes' costs never tie to the last digit (on a tie, either is as cheap)
+            CUBES.reduce((a, b) => (cubes[b].mesoToBetter! < cubes[a].mesoToBetter! ? b : a))
+          : null;
     // the score to stop at: past it, cubing on at Legendary costs more than the budget per 1% final
     // damage with either cube (each cube's own stop score, the higher one)
-    const stops = CUBES.map((c) => stopScore(rolls[c].ranks[3]!, prices[c], values.fdPer100, budget)).filter((s): s is number => s !== null);
+    const stops = CUBES.map((c) => stopScore(counted(rolls[c].ranks[3]!).dist, prices[c], values.fdPer100, budget)).filter((s): s is number => s !== null);
     let stop: PotentialItem["stop"] = null;
     if (stops.length > 0) {
       const at = Math.max(...stops);
@@ -93,7 +115,8 @@ export async function potentialBoard(ownerId: string, characterId: number, event
       // Stryker disable next-line EqualityOperator: two cubes' costs never tie to the last digit (on a tie, either is as cheap)
       const way = CUBES.map((c) => ({ cube: c, cubes: cubesToReach(rolls[c], from, at) ?? Infinity })).reduce((a, b) => (b.cubes * prices[b.cube] < a.cubes * prices[a.cube] ? b : a));
       // Stryker disable next-line EqualityOperator: a score exactly at the stop score is as good as past it either way
-      stop = { score: at, reached: score / 100 >= at, cube: way.cube, cubes: way.cubes, meso: way.cubes * prices[way.cube] };
+      // (a hat under its minimum cooldown hasn't reached anything)
+      stop = { score: at, reached: beat !== SHORT && score / 100 >= at, cube: way.cube, cubes: way.cubes, meso: way.cubes * prices[way.cube] };
     }
     const options = Object.fromEntries(
       Object.entries(potentialOptions(it.part, it.level)).map(([rank, slots]) => [rank, slots!.map((s) => [...new Set(s.map((o) => o.line))].sort((a, b) => points(b) - points(a)))]),
@@ -113,27 +136,30 @@ export async function potentialBoard(ownerId: string, characterId: number, event
       score: score / 100,
       // the best Legendary lines (both cubes roll the same lines)
       best: rolls.bright.ranks[3]!.at(-1)![0] / 100,
+      cooldown: isHat(it) ? { sec: linesCooldown(it.lines), min: values.cdMin, points: [0, 1, 2, 3, 4, 5, 6].map((s) => cooldownPoints(values, s) / 100) } : null,
       cubes,
       cheaper,
       stop,
     };
   });
   // Stryker disable next-line ArrayCallback: see the sort's test (cheapest first, endless last)
-  items.sort((a, b) => (a.cheaper ? a.cubes[a.cheaper].mesoPerFd! : Infinity) - (b.cheaper ? b.cubes[b.cheaper].mesoPerFd! : Infinity));
+  // (a hat's cube needed for its minimum cooldown that adds nothing has none: last too)
+  items.sort((a, b) => ((a.cheaper && a.cubes[a.cheaper].mesoPerFd) ?? Infinity) - ((b.cheaper && b.cubes[b.cheaper].mesoPerFd) ?? Infinity));
   return { known: true, budget, prices, items };
 }
 
 // One item's graph, for each cube: every score one cube can give with its chance (rank-ups included),
 // and the curves (at Legendary). With a target score: what reaching it costs with each cube.
 export interface PotentialGraph {
-  cubes: Record<Cube, { distribution: [score: number, chance: number][]; curves: ReturnType<typeof flameCurves> }>;
+  // short: the chance one cube's roll doesn't keep a hat's minimum cooldown (not among the scores)
+  cubes: Record<Cube, { distribution: [score: number, chance: number][]; short: number; curves: ReturnType<typeof flameCurves> }>;
   target: { score: number; cubes: Record<Cube, { cubes: number; meso: number } | null> } | null;
 }
 
 export async function potentialGraph(ownerId: string, characterId: number, slot: string, events: CubeEvent[], target: number | undefined): Promise<PotentialGraph> {
-  const { job, values } = await characterValues(ownerId, characterId);
+  const { job, values, equipped } = await characterGear(ownerId, characterId);
   if (!job) throw new HttpError(404, "No potential score for this job yet");
-  const it = (await cubeable(characterId)).find((i) => i.slot === slot);
+  const it = cubeable(equipped).find((i) => i.slot === slot);
   if (!it) throw new HttpError(404, "That slot has no item that can have potential");
   const from = fromRank(it);
   const rolls = { glowing: rollsOf(it, "glowing", job, values, events), bright: rollsOf(it, "bright", job, values, events) };
@@ -142,7 +168,13 @@ export async function potentialGraph(ownerId: string, characterId: number, slot:
     return n === null ? null : { cubes: n, meso: n * price(c, events) };
   };
   return {
-    cubes: Object.fromEntries(CUBES.map((c) => [c, { distribution: oneCube(rolls[c], from).map(([s, p]) => [s / 100, p]), curves: flameCurves(rolls[c].ranks[3]!, price(c, events)) }])) as PotentialGraph["cubes"],
+    cubes: Object.fromEntries(
+      CUBES.map((c) => {
+        // (a hat's rolls under its minimum aren't scores: left out, their share given)
+        const one = oneCube(rolls[c], from);
+        return [c, { distribution: one.filter(([s]) => s !== SHORT).map(([s, p]) => [s / 100, p]), short: counted(one).short, curves: flameCurves(counted(rolls[c].ranks[3]!).dist, price(c, events)) }];
+      }),
+    ) as PotentialGraph["cubes"],
     target: target === undefined ? null : { score: target, cubes: { glowing: reach("glowing", target), bright: reach("bright", target) } },
   };
 }

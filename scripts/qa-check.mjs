@@ -594,7 +594,7 @@ try {
     ["details: a potential line it can't have", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Boss Damage +40%", null, null] }, hammers: 0 }, 400],
     ["details: an empty slot", "PUT", `/gear/${miku.id}/android/details`, { stars: 0, flames: {}, potential: null, hammers: 0 }, 404],
     ["options: an unknown item", "GET", "/gear/options?item=1234567", undefined, 404],
-    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cooldown: null }, 400],
+    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -793,12 +793,48 @@ try {
   await values2.getByRole("spinbutton", { name: "1% INT =" }).fill("12.97");
   await values2.getByRole("spinbutton", { name: "1% INT =" }).press("Enter");
   await settle(600);
+  // skill cooldown as a table and a hat's minimum (v2.4.1)
+  const cdBox = (n) => values2.getByRole("spinbutton", { name: `${n} s skill cooldown =` });
+  check("Stat values", "skill cooldown: a box for each total from 2 to 6 s (none for 1 s), all empty to start", (await Promise.all([2, 3, 4, 5, 6].map((n) => cdBox(n).inputValue()))).every((v) => v === "") && (await values2.getByRole("spinbutton", { name: "1 s skill cooldown =" }).count()) === 0);
+  for (const [n, v] of [[2, "1.37"], [4, "3.34"]]) {
+    await cdBox(n).fill(v);
+    await cdBox(n).press("Enter");
+    await settle(500);
+  }
+  check("Stat values", "an empty cooldown box shows what it counts as: 3 s takes 2 s's 1.37, 6 s takes 4 s's 3.34", (await cdBox(3).getAttribute("placeholder")) === "1.37" && (await cdBox(6).getAttribute("placeholder")) === "3.34", `${await cdBox(3).getAttribute("placeholder")} / ${await cdBox(6).getAttribute("placeholder")}`);
+  const hatMin = values2.getByRole("group", { name: "Hat's minimum cooldown" });
+  await hatMin.getByRole("button", { name: "4 s", exact: true }).click();
+  await settle(800);
+  pb = await potBoard();
+  const crownCd = pb.items.find((i) => i.slot === "hat");
+  // the crown has no cooldown line: any roll keeping 4 s beats it; Legendary hats roll at least 4 s 0.062523% of the time with Bright, 0.026487% with Glowing (brendonmay's engine agrees)
+  check("Potential", "a hat must keep 4 s: the crown (0 s) takes any roll that keeps it, at brendonmay's odds", crownCd.cooldown?.sec === 0 && crownCd.cooldown?.min === 4 && Math.abs(crownCd.cubes.bright.better - 0.00062523) < 1e-8 && Math.abs(crownCd.cubes.glowing.better - 0.00026487) < 1e-8, JSON.stringify([crownCd.cooldown?.sec, crownCd.cooldown?.min, crownCd.cubes.bright.better, crownCd.cubes.glowing.better]));
+  check("Potential", "Targets: the crown under its 4 s minimum hasn't reached its stop score", (await page.getByRole("region", { name: "Targets" }).getByRole("row", { name: /AbsoLab Mage Crown/ }).innerText()).includes("reached") === false, await page.getByRole("region", { name: "Targets" }).getByRole("row", { name: /AbsoLab Mage Crown/ }).innerText());
+  await page.getByRole("button", { name: "Upgrade", exact: true }).click();
+  await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: "AbsoLab Mage Crown" }).click();
+  await settle(400);
+  check("Potential", "the crown says it's under the 4 s it must keep", (await crownPot().getByText(/under the 4 s it must keep/).count()) === 1);
+  const ubCd = (await api("GET", `/gear/${miku.id}/upgrades?sf=&cubes=`)).json;
+  const crownStep = ubCd.steps.find((x) => x.system === "potential" && x.slot === "hat");
+  check("Upgrades", "the crown's cube there too, with its cooldown and the minimum", crownStep && crownStep.chance === crownCd.cubes[crownCd.cheaper].better && crownStep.now.cooldown?.min === 4, JSON.stringify(crownStep?.now));
+  await shot("18b-potential-cooldown");
+  // back to none and empty boxes, for the checks after
+  await hatMin.getByRole("button", { name: "none", exact: true }).click();
+  await settle(400);
+  for (const n of [2, 4]) {
+    await cdBox(n).fill("");
+    await cdBox(n).press("Enter");
+    await settle(400);
+  }
+  pb = await potBoard();
+  check("Stat values", "back to no minimum and empty cooldown boxes: the crown as before", pb.items.find((i) => i.slot === "hat").cooldown?.min === 0 && (await cdBox(4).inputValue()) === "");
   for (const [what, method, where, body, status] of [
+    ["stat values: a hat minimum the game can't have (7 s)", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 7 }, 400],
     ["potential: no budget", "GET", `/gear/${miku.id}/potential`, undefined, 400],
     ["potential: an event it doesn't know", "GET", `/gear/${miku.id}/potential?events=free&budget=1`, undefined, 400],
     ["potential: a slot without an item that can have potential", "GET", `/gear/${miku.id}/potential/android`, undefined, 404],
     ["potential: a negative target", "GET", `/gear/${miku.id}/potential/hat?target=-1`, undefined, 400],
-    ["stat values: a bosses' defense it doesn't know", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 350, cooldown: null }, 400],
+    ["stat values: a bosses' defense it doesn't know", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 350, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -979,44 +1015,20 @@ try {
   check("Layout", "the Symbols tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/gear");
   check("Layout", "the Gear tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  // (narrow windows, not phones: the app is for desktop browsers, PLAN.md "Not for phones for now"; the
+  // phone-width checks added from v2.1.0 were dropped in v2.4.1, the owner's call)
   await go("/gear/flames");
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
   check("Layout", "the Flames page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  // a phone-sized window: the rail along the bottom; Gear opens its pages as a menu, without leaving the page
-  await page.setViewportSize({ width: 390, height: 800 });
-  await settle(300);
-  await page.locator(".rail-group > .tab").click();
-  await settle(300);
-  check("Layout", "phone width: Gear opens a menu of its pages, staying on Flames", (await text("h1")) === "Flames" && (await page.locator(".rail-group.menu .rail-pages").isVisible()));
-  check("Layout", "the Flames page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await shot("14-flames-phone");
-  await page.locator(".rail-page", { hasText: "Equipment" }).click();
-  await settle(300);
-  check("Layout", "picking Equipment from the menu opens it and closes the menu", (await text("h1")) === "Gear" && !(await page.locator(".rail-group.menu").count()));
-  await page.setViewportSize({ width: 900, height: 900 });
   await go("/gear/starforce");
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
   check("Layout", "the Star Force page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await page.setViewportSize({ width: 390, height: 800 });
-  await settle(400);
-  check("Layout", "the Star Force page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await page.setViewportSize({ width: 900, height: 900 });
   await go("/gear/potential");
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
   check("Layout", "the Potential page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await page.setViewportSize({ width: 390, height: 800 });
-  await settle(400);
-  check("Layout", "the Potential page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await shot("19-potential-phone");
-  await page.setViewportSize({ width: 900, height: 900 });
   await go("/gear/upgrades");
   await page.getByRole("region", { name: "All steps" }).waitFor();
   check("Layout", "the Upgrades page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await page.setViewportSize({ width: 390, height: 800 });
-  await settle(400);
-  check("Layout", "the Upgrades page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
-  await shot("22-upgrades-phone");
-  await page.setViewportSize({ width: 900, height: 900 });
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await go("/bosses");

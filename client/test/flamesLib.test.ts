@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FlameItem } from "../src/api/types";
-import { atLeast, budgetFrom, formatChance, formatMeso, formatScore, liveScore, pointAt, priceFromMillions, scoreBand, withFlames } from "../src/lib/flames";
+import { atLeast, budgetFrom, chanceTick, formatChance, formatMeso, formatScore, liveScore, pointAt, priceFromMillions, scoreBand, withFlames } from "../src/lib/flames";
 
 describe("formatMeso", () => {
   it("k, m, B with two decimals, one from 10B, whole with commas from 1,000B; endless as —", () => {
@@ -113,5 +113,11 @@ describe("atLeast", () => {
     expect(r).toHaveLength(3);
     [1, 0.5, 0.2].forEach((p, i) => expect(r[i]).toBeCloseTo(p, 12));
     expect(atLeast([])).toEqual([]);
+  });
+});
+
+describe("chanceTick", () => {
+  it("whole percents from 10%, one decimal from 1%, two significant figures below, never e notation", () => {
+    expect([0.5, 0.1, 0.0999, 0.012, 0.01, 0.00999, 0.000625, 0.0000000412, 0].map(chanceTick)).toEqual(["50%", "10%", "10.0%", "1.2%", "1.0%", "1%", "0.063%", "0.0000041%", "0%"]);
   });
 });

@@ -164,7 +164,7 @@ const HAT = view("1000001", "Test Hat", "hat", { stats: { str: 40, dex: 40, att:
 const MEDAL = view("1000002", "Test Medal", "medal", { stats: { str: 10 }, starMax: 0, flames: "boss", hammers: OPTIONS.hammers! });
 const OZ = view("1000003-4", "Test Oz Ring Lv. 4", "ring", { oz: { kind: "active", level: 4 }, starMax: 0 });
 const HAT2 = view("1000004", "Other Hat", "hat", { stats: { str: 10 }, starMax: 5, flames: "boss", potential: "hat" });
-const DEFAULTS = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null };
+const DEFAULTS = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
 const char = (over: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: [HAT.key, MEDAL.key, OZ.key, HAT2.key], equipped: { hat: { item: HAT.key }, medal: { item: MEDAL.key }, ring1: { item: OZ.key } }, details: {}, statBoxes: { pct: [{ stat: "LUK" as const, field: "lukPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: DEFAULTS, ...over });
 const gearBoard = (c: GearCharacter): GearBoard => ({ generated: "2026-10-24", slots: SLOTS, items: [HAT, MEDAL, OZ, HAT2], jobs: {}, characters: [c] });
 
@@ -469,26 +469,60 @@ describe("stat values", () => {
     await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, att: 2.6 }, DEFAULTS]));
   });
 
-  it("the potential lines' values (v2.3.0): a box each, the skill cooldown left empty until typed (and emptied again), and the bosses' defense for IED", async () => {
+  it("the potential lines' values (v2.3.0): a box each, the skill cooldown boxes left empty until typed (and emptied again), and the bosses' defense for IED", async () => {
     const s = await show(char());
     const box = within(await screen.findByRole("group", { name: "Stat values" }));
     const value = (name: string) => (box.getByRole("spinbutton", { name }) as HTMLInputElement).value;
     // a Night Walker: LUK its main stat, DEX its secondary (the job's defaults until typed)
-    expect(["1% LUK =", "1% DEX =", "1% ATT =", "1% Crit Damage =", "1% IED (300% defense) =", "1% IED (380% defense) =", "1 s skill cooldown ="].map(value)).toEqual(["", "", "53.82", "42.38", "15.6", "20.52", ""]);
+    expect(["1% LUK =", "1% DEX =", "1% ATT =", "1% Crit Damage =", "1% IED (300% defense) =", "1% IED (380% defense) ="].map(value)).toEqual(["", "", "53.82", "42.38", "15.6", "20.52"]);
     // the job's defaults, greyed in the empty boxes
     expect(["1% LUK =", "1% DEX ="].map((name) => box.getByRole("spinbutton", { name }).getAttribute("placeholder"))).toEqual(["12.97", "1.68"]);
     expect(box.queryByRole("spinbutton", { name: "1% STR =" })).toBeNull();
-    const cooldown = box.getByRole("spinbutton", { name: "1 s skill cooldown =" });
-    await userEvent.type(cooldown, "2.5{Enter}");
-    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }]));
+    // skill cooldown (v2.4.1): a box for each total from 2 to 6 s, all empty; none for 1 s
+    expect([2, 3, 4, 5, 6].map((n) => value(`${n} s skill cooldown =`))).toEqual(["", "", "", "", ""]);
+    expect(box.queryByRole("spinbutton", { name: "1 s skill cooldown =" })).toBeNull();
+    const cooldown = box.getByRole("spinbutton", { name: "4 s skill cooldown =" });
+    await userEvent.type(cooldown, "3.34{Enter}");
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cd4: 3.34 }]));
     await userEvent.clear(cooldown);
     await userEvent.tab();
-    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }, DEFAULTS]));
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cd4: 3.34 }, DEFAULTS]));
     const defense = within(box.getByRole("group", { name: "Bosses' defense" }));
     expect(defense.getByRole("button", { name: "380%" }).getAttribute("aria-pressed")).toBe("true");
     await userEvent.click(defense.getByRole("button", { name: "380%" }));
     await userEvent.click(defense.getByRole("button", { name: "300%" }));
-    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cooldown: 2.5 }, DEFAULTS, { ...DEFAULTS, bossDef: 300 }]));
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cd4: 3.34 }, DEFAULTS, { ...DEFAULTS, bossDef: 300 }]));
+  });
+
+  it("an empty cooldown box shows what it counts as: the nearest filled box below, else nothing", async () => {
+    await show(char({ statValues: { ...DEFAULTS, cd2: 1.37, cd4: 3.34 } }));
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const hint = (n: number) => box.getByRole("spinbutton", { name: `${n} s skill cooldown =` }).getAttribute("placeholder");
+    // 3 s takes 2 s's, 5 and 6 s take 4 s's
+    expect([3, 5, 6].map(hint)).toEqual(["1.37", "3.34", "3.34"]);
+    expect(box.getByRole("spinbutton", { name: "3 s skill cooldown =" }).closest("label")!.textContent).toContain("2 s");
+    expect(box.getByRole("spinbutton", { name: "6 s skill cooldown =" }).closest("label")!.textContent).toContain("4 s");
+  });
+  it("an empty cooldown box with nothing below it counts as nothing", async () => {
+    await show(char({ statValues: { ...DEFAULTS, cd4: 3.34 } }));
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const label = (n: number) => box.getByRole("spinbutton", { name: `${n} s skill cooldown =` }).closest("label")!.textContent;
+    expect(label(3)).toContain("nothing");
+    expect(label(5)).toContain("4 s");
+    expect(box.getByRole("spinbutton", { name: "3 s skill cooldown =" }).getAttribute("placeholder")).toBe("—");
+  });
+
+  it("the seconds a hat must keep: none to start, then saved as picked", async () => {
+    const s = await show(char());
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const pick = within(box.getByRole("group", { name: "Hat's minimum cooldown" }));
+    expect(pick.getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["none", "2 s", "3 s", "4 s", "5 s", "6 s"]);
+    expect(pick.getAllByRole("button").map((b) => b.textContent)).toEqual(["none", "2", "3", "4", "5", "6"]);
+    expect(pick.getByRole("button", { name: "none" }).getAttribute("aria-pressed")).toBe("true");
+    // picking the one already picked saves nothing
+    await userEvent.click(pick.getByRole("button", { name: "none" }));
+    await userEvent.click(pick.getByRole("button", { name: "4 s" }));
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cdMin: 4 }]));
   });
 
   it("a stat's 1% value: its job's default until typed, then saved as typed and marked against the default", async () => {

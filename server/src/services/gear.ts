@@ -1,5 +1,5 @@
 import { readdirSync } from "node:fs";
-import { type GearDetailsInput, type GearInput, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
+import { COOLDOWN_SECONDS, type GearDetailsInput, type GearInput, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
 import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, otherStarLimit, type StarNote, starGains, starNotes, starRange } from "../calc/gearDetails";
 import { getConfig } from "../config";
 import { db } from "../db";
@@ -9,6 +9,7 @@ import { type StatBoxes, statBoxes } from "../calc/potential";
 import { nearestLine, potentialOptions } from "../gameFigures/potential";
 import { HttpError } from "../http";
 import { listCharacters, ownCharacter } from "./characters";
+import { getSettings, type SettingsView } from "./settings";
 
 // An item as the gear tab shows it: what the list file says, its key, and its icon's address (null
 // when the data folder has no icon for it).
@@ -177,6 +178,17 @@ export async function characterValues(ownerId: string, characterId: number) {
   return { job, values };
 }
 
+// Everything the Flames, Star Force and Potential pages work from, read once: the character's job and
+// stat values, the settings and the equipped items (v2.4.1: the Upgrades page works out all three pages
+// from one read, instead of each reading it all again).
+export type CharacterGear = Awaited<ReturnType<typeof characterValues>> & { settings: SettingsView; equipped: EquippedItem[] };
+export async function characterGear(ownerId: string, characterId: number): Promise<CharacterGear> {
+  // (whose character it is first: someone else's gets no further)
+  const cv = await characterValues(ownerId, characterId);
+  const [settings, equipped] = await Promise.all([getSettings(ownerId), equippedItems(characterId)]);
+  return { ...cv, settings, equipped };
+}
+
 // ── v2.0.0: stars, flames, potential and hammers ──────────────────────────────────────────────
 
 // The potential kind of a typed item: its kind, when that kind has potential (the one rule for typed items).
@@ -209,10 +221,12 @@ function readDetails(details: GearDetailsInput, item: string | null): GearDetail
 }
 
 // A saved row's values (the database keeps the bosses' defense as a plain number: 300 or 380).
-export const statValuesOf = (row: (Omit<StatValuesInput, "bossDef"> & { bossDef: number }) | undefined): StatValuesInput => {
+// (the database keeps any whole number: one it can't be is read as none)
+const cdMinOf = (n: number): StatValuesInput["cdMin"] => (COOLDOWN_SECONDS.some((s) => s === n) ? (n as StatValuesInput["cdMin"]) : 0);
+export const statValuesOf = (row: (Omit<StatValuesInput, "bossDef" | "cdMin"> & { bossDef: number; cdMin: number }) | undefined): StatValuesInput => {
   if (!row) return { ...STAT_VALUE_DEFAULTS };
-  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef, cooldown } = row;
-  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cooldown };
+  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef, cd2, cd3, cd4, cd5, cd6, cdMin } = row;
+  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cd2, cd3, cd4, cd5, cd6, cdMin: cdMinOf(cdMin) };
 };
 
 export async function saveStatValues(ownerId: string, characterId: number, input: StatValuesInput) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { UpgradeStep } from "../src/api/types";
-import { along, chanceText, costNote, decades, eventsFrom, formatFd, formatTick, nowText, pageFor, pageQuery, SAME_PER_FD, stepKey, SYSTEM_NAME } from "../src/lib/upgrades";
+import { along, chanceText, costNote, decades, eventsFrom, formatFd, formatTick, nowText, perFdText, pageFor, pageQuery, SAME_PER_FD, stepKey, SYSTEM_NAME } from "../src/lib/upgrades";
 
 const step = (over: Partial<UpgradeStep>): UpgradeStep => ({ system: "flames", slot: "hat", name: "Hat", icon: null, step: "Black Flame", perFd: 1e8, cost: 4.2e7, fd: 0.42, chance: 1 / 14, boom: null, now: { score: 37.13, best: 268.8 }, ...over });
 
@@ -25,8 +25,11 @@ describe("the Upgrades page's display rules", () => {
     expect(nowText(step({}))).toBe("score 37.1 / 268.8");
     expect(nowText(step({ system: "starforce", now: { star: 17, boomCost: 500_000_000 } }))).toBe("17★ · booms at 500m");
     expect(nowText(step({ system: "starforce", now: { star: 21, boomCost: 0 } }))).toBe("21★ · booms not priced");
-    expect(nowText(step({ system: "potential", now: { rank: "unique", cube: "glowing", otherPerFd: 1.12e9 } }))).toBe("Unique · Bright 1.12B per 1%");
-    expect(nowText(step({ system: "potential", now: { rank: null, cube: "bright", otherPerFd: null } }))).toBe("no potential · Glowing can't beat it");
+    expect(nowText(step({ system: "potential", now: { rank: "unique", cube: "glowing", otherPerFd: 1.12e9, cooldown: null } }))).toBe("Unique · Bright 1.12B per 1%");
+    expect(nowText(step({ system: "potential", now: { rank: null, cube: "bright", otherPerFd: null, cooldown: null } }))).toBe("no potential · Glowing can't beat it");
+    // a hat with a minimum cooldown (v2.4.1): its seconds and the minimum; none: not mentioned
+    expect(nowText(step({ system: "potential", now: { rank: "legendary", cube: "bright", otherPerFd: null, cooldown: { sec: 2, min: 4 } } }))).toBe("Legendary · Glowing can't beat it · cooldown 2 s, 4 s needed");
+    expect(nowText(step({ system: "potential", now: { rank: "legendary", cube: "bright", otherPerFd: null, cooldown: { sec: 2, min: 0 } } }))).toBe("Legendary · Glowing can't beat it");
   });
 
   it("chanceText: 1 in X flames or cubes better; the next tap's success and boom, unrounded", () => {
@@ -39,6 +42,9 @@ describe("the Upgrades page's display rules", () => {
   it("costNote and formatFd", () => {
     expect([costNote(step({})), costNote(step({ system: "potential" })), costNote(step({ system: "starforce" }))]).toEqual(["average, to any better roll", "average, to any better roll", "average, booms included"]);
     expect([0.42, 1.5678, 0.1, 0.0074, 0.000891, 3e-7].map(formatFd)).toEqual(["+0.42%", "+1.57%", "+0.10%", "+0.0074%", "+0.00089%", "+0.0000003%"]);
+    // less than nothing (a hat's cube needed for its minimum cooldown), small or not
+    expect([-0.42, -0.0074, 0].map(formatFd)).toEqual(["−0.42%", "−0.0074%", "+0%"]);
+    expect([perFdText({ perFd: 4.1e9 }), perFdText({ perFd: null })]).toEqual(["4.10B", "needed"]);
     // the chart's ticks: grouped, never in "e" notation
     expect([10000, 10, 1, 0.01, 0.0000001].map(formatTick)).toEqual(["10,000%", "10%", "1%", "0.01%", "0.0000001%"]);
   });

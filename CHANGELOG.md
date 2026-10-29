@@ -2,6 +2,18 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.4.1: skill cooldown as a table, a minimum for hats (2026-10-29)
+
+- **Skill cooldown isn't worth the same each second** (the Ren Discord's figures: 2 s 1.37% final damage, 3 s 2.76%, 4 s 3.34%, 5 s 4.26%). The one "1 s skill cooldown" box is now **five boxes, 2 to 6 s in all**; **an empty box counts as the nearest filled one below** (shown greyed in it); 1 s counts as nothing. A hat's cooldown lines' seconds add up first, then count once (2 + 2 s is 4 s's value). The old per-second value converts (x → 2x … 6x).
+- **"Hat must keep at least" none / 2–6 s:** on the Potential and Upgrades pages a hat roll only counts as better if it keeps that much cooldown. A hat under it takes any roll that does; if that roll adds nothing over its lines, its cube is **"needed"** (cost and chance, no meso per 1%, listed last, not on the chart). The graph leaves out the rolls that don't keep it. The odds match brendonmay's engine in 100 cases ("at least 2–6 s", alone and with stat).
+- **Fixed on the way:** an item with no meso per 1% but a cube (that "needed" hat) would have sorted first on the Potential page.
+- **Fewer repeated reads** (moved here from v3.0.0): the Upgrades page reads the character, its stat values, the settings and its gear once, not once per page (three settings writes became one). Timed on a copy of the real data: ~2 ms of ~70 ms; the rest is the maths (noted in PLAN.md).
+- A gain below the lines now reads −5 / −0.10%, not +-5.
+- **No more phone-width checks** (the owner, 2026-10-29): `qa:check` had been testing the Gear pages at phone width since v2.1.0, against the plan's "not for phones for now". They're gone; the 900 px narrow-window checks stay. The phone fixes already made stay too.
+- Targets: a hat under its minimum cooldown is never "reached".
+- The graphs' chance scale keeps two significant figures below 1% (0.063%, not 0.0%), which the hat's small chances needed.
+- From the review pass: the "needed" note only on a hat that's under its minimum; a "needed" cube is never marked cheapest; a cooldown line in the editor shows its seconds ("1 s, adds up"), not +0.
+
 ## v2.4.0 (2026-10-29): Upgrades
 
 - **The Upgrades page**, the Gear group's fifth page: each item's next step in each system (a Black Flame, Star Force's best jump, the cheaper cube), exactly as the Flames, Star Force and Potential pages work it out, in one list cheapest per 1% final damage first. No new maths.

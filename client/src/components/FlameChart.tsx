@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { FlameGraph } from "../api/types";
-import { atLeast, formatChance, formatMeso, formatScore, pointAt } from "../lib/flames";
+import { atLeast, chanceTick, formatChance, formatMeso, formatScore, pointAt } from "../lib/flames";
 
 export type ChartMode = "dist" | "cost" | "gain";
 export const CHART_MODES: [ChartMode, string][] = [
@@ -41,7 +41,7 @@ export function FlameChart({ graph, current, mode, per = "flame", target = null,
   const Y = (v: number) => T + (1 - Math.min(v, ymax) / ymax) * (H - T - B);
   const shown = points.filter((p): p is [number, number] => p[1] !== null && p[1] <= ymax);
   const line = shown.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
-  const yLabel = (v: number) => (mode === "dist" ? `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%` : mode === "cost" ? formatMeso(v) : v.toFixed(1));
+  const yLabel = (v: number) => (mode === "dist" ? chanceTick(v) : mode === "cost" ? formatMeso(v) : v.toFixed(1));
 
   const move = (e: React.MouseEvent) => {
     const box = svg.current!.getBoundingClientRect();
@@ -55,7 +55,7 @@ export function FlameChart({ graph, current, mode, per = "flame", target = null,
   const tip =
     h && h[1] !== null
       ? mode === "dist"
-        ? [`score ${formatScore(h[0])}: ${(h[1] * 100).toFixed(h[1] < 0.01 ? 3 : 2)}%`, `at least this: ${formatChance(atLeastOf[hover!]!)}`]
+        ? [`score ${formatScore(h[0])}: ${h[1] < 0.01 ? chanceTick(h[1]) : `${(h[1] * 100).toFixed(2)}%`}`, `at least this: ${formatChance(atLeastOf[hover!]!)}`]
         : mode === "gain"
           ? [`at score ${formatScore(h[0])}`, `+${h[1].toFixed(2)} score a ${per}`]
           : [`at score ${formatScore(h[0])}`, `${formatMeso(h[1])} per +1 score`]

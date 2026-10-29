@@ -1,10 +1,11 @@
-import { type GearDetailsInput, POTENTIAL_RANKS, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
+import { COOLDOWN_SECONDS, type GearDetailsInput, POTENTIAL_RANKS, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
 import { useEffect, useState } from "react";
 import { useGearOptions } from "../api/hooks";
 import type { DetailOptions, FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
 import { formatScore, liveScore, scoreBand } from "../lib/flames";
 import { SLOT_ORDER } from "../lib/gear";
 import { clickStar, draftOf, fitDraft, isDirty, lineChoices, summary, toggleFlame, withRank, rankName } from "../lib/gearDetails";
+import { cooldownBelow } from "../lib/potential";
 
 const Icon = ({ item }: { item: GearItemView | undefined }) => (item?.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="no-icon">no icon</span>);
 
@@ -415,11 +416,33 @@ export function StatValuesBox({ c, onSave }: { c: GearCharacter; onSave: (v: Sta
             </span>
           </label>
         ))}
-        <label className="small">
-          <span>1 s skill cooldown =</span>
-          <ValueBox value={v.cooldown} label="1 s skill cooldown =" empty onCommit={(n) => onSave({ ...v, cooldown: n })} />
-          <span className="tiny muted">% final damage{v.cooldown === null && " (empty: counts as nothing; it depends on the class)"}</span>
-        </label>
+        {/* (cooldown isn't worth the same each second: the final damage at each total; 1 s counts as nothing) */}
+        {COOLDOWN_SECONDS.map((sec) => {
+          const field = `cd${sec}` as const;
+          const label = `${sec} s skill cooldown =`;
+          const below = cooldownBelow(v, sec);
+          return (
+            <label key={field} className="small">
+              <span>{label}</span>
+              <ValueBox value={v[field]} label={label} empty hint={below === null ? undefined : String(below.value)} onCommit={(n) => onSave({ ...v, [field]: n })} />
+              <span className="tiny muted">
+                % final damage in all
+                {v[field] === null && (below === null ? " (empty: counts as nothing)" : ` (empty: ${below.sec} s's)`)}
+              </span>
+            </label>
+          );
+        })}
+        <div className="small value-switch wide">
+          <span>Hat must keep at least (seconds)</span>
+          <div className="segmented" role="group" aria-label="Hat's minimum cooldown">
+            {([0, ...COOLDOWN_SECONDS] as const).map((s) => (
+              // (just the number shown, so the six fit at phone width)
+              <button key={s} type="button" aria-label={s === 0 ? "none" : `${s} s`} aria-pressed={v.cdMin === s} onClick={() => v.cdMin !== s && onSave({ ...v, cdMin: s })}>
+                {s === 0 ? "none" : s}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="small value-switch">
           <span>Bosses' defense (for IED)</span>
           <div className="segmented" role="group" aria-label="Bosses' defense">

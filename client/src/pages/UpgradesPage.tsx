@@ -8,7 +8,7 @@ import { UpgradesChart } from "../components/UpgradesChart";
 import { formatMeso } from "../lib/flames";
 import { CUBE_EVENT_LABELS, type CubeEvent, cubeEventsParam, cubePrice } from "../lib/potential";
 import { eventsParam, SF_EVENT_LABELS, type SfEventKey } from "../lib/starForce";
-import { chanceText, costNote, formatFd, nowText, pageFor, stepKey, SYSTEM_NAME } from "../lib/upgrades";
+import { chanceText, costNote, formatFd, nowText, pageFor, perFdText, stepKey, SYSTEM_NAME } from "../lib/upgrades";
 
 const Chip = ({ s }: { s: UpgradeStep }) => <span className={`sys-chip sys-${s.system}`}>{SYSTEM_NAME[s.system]}</span>;
 
@@ -35,7 +35,7 @@ function List({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: s
           </thead>
           <tbody>
             {steps.map((s, i) => (
-              <tr key={`${s.system}-${s.slot}`} className={i === 0 ? "cheapest" : undefined} onClick={() => navigate(pageFor(s, sf, cubes))}>
+              <tr key={`${s.system}-${s.slot}`} className={i === 0 && s.perFd !== null ? "cheapest" : undefined} onClick={() => navigate(pageFor(s, sf, cubes))}>
                 <td className="muted">{i + 1}</td>
                 {/* (the name is beside it: an item with no icon leaves the space empty) */}
                 <td>{s.icon && <ItemIcon item={s} />}</td>
@@ -51,7 +51,7 @@ function List({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: s
                 <td>
                   <b>{s.step}</b>
                 </td>
-                <td className={`num${i === 0 ? " gold" : ""}`}>{formatMeso(s.perFd)}</td>
+                <td className={`num${i === 0 && s.perFd !== null ? " gold" : ""}`}>{perFdText(s)}</td>
                 <td className="num">
                   {formatMeso(s.cost)}
                   <div className="tiny muted">{costNote(s)}</div>
@@ -69,13 +69,15 @@ function List({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: s
 }
 
 // Chart: every step as a dot; the picked one's figures and its item's other steps below.
-function Chart({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: string }) {
+// (needed: a hat's cube its minimum cooldown needs that adds nothing: not a point on the chart)
+function Chart({ steps, needed, sf, cubes }: { steps: UpgradeStep[]; needed: UpgradeStep[]; sf: string; cubes: string }) {
   // the step picked, remembered by which step it is (a new order keeps it; gone, the cheapest again)
   const [pickedKey, setPickedKey] = useState<string | null>(null);
   const found = steps.findIndex((x) => stepKey(x) === pickedKey);
   const picked = found < 0 ? 0 : found;
   const setPicked = (i: number) => setPickedKey(stepKey(steps[i]!));
-  const s = steps[picked]!;
+  const s = steps[picked];
+  if (!s) return <p className="notice muted block">Nothing to chart: {needed.map((x) => x.name).join(", ")} only has a cube its minimum cooldown needs, which adds nothing.</p>;
   const same = steps.map((x, i) => [x, i] as const).filter(([x]) => x.slot === s.slot && x.system !== s.system);
   return (
     <section className="block" aria-label="Cost against gain">
@@ -83,6 +85,7 @@ function Chart({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: 
         Cost against gain <span className="muted small">each dot one step; up and left is better; a dashed line: the same meso per 1% final damage; click a dot</span>
       </h2>
       <UpgradesChart steps={steps} picked={picked} onPick={setPicked} />
+      {needed.length > 0 && <p className="tiny muted">Not on the chart (they add nothing, but a hat's minimum cooldown needs them): {needed.map((x) => `${x.name}'s ${x.step}`).join(", ")}.</p>}
       <div className="flame-split" aria-label="Picked step">
         <div className="flame-tiles">
           <div className="flame-tile wide">
@@ -96,7 +99,7 @@ function Chart({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: 
           </div>
           <div className="flame-tile">
             <div className="tiny muted">Meso / 1% FD</div>
-            <div className="big">{formatMeso(s.perFd)}</div>
+            <div className="big">{perFdText(s)}</div>
           </div>
           <div className="flame-tile">
             <div className="tiny muted">Cost</div>
@@ -123,7 +126,7 @@ function Chart({ steps, sf, cubes }: { steps: UpgradeStep[]; sf: string; cubes: 
                 <span>
                   #{i + 1} <Chip s={x} /> {x.step}
                 </span>
-                <b>{formatMeso(x.perFd)} per 1%</b>
+                <b>{perFdText(x)} per 1%</b>
               </button>
             ))
           )}
@@ -230,7 +233,13 @@ export function UpgradesPage() {
               board.steps.length === 0 && <p className="notice muted">Nothing to upgrade: no equipped item has a next step that adds final damage. Equip items and save their details on the Equipment page.</p>
             )}
           </section>
-          {board.known && board.steps.length > 0 && (view === "list" ? <List steps={board.steps} sf={eventsParam(sf)} cubes={cubeEventsParam(cubes)} /> : <Chart key={c.id} steps={board.steps} sf={eventsParam(sf)} cubes={cubeEventsParam(cubes)} />)}
+          {board.known &&
+            board.steps.length > 0 &&
+            (view === "list" ? (
+              <List steps={board.steps} sf={eventsParam(sf)} cubes={cubeEventsParam(cubes)} />
+            ) : (
+              <Chart key={c.id} steps={board.steps.filter((s) => s.perFd !== null)} needed={board.steps.filter((s) => s.perFd === null)} sf={eventsParam(sf)} cubes={cubeEventsParam(cubes)} />
+            ))}
           <section className="block" aria-label="Stat values">
             <StatValuesBox c={c} onSave={(values) => saveValues.mutate({ id: c.id, values })} />
           </section>

@@ -7,7 +7,7 @@ import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // A made-up character with three items that can have potential. The numbers are the server's to work
 // out (tested there); here, what the page shows and sends.
-const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cooldown: null };
+const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
 const char = (id: number, name: string, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: { pct: [{ stat: "STR" as const, field: "strPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: VALUES, ...extra });
 const SLOTS = ["ring1", "hat", "emblem", "ring2", "pendant1", "face", "badge", "ring3", "pendant2", "eye", "earrings", "medal", "ring4", "weapon", "top", "shoulder", "secondary", "pocket", "belt", "bottom", "gloves", "android", "shoes", "cape", "heart", "ringP", "totem1", "totem2", "totem3"].map((key) => ({ key, label: key, kind: key.replace(/\d$|P$/, "") }));
 const GEAR: GearBoard = { generated: "2026-10-24", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit", { details: { hat: { stars: 17, flames: { STR: 6 }, potential: { rank: "legendary", lines: ["STR +13%", "STR +10%", "STR +10%"] }, hammers: 1 } } }), char(2, "Second")] };
@@ -21,7 +21,7 @@ const options = { rare: [["STR +3%", "DEX +3%"], ["STR +3%", "DEX +3%"], ["STR +
 const points = { "STR +3%": 38.91, "DEX +3%": 5.04, "STR +13%": 168.61, "STR +10%": 129.7, "DEX +13%": 21.84, "DEX +10%": 16.8 };
 const item = (slot: string, name: string, over: Partial<PotentialItem> = {}): PotentialItem => ({
   slot, name, icon: `/item-icons/${slot}.png`, level: 200, starMin: 0, rank: "legendary", lines: ["STR +13%", "STR +10%", "STR +10%"], options, points, ied: 20.52, score: 428.01, best: 505.83,
-  cubes: { glowing: metrics(), bright: metrics({ better: 0.0019, cubesToBetter: 535, mesoToBetter: 11_800_000_000, mesoPerFd: 13_400_000_000, price: 22_000_000 }) }, cheaper: "glowing",
+  cubes: { glowing: metrics(), bright: metrics({ better: 0.0019, cubesToBetter: 535, mesoToBetter: 11_800_000_000, mesoPerFd: 13_400_000_000, price: 22_000_000 }) }, cooldown: null, cheaper: "glowing",
   stop: { score: 421.2, reached: true, cube: "glowing", cubes: 840, meso: 10_080_000_000 }, ...over,
 });
 const BOARD: PotentialBoard = {
@@ -34,8 +34,8 @@ const BOARD: PotentialBoard = {
 };
 const GRAPH: PotentialGraph = {
   cubes: {
-    glowing: { distribution: [[0, 0.5], [168.61, 0.3], [428.01, 0.15], [505.83, 0.05]], curves: [{ score: 0, gain: 30, mesoPerScore: 400_000 }, { score: 300, gain: 1, mesoPerScore: 12_000_000 }] },
-    bright: { distribution: [[0, 0.4], [168.61, 0.4], [505.83, 0.2]], curves: [{ score: 0, gain: 40, mesoPerScore: 550_000 }, { score: 300, gain: 2, mesoPerScore: 11_000_000 }] },
+    glowing: { distribution: [[0, 0.5], [168.61, 0.3], [428.01, 0.15], [505.83, 0.05]], short: 0, curves: [{ score: 0, gain: 30, mesoPerScore: 400_000 }, { score: 300, gain: 1, mesoPerScore: 12_000_000 }] },
+    bright: { distribution: [[0, 0.4], [168.61, 0.4], [505.83, 0.2]], short: 0, curves: [{ score: 0, gain: 40, mesoPerScore: 550_000 }, { score: 300, gain: 2, mesoPerScore: 11_000_000 }] },
   },
   target: null,
 };
@@ -75,6 +75,63 @@ describe("the Potential page: the item row", () => {
     expect(row().getAllByRole("button").map((b) => b.className.split(" ").find((k) => k.startsWith("rank-border")))).toEqual(["rank-border-none", "rank-border-legendary", "rank-border-legendary"]);
     expect(cells().map((c) => c.classList.contains("cheapest"))).toEqual([true, false, false]);
     expect(s.calls.some((c) => c.path.includes("undefined") || c.path.includes("/gear/0/"))).toBe(false);
+  });
+
+  it("a hat under its minimum cooldown (v2.4.1): its cube is 'needed', its seconds and the minimum shown, a gain below its lines signed", async () => {
+    const hat = item("hat", "Arcane Hat", {
+      lines: ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"],
+      score: 472.83,
+      cooldown: { sec: 2, min: 4, points: [0, 0, 174.52, 174.52, 425.48, 425.48, 425.48] },
+      cubes: { glowing: metrics({ better: 0.00026487, mesoPerFd: null, gainIfBetter: -12.5, mesoToBetter: 45_300_000_000 }), bright: metrics({ better: 0.00062523, mesoPerFd: null, gainIfBetter: -12.5, mesoToBetter: 35_200_000_000, price: 22_000_000 }) },
+      cheaper: "bright",
+    });
+    show({ ...BOARD, items: [BOARD.items[0]!, BOARD.items[2]!, hat] }, { "GET /gear/:id/potential/hat": { ...GRAPH, cubes: { ...GRAPH.cubes, bright: { ...GRAPH.cubes.bright, short: 0.99937477 } } } }, "/gear/potential?item=hat");
+    const head = await screen.findByText(/under the 4 s it must keep/);
+    expect(head.textContent).toContain("cooldown 2 s");
+    // the row: "needed" above it, not a cost
+    expect(cells()[2]!.querySelector(".above")!.textContent).toBe("needed");
+    await userEvent.click(within(screen.getByRole("group", { name: "Cube" })).getByRole("button", { name: /Bright/ }));
+    // no meso per 1%, said why; the gain below its lines, with a minus
+    expect(tile("Meso / 1% FD").textContent).toContain("needed");
+    expect(tile("Avg gain when it beats it").textContent).toContain("−12.5");
+    expect(tile("Avg gain when it beats it").textContent).toContain("−0.10%");
+    // the graph leaves out the rolls under 4 s, saying how many
+    expect((await screen.findByText(/Rolls under the 4 s the hat must keep/)).textContent).toContain(">99% of cubes");
+  });
+
+  it("a needed cube at the head of the list isn't marked cheapest; with no minimum, no 'needed' note even when nothing is priced", async () => {
+    const needy = item("hat", "Arcane Hat", { cooldown: { sec: 0, min: 4, points: [0, 0, 1, 1, 1, 1, 1] }, cubes: { glowing: metrics({ mesoPerFd: null, gainIfBetter: -1 }), bright: metrics({ mesoPerFd: null, gainIfBetter: -1 }) }, cheaper: "bright" });
+    show({ ...BOARD, items: [needy] }, {}, "/gear/potential?item=hat");
+    await screen.findByText(/under the 4 s it must keep/);
+    expect(cells()[0]!.classList.contains("cheapest")).toBe(false);
+    expect(cells()[0]!.querySelector(".tag")!.textContent).toBe("");
+  });
+  it("no minimum and no final damage value: the hat's tile says nothing is needed", async () => {
+    const plain = item("hat", "Arcane Hat", { cooldown: { sec: 2, min: 0, points: [0, 0, 1, 1, 1, 1, 1] }, cubes: { glowing: metrics({ mesoPerFd: null }), bright: metrics({ mesoPerFd: null }) }, cheaper: null });
+    show({ ...BOARD, items: [plain] }, {}, "/gear/potential?item=hat");
+    await screen.findByText(/cooldown 2 s/);
+    expect(tile("Meso / 1% FD").textContent).not.toContain("needed");
+  });
+
+  it("a graph of small chances (a hat's rolls that keep its minimum) labels its scale readably, not 0.0% all the way up", async () => {
+    const tiny = { ...GRAPH, cubes: { glowing: { ...GRAPH.cubes.glowing, distribution: [[425.48, 0.0005], [505.83, 0.0001]] as [number, number][], short: 0.9994 }, bright: { ...GRAPH.cubes.bright, distribution: [[425.48, 0.0005], [505.83, 0.0001]] as [number, number][], short: 0.9994 } } };
+    show(BOARD, { "GET /gear/:id/potential/hat": tiny }, "/gear/potential?item=hat");
+    const chart = await screen.findByRole("region", { name: "One cube's result" });
+    await waitFor(() => expect(chart.querySelectorAll("svg text").length).toBeGreaterThan(3));
+    const labels = [...chart.querySelectorAll("svg text")].map((t) => t.textContent ?? "").filter((t) => t.endsWith("%"));
+    expect(labels.length).toBeGreaterThan(2);
+    expect(labels.filter((t) => t === "0.0%")).toEqual([]);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("a hat with no minimum: its seconds only; an item that isn't a hat: nothing about cooldown", async () => {
+    const hat = item("hat", "Arcane Hat", { cooldown: { sec: 2, min: 0, points: [0, 0, 1, 1, 1, 1, 1] } });
+    show({ ...BOARD, items: [hat, BOARD.items[0]!] }, {}, "/gear/potential?item=hat");
+    expect((await screen.findByText(/cooldown 2 s/)).textContent).not.toContain("must keep");
+    expect(screen.queryByText(/Rolls under/)).toBeNull();
+    await userEvent.click(row().getByRole("button", { name: "Gollux Belt" }));
+    await screen.findByRole("region", { name: /Gollux Belt potential/ });
+    expect(screen.queryByText(/cooldown \d s/)).toBeNull();
   });
 
   it("no final damage value (0 per 100 score): no cost, but not called the best either", async () => {

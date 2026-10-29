@@ -8,7 +8,7 @@ import { StatValuesBox } from "../components/GearDetails";
 import { BudgetBox, GearTop, ItemIcon, NoCharacters, useGearCharacter } from "../components/GearTop";
 import { DEFAULT_BUDGET, formatMeso, formatScore } from "../lib/flames";
 import { rankName } from "../lib/gearDetails";
-import { changed, CUBE_EVENT_LABELS, type CubeEvent, cubeEventsParam, cubePrice, fineChance, liveScore, oneIn, type Potential, withPotential, withRank } from "../lib/potential";
+import { changed, cooldownText, CUBE_EVENT_LABELS, type CubeEvent, cubeEventsParam, cubePrice, fineChance, lineText, liveScore, oneIn, type Potential, signedScore, withPotential, withRank } from "../lib/potential";
 import { eventsFrom, pageQuery } from "../lib/upgrades";
 
 type Rank = (typeof POTENTIAL_RANKS)[number];
@@ -26,13 +26,15 @@ function ItemRow({ items, picked, onPick }: { items: PotentialItem[]; picked: st
     <>
       <div className="flame-row" role="group" aria-label="Items, cheapest to upgrade first">
         {items.map((it, i) => {
-          const cheapest = i === 0 && it.cheaper !== null;
+          // (a hat's "needed" cube has no meso per 1%: never the cheapest)
+          const cheapest = i === 0 && it.cheaper !== null && it.cubes[it.cheaper].mesoPerFd !== null;
           const m = it.cheaper ? it.cubes[it.cheaper] : null;
           return (
             <div key={it.slot} className={`flame-cell pot-cell${cheapest ? " cheapest" : ""}`}>
               <span className="tag">{cheapest ? "cheapest" : ""}</span>
               <span className="above" title="Meso per 1% final damage, with the cheaper cube">
-                {formatMeso(m?.mesoPerFd ?? null)}
+                {/* (a hat's cube needed for its minimum cooldown that adds nothing) */}
+                {m && m.mesoPerFd === null ? "needed" : formatMeso(m?.mesoPerFd ?? null)}
               </span>
               <button type="button" className={`gear-icon rank-border-${it.rank ?? "none"}`} aria-pressed={picked === it.slot} aria-label={it.name} title={`${it.name} · ${it.rank ? rankName(it.rank) : "no potential"}`} onClick={() => onPick(it.slot)}>
                 <ItemIcon item={it} />
@@ -77,6 +79,7 @@ function ItemPanel({ item, board, cube, onCube, fdPer100, saving, onSave, target
         </h2>
         <span className="small">
           Score <b>{formatScore(item.score)}</b> <span className="muted">= {fd(item.score, fdPer100)} final damage · best {formatScore(item.best)}</span>
+          {item.cooldown && <span className={`muted${item.cooldown.sec < item.cooldown.min ? " gold" : ""}`}> · {cooldownText(item.cooldown)}</span>}
         </span>
       </div>
       <div className="flame-split">
@@ -104,7 +107,7 @@ function ItemPanel({ item, board, cube, onCube, fdPer100, saving, onSave, target
                     <option key={l}>{l}</option>
                   ))}
                 </select>
-                <span className="pts tiny muted">{draft.lines[i] ? `+${formatScore(item.points[draft.lines[i]!] ?? 0)}` : ""}</span>
+                <span className="pts tiny muted">{lineText(item, draft.lines[i] ?? null)}</span>
               </label>
             ))}
           <div className="row">
@@ -114,7 +117,7 @@ function ItemPanel({ item, board, cube, onCube, fdPer100, saving, onSave, target
             <button type="button" className="btn ghost" disabled={!dirty} onClick={() => setDraft(item.rank ? { rank: item.rank, lines: item.lines } : null)}>
               Cancel
             </button>
-            <span className={dirty ? "small gold" : "tiny muted"}>{dirty ? `Unsaved: ${formatScore(liveScore(item.points, draft?.lines ?? [], item.ied))} score; the numbers update when you save` : item.rank ? "Saved (the same potential as on the Equipment page)" : "No potential saved: counted as Rare with no lines"}</span>
+            <span className={dirty ? "small gold" : "tiny muted"}>{dirty ? `Unsaved: ${formatScore(liveScore(item.points, draft?.lines ?? [], item.ied, item.cooldown?.points ?? null))} score; the numbers update when you save` : item.rank ? "Saved (the same potential as on the Equipment page)" : "No potential saved: counted as Rare with no lines"}</span>
           </div>
           <p className="tiny muted">Each line lists what this item can roll at that rank, best first; the number is what it adds to the score (0: no damage for this character).</p>
         </div>
@@ -131,7 +134,7 @@ function ItemPanel({ item, board, cube, onCube, fdPer100, saving, onSave, target
             <div className="flame-tile">
               <div className="tiny muted">Meso / 1% FD</div>
               <div className="big">{formatMeso(m.mesoPerFd)}</div>
-              <div className="tiny muted">cubing until it beats these lines</div>
+              <div className="tiny muted">{m.mesoPerFd === null && m.mesoToBetter !== null && item.cooldown && item.cooldown.sec < item.cooldown.min ? `none: a roll that keeps ${item.cooldown.min} s adds nothing here, but it's needed` : "cubing until it beats these lines"}</div>
             </div>
             <div className="flame-tile">
               <div className="tiny muted">Mesos to any better roll</div>
@@ -140,8 +143,8 @@ function ItemPanel({ item, board, cube, onCube, fdPer100, saving, onSave, target
             </div>
             <div className="flame-tile">
               <div className="tiny muted">Avg gain when it beats it</div>
-              <div className="big">{m.gainIfBetter === null ? "—" : `+${formatScore(m.gainIfBetter)}`}</div>
-              {m.gainIfBetter !== null && <div className="tiny muted">≈ +{fd(m.gainIfBetter, fdPer100)} final damage</div>}
+              <div className="big">{m.gainIfBetter === null ? "—" : signedScore(m.gainIfBetter)}</div>
+              {m.gainIfBetter !== null && <div className="tiny muted">≈ {m.gainIfBetter < 0 ? "−" : "+"}{fd(Math.abs(m.gainIfBetter), fdPer100)} final damage</div>}
             </div>
             <div className="flame-tile">
               <div className="tiny muted">Chance per cube of better</div>
@@ -223,6 +226,7 @@ function Graph({ graph, item, cube, target, onTarget }: { graph: ReturnType<type
           : mode === "cost"
             ? "The meso per +1 score cubing costs on average (cubing until a better roll, at Legendary), if your lines had that score. It climbs steeply near the top."
             : "The score one cube adds on average (cubing until a better roll, at Legendary), if your lines had that score."}
+        {g && g.short > 0 && item.cooldown && ` Rolls under the ${item.cooldown.min} s the hat must keep (${fineChance(g.short)} of cubes) aren't shown: they don't count.`}
       </p>
     </section>
   );

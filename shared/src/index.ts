@@ -205,8 +205,10 @@ export const upgradesQuery = z.strictObject({ sf: sfEvents, cubes: cubeEvents })
 // which it includes); the potential lines' from v2.3.0, from the owner's MapleScouter sheet. 1% of each
 // stat (STR, DEX, INT, LUK, and HP for a Demon Avenger) is its own value, empty until typed: then the
 // job's default (STAT_PCT_DEFAULTS). Ignore defense is worth more against tougher bosses: one value for
-// 300% defense, one for 380%, and which applies. Skill cooldown is worth a share of final damage per
-// second, which depends on the class: none until typed (it counts as nothing).
+// 300% defense, one for 380%, and which applies. Skill cooldown isn't worth the same each second (it
+// depends on the class's skills): the final damage at 2 to 6 s in all (v2.4.1), each empty until typed;
+// and the seconds a hat must keep (0: none).
+export const COOLDOWN_SECONDS = [2, 3, 4, 5, 6] as const;
 const statValue = z.number().min(0).max(10000);
 export const statValuesInput = z.strictObject({
   att: statValue,
@@ -224,13 +226,18 @@ export const statValuesInput = z.strictObject({
   ied300: statValue,
   ied380: statValue,
   bossDef: z.union([z.literal(300), z.literal(380)]),
-  cooldown: statValue.nullable(),
+  cd2: statValue.nullable(),
+  cd3: statValue.nullable(),
+  cd4: statValue.nullable(),
+  cd5: statValue.nullable(),
+  cd6: statValue.nullable(),
+  cdMin: z.union([z.literal(0), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
 });
 export type StatValuesInput = z.infer<typeof statValuesInput>;
 // 1% of a stat until typed: a main stat 12.97, a secondary stat 1.68 (the owner's sheet); Xenon's three
 // main stats a third of a main stat each.
 export const STAT_PCT_DEFAULTS = { main: 12.97, secondary: 1.68 } as const;
-export const STAT_VALUE_DEFAULTS: Readonly<StatValuesInput> = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cooldown: null };
+export const STAT_VALUE_DEFAULTS: Readonly<StatValuesInput> = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 };
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({

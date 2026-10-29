@@ -179,12 +179,16 @@ Planned 2026-10-24 with the owner, one version per step, each building on the la
   - **Set bonuses:** the wiki; checked against whackybeanz.com.
   - Not maplehub.io: it's for MapleStory N, not GMS.
 
+### v2.4.1: Skill cooldown as a table, a minimum for hats, and fewer repeated reads — done
+How it works is in DESIGN.md ("Gear details" stat values, "Potential" and "Upgrades"). Decided with the owner 2026-10-29, from the Ren Discord's figures; a fix version of its own (it needed its own testing). Checked against brendonmay's engine side by side (`tempdata/cubes/compare-cooldown-results.txt`). The single read was timed before and after on a copy of the real data: about 2 ms of a ~70 ms request saved; the rest is the flame and potential maths (see below).
+- **Noted for later (2026-10-29):** the Upgrades request's time is the flame and potential maths (flames ~40 ms, potential ~25–37 ms for 25 slots); keeping each item's worked-out rolls between requests (until its gear or stat values change) would cut it. Not needed yet.
+
 ### The order (the owner, 2026-10-29)
 v3 HEXA (Ren, then every job), then Familiars; v4 Stats; v5 Bosses with pitched items and history; v6 the standalone calculators (their maths is done: built after Stats, which can fill in their stat values); v7 low-priority extras; v8 the server move with export.
 
 ### v3.0.0–v3.2.0: HEXA (6th job) progress, then Familiars
 A major version (decided 2026-10-23: a lot of work; moved from v4.0.0 on 2026-10-29, before Stats and Bosses, which need it). Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v4.0.0's stats and v5.0.0's bosses (they matter for boss damage).
-- **v3.0.0, HEXA for Ren** (the owner, 2026-10-29: one job first, to understand how it works): the cores, their costs, what's left to finish, the page. **Also in this version: fewer repeated reads** (the owner, 2026-10-29: fix it rather than leave it, in the next version so its checks share this version's): the Upgrades page loads the character, its stat values, the settings and the equipped items once per board (three boards); let the Flames, Star Force and Potential boards take them already loaded, so Upgrades reads each once. Time the page before and after.
+- **v3.0.0, HEXA for Ren** (the owner, 2026-10-29: one job first, to understand how it works): the cores, their costs, what's left to finish, the page.
 - **v3.1.0, HEXA for every job.** A big version: **each job's skills scale differently, so each job levels its cores in a different order** (the owner, 2026-10-29). It needs every job's damage per level, checked against other sites or guides as the potential maths was; maybe split into groups of jobs.
 - **To research first:** the current HEXA core types and the cost of each level, for GMS's current patch (whether the costs are the same for every job); Ren's skills' damage per level. Start from **https://hexa-matrix-tracker.pages.dev/** (the owner, 2026-10-29: a site to look at), plus the usual research: the wiki, Nexon's patch notes, other calculators and guides, compared side by side before trusting any figure.
 - **To decide first** (open, 2026-10-29): does v3.0.0 **recommend the order** (each next level's Sol Erda and Fragments against the damage it adds, as the Upgrades page ranks steps; needs the damage figures), or only **track** the levels and what's left, with the order later?

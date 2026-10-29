@@ -1,8 +1,7 @@
 import { bestFlameScore, chanceAtLeast, type FlameMetrics, flameCurves, flameDistribution, flameMetrics, flameScore, type FlameWeights, flameWeights, stopScore } from "../calc/flames";
 import { type FlameRow, flameGrid } from "../calc/gearDetails";
 import { HttpError } from "../http";
-import { characterValues, equippedItems } from "./gear";
-import { getSettings } from "./settings";
+import { type CharacterGear, characterGear, type EquippedItem } from "./gear";
 
 // The Flames page (v2.1.0): a character's equipped items that can have flames, each with its saved
 // flames' score and what a Black Flame would do, cheapest to upgrade first.
@@ -45,8 +44,8 @@ interface Flameable {
 
 // The character's items that can have flames: listed ones whose list entry says so, and typed ones
 // whose kind, level and boss tick have been given.
-async function flameable(characterId: number): Promise<Flameable[]> {
-  return (await equippedItems(characterId))
+function flameable(equipped: EquippedItem[]): Flameable[] {
+  return equipped
     .filter((e) => e.di.flames)
     .map(({ slot, name, icon, di, details }) => ({ slot, name, icon, level: di.level, boss: di.flames === "boss", starMin: Math.min(di.starMin, di.starMax), weapon: di.slot === "weapon", grid: flameGrid(di), flames: details?.flames ?? {} }));
 }
@@ -58,11 +57,12 @@ function toStop(dist: [number, number][], stop: number, score: number, price: nu
   return { score: stop, reached: score / 100 >= stop, flames: 1 / chance, meso: price / chance };
 }
 
-export async function flamesBoard(ownerId: string, characterId: number, budget: number): Promise<FlamesBoard> {
-  const { job, values } = await characterValues(ownerId, characterId);
-  const { blackFlamePrice: price } = await getSettings(ownerId);
+export const flamesBoard = async (ownerId: string, characterId: number, budget: number): Promise<FlamesBoard> => flamesFrom(await characterGear(ownerId, characterId), budget);
+// (from a character's gear already read: the Upgrades page reads it once for every page)
+export function flamesFrom({ job, values, settings, equipped }: CharacterGear, budget: number): FlamesBoard {
+  const price = settings.blackFlamePrice;
   if (!job) return { known: false, price, budget, items: [] };
-  const items = (await flameable(characterId)).map((it): FlameItem => {
+  const items = flameable(equipped).map((it): FlameItem => {
     const weights = flameWeights(job, values, it.weapon);
     const dist = flameDistribution(it.grid, weights, it.boss);
     const score = flameScore(it.grid, weights, it.flames);
@@ -95,11 +95,11 @@ export interface FlameGraph {
 }
 
 export async function flameGraph(ownerId: string, characterId: number, slot: string): Promise<FlameGraph> {
-  const { job, values } = await characterValues(ownerId, characterId);
+  const { job, values, settings, equipped } = await characterGear(ownerId, characterId);
   if (!job) throw new HttpError(404, "No flame score for this job yet");
-  const it = (await flameable(characterId)).find((i) => i.slot === slot);
+  const it = flameable(equipped).find((i) => i.slot === slot);
   if (!it) throw new HttpError(404, "That slot has no item that can have flames");
-  const { blackFlamePrice: price } = await getSettings(ownerId);
+  const price = settings.blackFlamePrice;
   const dist = flameDistribution(it.grid, flameWeights(job, values, it.weapon), it.boss);
   return { distribution: dist.map(([s, p]) => [s / 100, p]), curves: flameCurves(dist, price) };
 }

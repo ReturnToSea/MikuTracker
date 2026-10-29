@@ -585,6 +585,8 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .value-grid label { display: contents; }
 .value-grid .value-switch { display: contents; }
 .value-grid .value-switch .segmented { grid-column: span 2; justify-self: start; }
+/* (six choices: the label on its own row, the buttons under it, so it fits at phone width) */
+.value-grid .value-switch.wide > span, .value-grid .value-switch.wide .segmented { grid-column: 1 / -1; }
 
 /* The Flames page (v2.1.0) */
 .flame-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 6px; }
