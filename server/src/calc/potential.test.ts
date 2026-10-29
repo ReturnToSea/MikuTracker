@@ -384,14 +384,14 @@ describe("cubeMetrics", () => {
   it("chance, cubes and meso to a better roll, the average gain, and meso per 1% final damage", () => {
     // 1 in 5 beats 100, ending on 200 (+1 point); 5 cubes × 10m = 50m for +1 × 1 / 100 = 0.01% FD: 5B per 1%
     const m = cubeMetrics(legendary, 0, 100, 10e6, 1);
-    expect(m).toMatchObject({ better: 0.2, rankUp: 0, cubesToBetter: expect.closeTo(5, 12), mesoToBetter: expect.closeTo(50e6, 5), gainIfBetter: expect.closeTo(1, 12), mesoPerFd: expect.closeTo(5e9, 2) });
+    expect(m).toMatchObject({ better: 0.2, rankUp: 0, cubesToBetter: expect.closeTo(5, 12), mesoToBetter: expect.closeTo(50e6, 5), gainIfBetter: expect.closeTo(1, 12), fdIfBetter: expect.closeTo(0.01, 12), mesoPerFd: expect.closeTo(5e9, 2) });
     expect(m.cubesForChance).toEqual([0.25, 0.5, 0.7, 0.99].map((chance, i) => ({ chance, cubes: [2, 4, 6, 21][i] })));
   });
   it("below the top rank: its rank-up chance", () => {
     expect(cubeMetrics(twoRanks, 0, 0, 10e6, 1).rankUp).toBe(0.2);
   });
   it("nothing to gain: no meso figures", () => {
-    expect(cubeMetrics(legendary, 0, 200, 10e6, 1)).toMatchObject({ better: 0, cubesToBetter: null, mesoToBetter: null, gainIfBetter: null, mesoPerFd: null });
+    expect(cubeMetrics(legendary, 0, 200, 10e6, 1)).toMatchObject({ better: 0, cubesToBetter: null, mesoToBetter: null, gainIfBetter: null, fdIfBetter: null, mesoPerFd: null });
     // a final damage value of 0 makes it endless per 1%
     expect(cubeMetrics(legendary, 0, 100, 10e6, 0).mesoPerFd).toBeNull();
   });

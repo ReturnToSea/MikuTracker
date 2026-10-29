@@ -604,7 +604,7 @@ try {
   await go("/gear");
   await page.locator(".rail-group").getByRole("link", { name: "Flames" }).click();
   await page.getByRole("group", { name: /Items, cheapest/ }).waitFor();
-  check("Flames", "the Gear group lists its pages; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames,Star Force,Potential" && (await page.locator(".rail-page.active").innerText()) === "Flames");
+  check("Flames", "the Gear group lists its pages; Flames opens from it", (await text("h1")) === "Flames" && (await page.locator(".rail-page").allInnerTexts()).join(",") === "Equipment,Flames,Star Force,Potential,Upgrades" && (await page.locator(".rail-page.active").innerText()) === "Flames");
   const flameBoard = async () => (await api("GET", `/gear/${miku.id}/flames?budget=10000000000`)).json;
   let fb = await flameBoard();
   const rowNames = await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
@@ -804,6 +804,55 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
 
+  // ---------- the Upgrades page (v2.4.0) ----------
+  await go("/gear");
+  await page.locator(".rail-group").getByRole("link", { name: "Upgrades" }).click();
+  const allSteps = page.getByRole("region", { name: "All steps" });
+  await allSteps.waitFor();
+  const ub = (await api("GET", `/gear/${miku.id}/upgrades?sf=&cubes=`)).json;
+  const stepRows = allSteps.locator("tbody tr");
+  const perFds = ub.steps.map((x) => x.perFd);
+  check("Upgrades", "the Gear group's fifth page: every step from Flames, Star Force and Potential, cheapest per 1% final damage first", (await text("h1")) === "Upgrades" && (await stepRows.count()) === ub.steps.length && ub.steps.length > 0 && perFds.every((v, i) => i === 0 || perFds[i - 1] <= v) && new Set(ub.steps.map((x) => x.system)).size === 3, `${ub.steps.length} steps, systems ${[...new Set(ub.steps.map((x) => x.system))].join(", ")}`);
+  const flameStep = ub.steps.find((x) => x.system === "flames");
+  check("Upgrades", "a flame step costs the whole step (price ÷ the chance of better), not one 3m flame", flameStep.cost > 3_000_000 && Math.abs(flameStep.cost - 3_000_000 / flameStep.chance) < 1, `${flameStep.name}: ${flameStep.cost} at ${flameStep.chance}`);
+  const potGb = (await api("GET", `/gear/${miku.id}/potential?events=&budget=0`)).json.items.find((x) => x.slot === "hat");
+  const potStep = ub.steps.find((x) => x.system === "potential" && x.slot === "hat");
+  check("Upgrades", "a potential step is the Potential page's own figure (the cheaper cube to any better roll)", potStep && potStep.perFd === potGb.cubes[potGb.cheaper].mesoPerFd && potStep.cost === potGb.cubes[potGb.cheaper].mesoToBetter, JSON.stringify(potStep));
+  await shot("20-upgrades");
+  const firstFlames = ub.steps.findIndex((x) => x.system === "flames");
+  await stepRows.nth(firstFlames).click();
+  await page.getByRole("region", { name: `${ub.steps[firstFlames].name} flames` }).waitFor({ timeout: 5000 }).catch(() => {});
+  check("Upgrades", "a row opens that system's page with the item picked", (await text("h1")) === "Flames" && (await page.getByRole("region", { name: `${ub.steps[firstFlames].name} flames` }).count()) === 1, page.url());
+  // picking another item there moves the address with it (a reload keeps it)
+  const otherFlame = fb.items.find((i) => i.slot !== ub.steps[firstFlames].slot);
+  await page.getByRole("group", { name: /Items, cheapest/ }).getByRole("button", { name: otherFlame.name }).click();
+  await settle(300);
+  check("Upgrades", "the address follows the item picked on the page a row opened", new URL(page.url()).searchParams.get("item") === otherFlame.slot, page.url());
+  await page.reload();
+  await page.getByRole("region", { name: `${otherFlame.name} flames` }).waitFor({ timeout: 5000 }).catch(() => {});
+  check("Upgrades", "reloading keeps that item", (await page.getByRole("region", { name: `${otherFlame.name} flames` }).count()) === 1);
+  await go("/gear/upgrades");
+  await allSteps.waitFor();
+  await page.getByRole("button", { name: "Chart", exact: true }).click();
+  const chartBox = page.getByRole("region", { name: "Cost against gain" });
+  await chartBox.waitFor();
+  check("Upgrades", "Chart: a dot per step, the cheapest picked to start", (await chartBox.locator("svg circle").count()) === ub.steps.length && (await chartBox.getByText(/#1 on the list/).count()) === 1);
+  await chartBox.locator("svg circle").nth(ub.steps.length - 1).click();
+  check("Upgrades", "clicking a dot picks that step", (await chartBox.getByText(new RegExp(`#${ub.steps.length} on the list`)).count()) === 1);
+  await shot("21-upgrades-chart");
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Cube sale (25% off)" }).check();
+  await settle(800);
+  const sale = (await api("GET", `/gear/${miku.id}/upgrades?sf=&cubes=sale`)).json;
+  check("Upgrades", "a cube sale: the potential steps cost 25% less", sale.steps.filter((x) => x.system === "potential").every((x) => Math.abs(x.cost - ub.steps.find((y) => y.system === "potential" && y.slot === x.slot).cost * 0.75) < 1));
+  for (const [what, method, where, body, status] of [
+    ["upgrades: an event it doesn't know", "GET", `/gear/${miku.id}/upgrades?sf=halfOff`, undefined, 400],
+    ["upgrades: an unknown character", "GET", "/gear/99999/upgrades", undefined, 404],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+
   // ---------- EXP table ----------
   await go("/exp-table");
   check("EXP table", "says which patch it's current as of", /v\.271/.test((await text(".section-head")) ?? ""));
@@ -959,6 +1008,14 @@ try {
   await settle(400);
   check("Layout", "the Potential page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   await shot("19-potential-phone");
+  await page.setViewportSize({ width: 900, height: 900 });
+  await go("/gear/upgrades");
+  await page.getByRole("region", { name: "All steps" }).waitFor();
+  check("Layout", "the Upgrades page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 390, height: 800 });
+  await settle(400);
+  check("Layout", "the Upgrades page at phone width: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await shot("22-upgrades-phone");
   await page.setViewportSize({ width: 900, height: 900 });
   await go("/checklist");
   check("Layout", "the Checklist tab at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);

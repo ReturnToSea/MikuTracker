@@ -138,6 +138,8 @@ describe("flameOdds and flameMetrics", () => {
     const m = flameMetrics(TOY, 3000, 3_000_000, 0.785);
     expect(m.beats).toBeCloseTo(0.6734, 12);
     expect(m.gainIfBetter).toBeCloseTo(1.242 / 0.1196, 9); // 10.38
+    // that gain as final damage: 10.38 × 0.785 / 100 = 0.0815%
+    expect(m.fdIfBetter).toBeCloseTo((1.242 / 0.1196) * 0.00785, 9);
     expect(m.flamesToBetter).toBeCloseTo(1 / 0.1196, 9); // 8.36
     expect(m.mesoToBetter).toBeCloseTo(3_000_000 / 0.1196, 3); // 25.08m
     // 1.242 points × 0.785 / 100 = 0.0097497% final damage a flame: 3m ÷ that = 307.7m per 1%
@@ -148,7 +150,7 @@ describe("flameOdds and flameMetrics", () => {
 
   it("at the top, or with nothing to gain, the endless figures are null", () => {
     const m = flameMetrics(TOY, 5000, 3_000_000, 0.785);
-    expect([m.better, m.gain, m.gainIfBetter, m.flamesToBetter, m.mesoToBetter, m.mesoPerFd, m.flamesForChance[0]!.flames]).toEqual([0, 0, null, null, null, null, null]);
+    expect([m.better, m.gain, m.gainIfBetter, m.fdIfBetter, m.flamesToBetter, m.mesoToBetter, m.mesoPerFd, m.flamesForChance[0]!.flames]).toEqual([0, 0, null, null, null, null, null, null]);
     expect(flameMetrics(TOY, 3000, 3_000_000, 0).mesoPerFd).toBeNull();
   });
 });

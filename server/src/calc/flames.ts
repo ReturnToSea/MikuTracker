@@ -129,6 +129,7 @@ export interface FlameMetrics {
   beats: number; // share of rolls the current flames beat
   gain: number; // score added per flame, on average
   gainIfBetter: number | null; // score added when a flame is better, on average
+  fdIfBetter: number | null; // the final damage that adds, %
   flamesToBetter: number | null;
   mesoToBetter: number | null;
   mesoPerFd: number | null; // meso per 1% final damage, for the next flame on average
@@ -143,6 +144,7 @@ export function flameMetrics(dist: [number, number][], current: number, price: n
     beats: worse,
     gain,
     gainIfBetter: better > 0 ? gain / better : null,
+    fdIfBetter: better > 0 ? (gain / better) * (fdPer100 / 100) : null,
     flamesToBetter: better > 0 ? 1 / better : null,
     mesoToBetter: better > 0 ? price / better : null,
     mesoPerFd: fdPerFlame > 0 ? price / fdPerFlame : null,

@@ -17,5 +17,6 @@ export type { StarForceBoard, StarForceDetail, StarForceItem, StarForceRow } fro
 export type { PotentialBoard, PotentialGraph, PotentialItem } from "../../../server/src/services/potential";
 export type { CubeMetrics } from "../../../server/src/calc/potential";
 export type { Cube } from "../../../server/src/gameFigures/cubes";
+export type { UpgradeStep, UpgradeSystem, UpgradesBoard } from "../../../server/src/services/upgrades";
 
 export type ThemeArt = Record<ThemeId, string | null>;

@@ -23,7 +23,7 @@ const grid = [
 ] as FlameItem["grid"];
 const weights = { STR: 1, DEX: 0.125, ATT: 4 } as unknown as FlameItem["weights"];
 const metrics = (over: Partial<FlameItem["metrics"]> = {}): FlameItem["metrics"] => ({
-  better: 0.2124, beats: 0.75, gain: 4.7, gainIfBetter: 22.1, flamesToBetter: 4.7, mesoToBetter: 14_120_000, mesoPerFd: 81_300_000,
+  better: 0.2124, beats: 0.75, gain: 4.7, gainIfBetter: 22.1, fdIfBetter: 0.17, flamesToBetter: 4.7, mesoToBetter: 14_120_000, mesoPerFd: 81_300_000,
   flamesForChance: [{ chance: 0.25, flames: 2 }, { chance: 0.5, flames: 3 }, { chance: 0.7, flames: 6 }, { chance: 0.99, flames: 20 }],
   ...over,
 });
@@ -40,9 +40,9 @@ const BOARD: FlamesBoard = {
 };
 const GRAPH = { distribution: [[0, 0.5], [33, 0.3], [66, 0.2]], curves: [{ score: 0, gain: 30, mesoPerScore: 100_000 }, { score: 33, gain: 13, mesoPerScore: 230_000 }, { score: 66, gain: 0, mesoPerScore: null }] };
 
-function show(board: FlamesBoard = BOARD, routes: Record<string, unknown> = {}) {
+function show(board: FlamesBoard = BOARD, routes: Record<string, unknown> = {}, path = "/gear/flames") {
   const s = fakeServer({ ...BASE_ROUTES, "GET /gear": GEAR, "GET /gear/:id/flames": board, "GET /gear/:id/flames/hat": GRAPH, "GET /gear/:id/flames/gloves": GRAPH, "GET /gear/:id/flames/weapon": GRAPH, "PUT /gear/:id/hat/details": undefined, "PUT /gear/:id/weapon/details": undefined, "PUT /settings": (body: object) => ({ theme: "ren", worldId: 45, blackFlamePrice: 3_000_000, ...body }), ...routes });
-  renderWithApp(<App />, "/gear/flames");
+  renderWithApp(<App />, path);
   return s;
 }
 const row = () => within(screen.getByRole("group", { name: /Items, cheapest/ }));
@@ -50,6 +50,11 @@ const cells = () => row().getAllByRole("button").map((b) => b.closest(".flame-ce
 const panel = (name: RegExp) => within(screen.getByRole("region", { name }));
 
 describe("the Flames page: the item row", () => {
+  it("a link with ?item= opens on that item (the Upgrades page's rows)", async () => {
+    show(BOARD, {}, "/gear/flames?item=hat");
+    expect(await screen.findByRole("region", { name: "Arcane Hat flames" })).toBeTruthy();
+  });
+
   it("only the board's items, cheapest first, the meso per 1% final damage above and the chance of better below; the cheapest marked", async () => {
     const s = show();
     await screen.findByRole("group", { name: /Items, cheapest/ });
@@ -278,6 +283,8 @@ describe("saving settings", () => {
     const qc = new QueryClient();
     qc.setQueryData(["flames", 1, 10e9], BOARD);
     qc.setQueryData(["starforce", 1, "", 10e9], {});
+    qc.setQueryData(["upgrades", 1, "", ""], {});
+    const upOutOfDate = () => qc.getQueryState(["upgrades", 1, "", ""])!.isInvalidated;
     qc.setQueryData(["gear", 45], GEAR);
     const { result } = renderHook(() => useUpdateSettings(), { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider> });
     const outOfDate = () => qc.getQueryState(["flames", 1, 10e9])!.isInvalidated;
@@ -285,13 +292,18 @@ describe("saving settings", () => {
     await act(() => result.current.mutateAsync({ worldId: 70 }));
     expect(outOfDate()).toBe(false);
     const sfOutOfDate = () => qc.getQueryState(["starforce", 1, "", 10e9])!.isInvalidated;
-    // the theme and world saves above left both current
-    expect(sfOutOfDate()).toBe(false);
+    // the theme and world saves above left both current, and the Upgrades numbers
+    expect([sfOutOfDate(), upOutOfDate()]).toEqual([false, false]);
     await act(() => result.current.mutateAsync({ mvp: "gold" }));
+    // the Upgrades page uses the MVP tier and the Black Flame price
+    expect(upOutOfDate()).toBe(true);
+    qc.setQueryData(["upgrades", 1, "", ""], {});
+    expect(upOutOfDate()).toBe(false);
     // the MVP tier: the Star Force numbers, not the Flames ones
     expect([sfOutOfDate(), outOfDate()]).toEqual([true, false]);
     await act(() => result.current.mutateAsync({ blackFlamePrice: 4_000_000 }));
     expect(outOfDate()).toBe(true);
+    expect(upOutOfDate()).toBe(true);
     // only the Flames numbers: the gear board is still current
     expect(qc.getQueryState(["gear", 45])!.isInvalidated).toBe(false);
   });

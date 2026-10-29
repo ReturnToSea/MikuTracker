@@ -5,7 +5,7 @@ import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, PotentialBoard, PotentialGraph, StarForceBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, PotentialBoard, PotentialGraph, StarForceBoard, UpgradesBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -24,6 +24,7 @@ export const keys = {
   starForce: (id: number, events: string, budget: number) => ["starforce", id, events, budget],
   starForceDetail: (id: number, slot: string, events: string, target: number) => ["starforce", id, "detail", slot, events, target],
   potential: (id: number, events: string, budget: number) => ["potential", id, events, budget],
+  upgrades: (id: number, sf: string, cubes: string) => ["upgrades", id, sf, cubes],
   potentialGraph: (id: number, slot: string, events: string, target: number | null) => ["potential", id, "graph", slot, events, target],
 } as const;
 
@@ -67,6 +68,8 @@ export function useUpdateSettings() {
       // (the theme or world doesn't)
       if (input.blackFlamePrice !== undefined) void qc.invalidateQueries({ queryKey: ["flames"] });
       if (input.mvp !== undefined) void qc.invalidateQueries({ queryKey: ["starforce"] });
+      // the Upgrades page uses both
+      if (input.blackFlamePrice !== undefined || input.mvp !== undefined) void qc.invalidateQueries({ queryKey: ["upgrades"] });
     },
   });
 }
@@ -167,10 +170,10 @@ export function useSaveSymbol(world: number) {
   });
 }
 
-// After a gear save: the board, and the Flames, Star Force and Potential pages' numbers (which follow
+// After a gear save: the board, and the Flames, Star Force, Potential and Upgrades pages' numbers (which follow
 // the items, their details and the stat values).
 const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) =>
-  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] })]);
+  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] }), qc.invalidateQueries({ queryKey: ["upgrades"] })]);
 
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
@@ -251,3 +254,8 @@ export const usePotential = (id: number | undefined, events: string, budget: num
   useQuery({ queryKey: keys.potential(id ?? 0, events, budget), queryFn: () => api<PotentialBoard>(`/gear/${id}/potential?events=${events}&budget=${budget}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
 export const usePotentialGraph = (id: number | undefined, slot: string | undefined, events: string, target: number | null) =>
   useQuery({ queryKey: keys.potentialGraph(id ?? 0, String(slot), events, target), queryFn: () => api<PotentialGraph>(`/gear/${id}/potential/${slot}?events=${events}${target === null ? "" : `&target=${target}`}`), enabled: slot !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id && query?.queryKey[3] === slot ? previous : undefined) });
+
+// The Upgrades page: each item's next step in each system, for the events ticked. New events keep showing
+// the last numbers until the new ones come (only for the same character).
+export const useUpgrades = (id: number | undefined, sf: string, cubes: string) =>
+  useQuery({ queryKey: keys.upgrades(id ?? 0, sf, cubes), queryFn: () => api<UpgradesBoard>(`/gear/${id}/upgrades?sf=${sf}&cubes=${cubes}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });

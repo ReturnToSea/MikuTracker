@@ -1,4 +1,4 @@
-import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, potentialItemQuery, potentialQuery, starForceItemQuery, starForceQuery, statValuesInput } from "@miku/shared";
+import { flamesQuery, gearDetailsInput, gearInput, gearOptionsQuery, gearQuery, potentialItemQuery, potentialQuery, starForceItemQuery, upgradesQuery, starForceQuery, statValuesInput } from "@miku/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { currentOwner } from "../owner";
@@ -6,6 +6,7 @@ import { flameGraph, flamesBoard } from "../services/flames";
 import { gearBoard, listedItemOptions, otherItemOptions, saveGear, saveGearDetails, saveStatValues } from "../services/gear";
 import { potentialBoard, potentialGraph } from "../services/potential";
 import { starForceBoard, starForceDetail } from "../services/starForce";
+import { upgradesBoard } from "../services/upgrades";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -55,6 +56,12 @@ gearRouter.get("/:characterId/potential", async (req, res) => {
 gearRouter.get("/:characterId/potential/:slot", async (req, res) => {
   const q = potentialItemQuery.parse(req.query);
   res.json(await potentialGraph(currentOwner(res), idParam.parse(req.params.characterId), req.params.slot, q.events, q.target));
+});
+
+// The Upgrades page: each item's next step in each system, cheapest per 1% final damage first.
+gearRouter.get("/:characterId/upgrades", async (req, res) => {
+  const q = upgradesQuery.parse(req.query);
+  res.json(await upgradesBoard(currentOwner(res), idParam.parse(req.params.characterId), q.sf, q.cubes));
 });
 
 // An item's stars, flames, potential and hammers.

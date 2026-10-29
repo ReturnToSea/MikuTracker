@@ -259,6 +259,7 @@ export interface CubeMetrics {
   cubesToBetter: number | null; // on average, rank-ups included
   mesoToBetter: number | null;
   gainIfBetter: number | null; // score added when it ends, on average
+  fdIfBetter: number | null; // the final damage that adds, %
   mesoPerFd: number | null; // meso per 1% final damage, cubing until a better roll
   cubesForChance: { chance: number; cubes: number | null }[];
 }
@@ -275,6 +276,7 @@ export function cubeMetrics(rolls: CubeRolls, from: number, current: number, pri
     cubesToBetter: ends ? c.cubes : null,
     mesoToBetter: ends ? c.cubes * price : null,
     gainIfBetter: gain,
+    fdIfBetter: gain === null ? null : fd,
     mesoPerFd: ends && fd > 0 ? (c.cubes * price) / fd : null,
     cubesForChance: CHANCES.map((chance, i) => ({ chance, cubes: counts[i]! })),
   };

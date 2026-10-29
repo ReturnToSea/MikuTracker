@@ -35,6 +35,9 @@
   --rank-legendary: #7fd18b;
   /* the item summary's parts: flames and Exceptional Hammers */
   --part-flames: #6fd6cf;
+  --sys-starforce: #f0c96a; /* the Upgrades page's systems (v2.4.0) */
+  --sys-flames: #ff8a65;
+  --sys-potential: #b48be8;
   --part-hammers: #f0a35a;
   --diff-easy: #3b5b4a;
   --diff-normal: #3e4f73;
@@ -87,6 +90,9 @@
   --rank-unique: #a87b12;
   --rank-legendary: #2f8f45;
   --part-flames: #0f8a83;
+  --sys-starforce: #b8860b;
+  --sys-flames: #d4532a;
+  --sys-potential: #7c4bc4;
   --part-hammers: #b45309;
   --diff-easy: #5fae7d;
   --diff-normal: #4f86c6;

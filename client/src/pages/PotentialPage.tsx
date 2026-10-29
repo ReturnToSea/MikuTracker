@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { POTENTIAL_RANKS } from "@miku/shared";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
+import { CUBE_EVENTS, POTENTIAL_RANKS } from "@miku/shared";
 import { useGear, usePotential, usePotentialGraph, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
 import type { Cube, PotentialBoard, PotentialItem } from "../api/types";
 import { CHART_MODES, type ChartMode, FlameChart } from "../components/FlameChart";
@@ -8,6 +9,7 @@ import { BudgetBox, GearTop, ItemIcon, NoCharacters, useGearCharacter } from "..
 import { DEFAULT_BUDGET, formatMeso, formatScore } from "../lib/flames";
 import { rankName } from "../lib/gearDetails";
 import { changed, CUBE_EVENT_LABELS, type CubeEvent, cubeEventsParam, cubePrice, fineChance, liveScore, oneIn, type Potential, withPotential, withRank } from "../lib/potential";
+import { eventsFrom, pageQuery } from "../lib/upgrades";
 
 type Rank = (typeof POTENTIAL_RANKS)[number];
 const CUBE_NAMES: Record<Cube, string> = { glowing: "Glowing", bright: "Bright" };
@@ -287,12 +289,17 @@ export function PotentialPage() {
   const [picked, setPicked] = useGearCharacter();
   const [view, setView] = useState<"upgrade" | "targets">("upgrade");
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
-  const [on, setOn] = useState<ReadonlySet<CubeEvent>>(new Set());
-  const [slot, setSlot] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  // the item and events from a link (the Upgrades page's), else the first item and none
+  const [on, setOn] = useState<ReadonlySet<CubeEvent>>(() => eventsFrom(params.get("events"), CUBE_EVENTS));
+  // the item picked: from a link (the Upgrades page's ?item=<slot>), else the first
+  const [slot, setSlot] = useState<string | null>(params.get("item"));
   // the cube shown (null: the item's cheaper one) and the target score picked on the graph
   const [cube, setCube] = useState<Cube | null>(null);
   const [target, setTarget] = useState<number | null>(null);
   const events = cubeEventsParam(on);
+  // the address follows the item picked and the events (a reload keeps them)
+  useEffect(() => setParams(pageQuery(slot, events), { replace: true }), [slot, events, setParams]);
   const b = gear.data;
   const c = b?.characters.find((x) => x.id === picked) ?? b?.characters[0];
   const potential = usePotential(c?.id, events, budget);

@@ -197,6 +197,9 @@ const cubeEvents = z
 export const potentialQuery = z.strictObject({ events: cubeEvents, budget: z.coerce.number().min(0).max(1e15) });
 export const potentialItemQuery = z.strictObject({ events: cubeEvents, target: z.coerce.number().min(0).max(1e6).optional() });
 
+// The Upgrades page (v2.4.0): the Star Force page's events and the Potential page's, each as on its page.
+export const upgradesQuery = z.strictObject({ sf: sfEvents, cubes: cubeEvents });
+
 // What each stat is worth to a character, in main stat (typed in on the gear tab), one set shared by
 // every page. The first five from v2.1.0 (all stat % was 10 until v2.3.0: below a main stat % line,
 // which it includes); the potential lines' from v2.3.0, from the owner's MapleScouter sheet. 1% of each

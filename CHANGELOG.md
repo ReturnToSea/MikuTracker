@@ -2,6 +2,17 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v2.4.0 (2026-10-29): Upgrades
+
+- **The Upgrades page**, the Gear group's fifth page: each item's next step in each system (a Black Flame, Star Force's best jump, the cheaper cube), exactly as the Flames, Star Force and Potential pages work it out, in one list cheapest per 1% final damage first. No new maths.
+- **Each row's cost is the whole step** (the owner): the meso to any better flame or roll, or the jump with its booms, not the price of one try; with what it adds and the chance, as a player says it.
+- **List | Chart:** the ranked table (a row opens that system's page with the item picked; those pages now open on a linked item), or every step as a dot of cost against gain with lines of the same meso per 1%; clicking a dot shows that step and the item's other steps.
+- Every page's events as checkboxes (Star Force's and the cubes'); the MVP tier and Black Flame price as on their pages.
+- DESIGN.md now writes down the Gear pages' shared look and layout (and that a boom keeps flames and potential), so every new Gear page matches.
+- **From the review pass** (10 findings, 9 fixed): a row now opens its page **with that page's events from here**, so it shows the figures the row did (before, ticking "30% off" here and clicking a Star Force row showed the unticked figures there); the Flames, Star Force and Potential pages keep the item and events in the address (a reload keeps them); the chart keeps the picked step when the order changes, draws a free step (a Black Flame price of 0) instead of losing it, and scrolls on a phone rather than shrinking to unreadable text; tiny gains read "+0.0000003%", not "3e-7"; the Flames and Potential calculations report a better roll's final damage themselves (the Upgrades list took no figure of its own, and reads the character once instead of four times); DESIGN.md's address list. **Moved to v3.0.0:** the speed (each board reads the character and its gear again; the owner: fix it rather than leave it, in the next version so its checks are shared).
+- **The plan's order changed** (the owner, 2026-10-29): v3 HEXA (Ren first, then every job; each job levels its cores in its own order), then Familiars; v4 Stats; v5 Bosses, with pitched items and drops (moved from v2.5.0) and boss and checklist history; v6 the standalone calculators; v7 low-priority extras (targets by lines, potential extras, star transfer, totems, avatar history); v8 the server move, with export. The speed fix goes into v3.0.0.
+- **The checking order changed** (the owner, 2026-10-29): mutation testing now runs once after the review's fixes, with incremental rechecks, instead of before the review and again after (CLAUDE.md).
+
 ## v2.3.0 (2026-10-28): Potential
 
 - **The Potential page**, the Gear group's fourth page (layout A of 5 mockups): each item that can have potential, cheapest per 1% final damage first, with **both cubes the Heroic Cube Shop sells**, **Glowing** (12m) and **Bright** (22m), worked out and the cheaper one marked. Below each icon, which cube and **"1/X"**: 1 in how many cubes beats the current lines.

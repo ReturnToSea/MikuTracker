@@ -13,7 +13,7 @@ const SLOTS = ["ring1", "hat", "emblem", "ring2", "pendant1", "face", "badge", "
 const GEAR: GearBoard = { generated: "2026-10-24", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit", { details: { hat: { stars: 17, flames: { STR: 6 }, potential: { rank: "legendary", lines: ["STR +13%", "STR +10%", "STR +10%"] }, hammers: 1 } } }), char(2, "Second")] };
 
 const metrics = (over: Partial<CubeMetrics & { price: number }> = {}): CubeMetrics & { price: number } => ({
-  better: 0.0015, rankUp: 0, cubesToBetter: 676, mesoToBetter: 8_110_000_000, gainIfBetter: 96.3, mesoPerFd: 10_700_000_000, price: 12_000_000,
+  better: 0.0015, rankUp: 0, cubesToBetter: 676, mesoToBetter: 8_110_000_000, gainIfBetter: 96.3, fdIfBetter: 0.76, mesoPerFd: 10_700_000_000, price: 12_000_000,
   cubesForChance: [{ chance: 0.25, cubes: 195 }, { chance: 0.5, cubes: 469 }, { chance: 0.7, cubes: 814 }, { chance: 0.99, cubes: 3112 }],
   ...over,
 });
@@ -40,11 +40,11 @@ const GRAPH: PotentialGraph = {
   target: null,
 };
 
-function show(board: PotentialBoard = BOARD, routes: Record<string, unknown> = {}) {
+function show(board: PotentialBoard = BOARD, routes: Record<string, unknown> = {}, path = "/gear/potential") {
   // the graph, with what reaching a target costs when one is asked for
   const graph = (_: unknown, path: string) => (path.includes("target=") ? { ...GRAPH, target: { score: Number(/target=([\d.]+)/.exec(path)![1]), cubes: { glowing: { cubes: 6806, meso: 81_700_000_000 }, bright: null } } } : GRAPH);
   const s = fakeServer({ ...BASE_ROUTES, "GET /gear": GEAR, "GET /gear/:id/potential": board, "GET /gear/:id/potential/belt": graph, "GET /gear/:id/potential/hat": graph, "GET /gear/:id/potential/top": graph, "PUT /gear/:id/hat/details": undefined, "PUT /gear/:id/belt/details": undefined, ...routes });
-  renderWithApp(<App />, "/gear/potential");
+  renderWithApp(<App />, path);
   return s;
 }
 const row = () => within(screen.getByRole("group", { name: /Items, cheapest/ }));
@@ -53,6 +53,18 @@ const panel = (name: RegExp) => within(screen.getByRole("region", { name }));
 const tile = (label: string) => screen.getByText(label).closest(".flame-tile")!;
 
 describe("the Potential page: the item row", () => {
+  it("a link with ?item= opens on that item (the Upgrades page's rows)", async () => {
+    show(BOARD, {}, "/gear/potential?item=top");
+    expect(await screen.findByRole("region", { name: /Eternal Armor potential/ })).toBeTruthy();
+  });
+
+  it("a link's events open ticked, and are asked for (only ones the page has)", async () => {
+    const s = show(BOARD, {}, "/gear/potential?item=top&events=sale,free");
+    await screen.findByRole("region", { name: /Eternal Armor potential/ });
+    expect([screen.getByRole("checkbox", { name: "Cube sale (25% off)" }), screen.getByRole("checkbox", { name: "Double Miracle Time" })].map((c) => (c as HTMLInputElement).checked)).toEqual([true, false]);
+    expect(s.calls.some((c) => c.path.startsWith("/gear/1/potential?events=sale&"))).toBe(true);
+  });
+
   it("cheapest first: the cheaper cube's meso per 1% final damage above, which cube and 1 in how many cubes below; the border is the rank", async () => {
     const s = show();
     await screen.findByRole("group", { name: /Items, cheapest/ });

@@ -33,7 +33,7 @@ const DETAIL: StarForceDetail = {
   graphs: { cost: { width: 1e8, bins: [0.16, 0.12, 0.05], marks: { median: 1.28e9, p75: 4.03e9, p90: 7.48e9, p99: 16.6e9 } }, booms: { width: 1, counts: [0.7, 0.2, 0.1], more: false }, perStar: [{ to: 18, avgCost: 2.88e9 }] },
 };
 
-function show(board: StarForceBoard = BOARD, routes: Record<string, unknown> = {}) {
+function show(board: StarForceBoard = BOARD, routes: Record<string, unknown> = {}, path = "/gear/starforce") {
   const s = fakeServer({
     ...BASE_ROUTES,
     "GET /gear": GEAR,
@@ -47,7 +47,7 @@ function show(board: StarForceBoard = BOARD, routes: Record<string, unknown> = {
     "PUT /gear/:id/stat-values": undefined,
     ...routes,
   });
-  renderWithApp(<App />, "/gear/starforce");
+  renderWithApp(<App />, path);
   return s;
 }
 const itemRow = () => within(screen.getByRole("group", { name: /Items, cheapest/ }));
@@ -60,6 +60,11 @@ const pickHat = async () => {
 };
 
 describe("the Star Force page: the item row", () => {
+  it("a link with ?item= opens on that item (the Upgrades page's rows)", async () => {
+    show(BOARD, {}, "/gear/starforce?item=hat");
+    expect(await screen.findByRole("region", { name: "Eternal Helm Star Force" })).toBeTruthy();
+  });
+
   it("cheapest first: each item's best jump (meso per 1% FD and its star) above, the next tap's success below, its stars on the icon", async () => {
     show();
     await screen.findByRole("group", { name: /Items, cheapest/ });

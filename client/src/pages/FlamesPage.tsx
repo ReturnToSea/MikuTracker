@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import type { GearDetailsInput } from "@miku/shared";
 import { useFlameGraph, useFlames, useGear, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
 import type { FlameItem, FlamesBoard, GearCharacter } from "../api/types";
@@ -6,6 +7,7 @@ import { CHART_MODES, type ChartMode, FlameChart } from "../components/FlameChar
 import { FlameTable, StatValuesBox } from "../components/GearDetails";
 import { BudgetBox, GearTop, ItemIcon, NoCharacters, useGearCharacter } from "../components/GearTop";
 import { DEFAULT_BUDGET, formatChance, formatMeso, formatScore, priceFromMillions, withFlames } from "../lib/flames";
+import { pageQuery } from "../lib/upgrades";
 
 const same = (a: Record<string, number>, b: Record<string, number>) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 
@@ -214,7 +216,11 @@ export function FlamesPage() {
   const [picked, setPicked] = useGearCharacter();
   const [view, setView] = useState<"upgrade" | "targets">("upgrade");
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
-  const [slot, setSlot] = useState<string | null>(null);
+  // the item picked: from a link (the Upgrades page's ?item=<slot>), else the first
+  const [params, setParams] = useSearchParams();
+  const [slot, setSlot] = useState<string | null>(params.get("item"));
+  // the address follows the item picked (a reload keeps it)
+  useEffect(() => setParams(pageQuery(slot, ""), { replace: true }), [slot, setParams]);
   const b = gear.data;
   const c = b?.characters.find((x) => x.id === picked) ?? b?.characters[0];
   const flames = useFlames(c?.id, budget);

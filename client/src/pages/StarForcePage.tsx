@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { MVP_TIERS } from "@miku/shared";
 import { useGear, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useStarForce, useStarForceDetail, useUpdateSettings } from "../api/hooks";
 import type { GearCharacter, StarForceBoard, StarForceItem } from "../api/types";
@@ -8,6 +9,7 @@ import { SF_CHART_MODES, type SfChartMode, StarForceChart } from "../components/
 import { clickStar } from "../lib/gearDetails";
 import { DEFAULT_BUDGET, formatChance, formatMeso } from "../lib/flames";
 import { boomCostFrom, eventsParam, formatRate, jumpSpans, SF_EVENT_LABELS, type SfEventKey, withBoomSettings, withStars } from "../lib/starForce";
+import { eventsFrom, pageQuery } from "../lib/upgrades";
 
 const MVP_LABELS: Record<(typeof MVP_TIERS)[number], string> = { none: "None", silver: "Silver (3%)", gold: "Gold (5%)", diamond: "Diamond or higher (10%)" };
 const fdText = (fd: number) => `+${fd.toFixed(2)}%`;
@@ -269,14 +271,19 @@ export function StarForcePage() {
   useRefreshStatus();
   const [picked, setPicked] = useGearCharacter();
   const [view, setView] = useState<"upgrade" | "targets">("upgrade");
-  const [events, setEvents] = useState<Set<SfEventKey>>(new Set());
+  const [params, setParams] = useSearchParams();
+  // the item and events from a link (the Upgrades page's), else the first item and none
+  const [events, setEvents] = useState<Set<SfEventKey>>(() => eventsFrom(params.get("events"), SF_EVENT_LABELS.map(([k]) => k)));
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
-  const [slot, setSlot] = useState<string | null>(null);
+  // the item picked: from a link (the Upgrades page's ?item=<slot>), else the first
+  const [slot, setSlot] = useState<string | null>(params.get("item"));
   // the star planned to (cleared whenever the item changes)
   const [target, setTarget] = useState<number | null>(null);
   const b = gear.data;
   const c = b?.characters.find((x) => x.id === picked) ?? b?.characters[0];
   const ev = eventsParam(events);
+  // the address follows the item picked and the events (a reload keeps them)
+  useEffect(() => setParams(pageQuery(slot, ev), { replace: true }), [slot, ev, setParams]);
   const sf = useStarForce(c?.id, ev, budget);
   const board = sf.data;
   const item = board?.items.find((i) => i.slot === slot) ?? board?.items[0];

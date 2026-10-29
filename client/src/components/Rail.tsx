@@ -25,6 +25,7 @@ export const TOP_TABS: Tab[] = [
       { path: "/gear/flames", label: "Flames" },
       { path: "/gear/starforce", label: "Star Force" },
       { path: "/gear/potential", label: "Potential" },
+      { path: "/gear/upgrades", label: "Upgrades" },
     ],
   },
 ];
