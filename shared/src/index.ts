@@ -245,3 +245,62 @@ export const reorderInput = z.strictObject({
   ids: z.array(z.number().int().positive()).max(500),
 });
 export type ReorderInput = z.infer<typeof reorderInput>;
+
+// ── v3.0.0: HEXA (6th job) ─────────────────────────────────────────────────────────────────────
+
+// The HEXA page of a world: /api/hexa?world=45
+export const hexaQuery = z.strictObject({ world: worldId });
+
+// A job's HEXA nodes in GMS (Oct 2026): Origin and Ascent (skill nodes), four Mastery, four Boost
+// (Enhancement), and three Common: Sol Janus, Sol Hecate and the job's 5th job common boost.
+export const HEXA_NODES = ["origin", "ascent", "mastery1", "mastery2", "mastery3", "mastery4", "boost1", "boost2", "boost3", "boost4", "janus", "hecate", "common3"] as const;
+export type HexaNode = (typeof HEXA_NODES)[number];
+// The Epic Dungeon a character does each week for Sol Erda Fragments (none: no dungeon).
+export const EPIC_DUNGEONS = ["none", "highMountain", "anglerCompany", "nightmareParadise"] as const;
+
+// The input's limits (the game's): a node's level, a HEXA Stat line's level, a HEXA Stat node's rank.
+export const HEXA_LEVEL_MAX = 30;
+export const HEXA_LINE_MAX = 10;
+export const HEXA_RANK_MAX = 20;
+const hexaLevel = z.number().int().min(0).max(HEXA_LEVEL_MAX);
+const hexaLevels = z.strictObject(Object.fromEntries(HEXA_NODES.map((n) => [n, hexaLevel])) as Record<HexaNode, typeof hexaLevel>);
+// The stats a HEXA Stat line can be (main stat: flat, % doesn't multiply it).
+export const HEXA_STATS = ["mainStat", "att", "bossDmg", "ied", "dmg", "critDmg"] as const;
+export type HexaStat = (typeof HEXA_STATS)[number];
+// One HEXA Stat line as typed: its stat (null: not picked yet) and its level (0–10).
+const hexaStatLine = z.strictObject({ stat: z.enum(HEXA_STATS).nullable(), level: z.number().int().min(0).max(HEXA_LINE_MAX) });
+// One HEXA Stat node as typed: its main line and its two additional lines (20 levels in all at most,
+// three different stats), and whether it's unlocked (a node with any level is).
+const hexaStat = z
+  .strictObject({ lines: z.tuple([hexaStatLine, hexaStatLine, hexaStatLine]), unlocked: z.boolean() })
+  .refine((s) => s.lines[0].level + s.lines[1].level + s.lines[2].level <= HEXA_RANK_MAX, { message: "A HEXA Stat node's three lines are 20 levels at most" })
+  .refine((s) => new Set(s.lines.map((l) => l.stat).filter((x) => x !== null)).size === s.lines.filter((l) => l.stat !== null).length, { message: "A HEXA Stat node's three lines are three different stats" });
+// A character's HEXA page, as typed (v3.0.0): each node's level now and the level wanted (Origin is at
+// least 1: the 6th job gives it), the three HEXA Stat nodes (a stat is the main line of one node at
+// most), whether Sol Janus counts in the totals, and the fragment calculator: fragments owned, fragments
+// a day from farming, Erda's Request, the Epic Dungeon.
+export const hexaInput = z
+  .strictObject({
+    current: hexaLevels,
+    desired: hexaLevels,
+    stats: z.tuple([hexaStat, hexaStat, hexaStat]),
+    janus: z.boolean(),
+    owned: z.number().int().min(0).max(10_000_000),
+    perDay: z.number().min(0).max(100_000),
+    erdaRequest: z.boolean(),
+    dungeon: z.enum(EPIC_DUNGEONS),
+  })
+  .refine((h) => h.current.origin >= 1, { message: "Origin is at least level 1 (the 6th job gives it)" })
+  .refine((h) => { const mains = h.stats.map((s) => s.lines[0].stat).filter((x) => x !== null); return new Set(mains).size === mains.length; }, { message: "A stat is the main line of one HEXA Stat node at most" });
+export type HexaInput = z.infer<typeof hexaInput>;
+// A new character's: Origin 1, everything else 0, every node wanted at 30, no HEXA Stat.
+export const HEXA_DEFAULTS: HexaInput = {
+  current: Object.fromEntries(HEXA_NODES.map((n) => [n, n === "origin" ? 1 : 0])) as Record<HexaNode, number>,
+  desired: Object.fromEntries(HEXA_NODES.map((n) => [n, HEXA_LEVEL_MAX])) as Record<HexaNode, number>,
+  stats: [0, 1, 2].map(() => ({ lines: [0, 1, 2].map(() => ({ stat: null, level: 0 })), unlocked: false })) as HexaInput["stats"],
+  janus: false,
+  owned: 0,
+  perDay: 0,
+  erdaRequest: false,
+  dungeon: "none",
+};

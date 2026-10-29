@@ -4,15 +4,17 @@ import Database from "better-sqlite3";
 import { utcDay } from "./calc/utcDays";
 import { getConfig } from "./config";
 
-// Copies of the database, one file per UTC day: miku-2026-10-23.db, plus
-// miku-2026-10-23-before-update.db when the always-on app was updated that day. The Mac isn't
+// Copies of the database, one file per UTC day: miku-2026-10-23.db, plus one for each update of the
+// always-on app that day, named by its UTC time: miku-2026-10-23-before-update-043612.db (v3.0.0:
+// before, a second update on the same day replaced the first's copy; older copies are still named
+// miku-2026-10-23-before-update.db). The Mac isn't
 // always on, so nothing runs at a set time: a backup is made when the server starts and there's
 // none from today, checked again every hour while it runs, before every update of the always-on
 // app, and by hand (npm run backup). Adapted from Goal Tracker.
 export const KEEP_DAILY = 30; // the newest 30 backups…
 export const KEEP_MONTHS = 12; // …plus the first of each of the last 12 months
 export const HOUR_MS = 60 * 60 * 1000;
-const NAME = /^miku-(\d{4}-\d{2}-\d{2})(-before-update)?\.db$/;
+const NAME = /^miku-(\d{4}-\d{2}-\d{2})(-before-update(?:-\d{6})?)?\.db$/;
 
 export interface BackupPlace {
   dbFile: string;
@@ -78,7 +80,7 @@ export function pruneBackups(folder: string, today: Date): string[] {
   return removed;
 }
 
-// Copies the database now (replacing today's copy of the same kind), then prunes old ones.
+// Copies the database now (replacing today's regular copy; a before-update copy is its own), then prunes old ones.
 // SQLite's own backup reads a consistent copy even while the app is writing. It's written
 // under a temporary name first, so a copy cut short never looks like a finished backup; a
 // leftover one from such a copy is cleared first (SQLite won't copy over it). Null when
@@ -86,7 +88,8 @@ export function pruneBackups(folder: string, today: Date): string[] {
 export async function makeBackup(place: BackupPlace, now: Date, beforeUpdate = false): Promise<BackupFile | null> {
   if (!existsSync(place.dbFile)) return null;
   mkdirSync(place.folder, { recursive: true });
-  const name = `miku-${utcDay(now)}${beforeUpdate ? "-before-update" : ""}.db`;
+  // (a before-update copy: its own, by the time; HHMMSS in UTC)
+  const name = `miku-${utcDay(now)}${beforeUpdate ? `-before-update-${now.toISOString().slice(11, 19).replaceAll(":", "")}` : ""}.db`;
   const target = path.join(place.folder, name);
   const partial = `${target}.partial`;
   rmSync(partial, { force: true });

@@ -40,6 +40,15 @@ export const SymbolIcon = () => (
   </svg>
 );
 
+// Three hexagons: the HEXA Matrix (6th job).
+export const HexaIcon = () => (
+  <svg {...common}>
+    <path d="M8 3l3.5 2v4L8 11 4.5 9V5z" />
+    <path d="M16 3l3.5 2v4L16 11l-3.5-2V5z" />
+    <path d="M12 12l3.5 2v4L12 20l-3.5-2v-4z" />
+  </svg>
+);
+
 // A helmet: the gear tab.
 export const GearIcon = () => (
   <svg {...common}>

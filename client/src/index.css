@@ -685,3 +685,93 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .flame-chart .bar { fill: var(--accent); opacity: 0.8; }
 .flame-chart .dot-series { fill: var(--accent); }
 @media (max-width: 900px) { .sf-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sf-boom { justify-items: start; text-align: left; } }
+
+/* ── The HEXA page (v3.0.0) ───────────────────────────────────────────────────────────── */
+/* Tracker: the inputs on the left, the priority on the right, held in view and scrolling on its own */
+/* (the HEXA page is wider than the others: two columns side by side, like hexa-matrix-tracker) */
+.page:has(.hexa-page) { max-width: 1440px; }
+.hexa-view { display: flex; justify-content: flex-end; margin: -6px 0 10px; }
+.hexa-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 480px); gap: 16px; align-items: start; }
+.hexa-split > div > .block:last-child { margin-bottom: 0; }
+.hexa-side { position: sticky; top: 12px; display: flex; flex-direction: column; max-height: calc(100vh - 24px); margin-bottom: 0; }
+/* (narrow windows: the priority goes under the rest) */
+@media (max-width: 1100px) { .hexa-split { grid-template-columns: minmax(0, 1fr); } .hexa-side { position: static; max-height: 640px; margin-top: 16px; } }
+.hexa-icon { width: 24px; height: 24px; flex: none; border-radius: 4px; image-rendering: pixelated; }
+.hexa-icon.none { display: inline-grid; place-items: center; background: var(--surface-2); color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.hexa-mats { display: inline-flex; gap: 12px; flex-wrap: wrap; }
+.hexa-mat { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hexa-mat img, .hexa-th, .hexa-calc-title img { width: 16px; height: 16px; object-fit: contain; }
+.hexa-th { vertical-align: -3px; }
+.hexa-tag { display: inline-block; margin-right: 5px; padding: 0 4px; border: var(--border-width) solid var(--border); border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 15px; color: var(--text-muted); }
+/* the summary */
+.hexa-bar { display: block; height: 8px; }
+.hexa-sum { display: flex; gap: 28px; flex-wrap: wrap; align-items: end; margin-top: 10px; }
+.hexa-sum .hexa-mats { font-size: 1.05em; }
+.hexa-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+.hexa-done { margin-left: auto; text-align: right; }
+/* current progress */
+.hexa-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; }
+@media (max-width: 1250px) { .hexa-groups { grid-template-columns: 1fr; } }
+.hexa-node { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto auto auto; align-items: center; gap: 6px; padding: 3px 0; border-top: var(--border-width) solid var(--border); }
+.hexa-groups .gear-group + .hexa-node { border-top: 0; }
+.hexa-node .text-input.count, .hexa-line .text-input.count { width: 44px; }
+.hexa-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hexa-node.maxed .hexa-name { color: var(--good); }
+.hexa-stat-title { margin-top: 12px; }
+.hexa-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 4px; }
+@media (max-width: 1250px) { .hexa-stats { grid-template-columns: 1fr; } }
+.hexa-stat { padding: 8px 10px; border: var(--border-width) solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.hexa-stat.locked { opacity: 0.7; }
+.hexa-stat p { margin: 4px 0 0; }
+.hexa-stat-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px; }
+.hexa-stat-head > span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.hexa-stat-head label { white-space: nowrap; }
+.hexa-line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; padding: 2px 0; }
+.hexa-line select { min-width: 0; }
+.hexa-rank { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; margin-top: 4px; }
+.hexa-rank .chance-track { height: 5px; }
+/* the fragment calculator */
+.hexa-calc-title { display: flex; align-items: center; gap: 6px; }
+.hexa-calc { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-top: 6px; }
+.hexa-calc label { display: inline-flex; align-items: center; gap: 6px; }
+.hexa-calc .text-input.count { width: 64px; }
+.hexa-calc .text-input.wide { width: 90px; }
+.hexa-calc-out { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0 0; }
+.hexa-calc-out b { color: var(--text); }
+/* the priority */
+.hexa-next { padding: 8px 10px; margin-bottom: 8px; border: var(--border-width) solid var(--accent); border-radius: 10px; background: var(--accent-soft); }
+.hexa-next-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hexa-next-name { display: flex; align-items: center; gap: 8px; }
+.hexa-next .hexa-icon { width: 30px; height: 30px; }
+.hexa-priority { flex: 1; min-height: 0; overflow-y: auto; }
+.hexa-priority table { table-layout: fixed; margin-top: 0; }
+.hexa-priority th:first-child { width: auto; }
+.hexa-priority th:nth-child(2) { width: 32px; } .hexa-priority th:nth-child(3) { width: 34px; } .hexa-priority th:nth-child(4) { width: 58px; } .hexa-priority th:nth-child(5) { width: 76px; } .hexa-priority th:nth-child(6) { width: 62px; }
+.hexa-priority th, .hexa-priority td { padding: 4px 5px; white-space: nowrap; }
+.hexa-priority thead th { position: sticky; top: 0; background: var(--bg); z-index: 1; }
+.hexa-cell { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.hexa-cell .hexa-icon { width: 22px; height: 22px; }
+.hexa-priority tr.affordable td, .hexa-priority tr.affordable .hexa-tag { color: var(--good); }
+.hexa-side > p { margin: 8px 0 0; }
+/* the full order: every step in a row that wraps, its details on hover or focus */
+.hexa-order { display: flex; flex-wrap: wrap; gap: 12px 0; margin: 10px 0 0; padding: 0; list-style: none; }
+.hexa-step { position: relative; display: grid; justify-items: center; gap: 1px; width: 66px; padding-left: 20px; outline: none; }
+.hexa-step::before { content: "→"; position: absolute; left: 3px; top: 10px; color: var(--text-muted); font-size: 12px; }
+.hexa-step:first-child::before { content: "▸"; color: var(--accent); }
+.hexa-step-pic { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border: 2px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.hexa-step-pic .hexa-icon { width: 32px; height: 32px; }
+.hexa-roman { position: absolute; right: -5px; bottom: -5px; padding: 0 3px; border-radius: 4px; background: var(--line); color: var(--on-accent); font-size: 9px; font-weight: 800; line-height: 12px; }
+.hexa-step-lv { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hexa-step.done { opacity: 0.35; }
+.hexa-step.done .hexa-step-pic::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; font-weight: 900; color: var(--good); }
+.hexa-step.next .hexa-step-pic { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.hexa-step.affordable .hexa-step-pic { border-color: var(--good); }
+.hexa-step:hover .hexa-step-pic, .hexa-step:focus-visible .hexa-step-pic { border-color: var(--text); }
+.hexa-tip { position: absolute; z-index: 20; top: 100%; left: 50%; transform: translateX(-40%); display: none; gap: 2px; width: max-content; max-width: 280px; margin-top: 4px; padding: 7px 10px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--bg); box-shadow: var(--shadow); font-size: 12px; pointer-events: none; }
+.hexa-step:hover .hexa-tip, .hexa-step:focus-visible .hexa-tip { display: grid; }
+.hexa-step.done:hover, .hexa-step.done:focus-visible { opacity: 1; }
+.hexa-legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0 0; }
+.hexa-legend .next::before, .hexa-legend .affordable::before, .hexa-legend .done::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border: 2px solid var(--border); border-radius: 3px; vertical-align: -2px; }
+.hexa-legend .next::before { border-color: var(--accent); }
+.hexa-legend .affordable::before { border-color: var(--good); }
+.hexa-legend .done::before { opacity: 0.35; }

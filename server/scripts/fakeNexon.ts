@@ -13,11 +13,13 @@ import { answer, CHARACTERS, type FakeCharacter } from "../test/fixtures/nexon";
 
 const PORT = Number(process.env.FAKE_NEXON_PORT ?? 4755);
 
-// The starting characters: the tests' three, plus a level-300 one and one without Legion on Hyperion.
+// The starting characters: the tests' three, plus a level-300 one, one without Legion on Hyperion and a Ren.
 const start = (): FakeCharacter[] => [
   ...CHARACTERS.map((c) => ({ ...c, legion: c.legion && { ...c.legion } })),
   { characterName: "MaxedOut", worldID: 45, level: 300, exp: 0, jobName: "Hero", worldRank: 1, overallRank: 3 },
   { characterName: "NewHere", worldID: 70, level: 200, exp: 1_000_000_000, jobName: "Kain", worldRank: 80_000, overallRank: 200_000 },
+  // (v3.0.0: a Ren for the HEXA page; the click-through adds it there and removes it after)
+  { characterName: "PlumBlade", worldID: 45, level: 275, exp: 0, jobName: "Ren", worldRank: 900, overallRank: 3_000 },
 ];
 let characters = start();
 

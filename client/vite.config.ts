@@ -28,7 +28,7 @@ export default defineConfig({
     host: "127.0.0.1", // only this Mac, like the API
     port: Number(process.env.MIKU_DEV_PAGE_PORT ?? 4752),
     strictPort: true,
-    proxy: { "/api": devApi, "/theme-art": devApi, "/avatars": devApi },
+    proxy: { "/api": devApi, "/theme-art": devApi, "/avatars": devApi, "/boss-art": devApi, "/item-icons": devApi },
   },
   test: {
     environment: "jsdom",

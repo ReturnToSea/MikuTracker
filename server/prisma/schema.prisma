@@ -51,6 +51,7 @@ model Character {
   checklistTicks ChecklistTick[]
   symbols        SymbolState[]
   gear           GearSlot[]
+  hexa           HexaPlan?
   statValues     StatValues?
 
   @@unique([ownerId, worldId, nameKey])
@@ -251,4 +252,13 @@ model StatValues {
   cd5         Float?
   cd6         Float?
   cdMin       Int     @default(0)
+}
+
+// A character's HEXA page (v3.0.0), as typed: `data` is the JSON of @miku/shared's HexaInput (each
+// node's level now and wanted, the HEXA Stat nodes, the fragment calculator), checked on saving and on
+// reading. No row: the defaults (HEXA_DEFAULTS).
+model HexaPlan {
+  characterId Int       @id
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  data        String
 }

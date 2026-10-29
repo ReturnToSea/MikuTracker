@@ -30,7 +30,9 @@ export function useGearCharacter(): [number | null, (id: number) => void] {
 }
 
 // The top of a Gear page: the world, and the world's characters as tabs.
-export function GearTop({ world, onWorld, characters, current, onPick }: { world: number; onWorld: (w: number) => void; characters: GearCharacter[] | undefined; current: GearCharacter | undefined; onPick: (id: number) => void }) {
+// (also the HEXA page's: only what the tabs show)
+type Tab = Pick<GearCharacter, "id" | "name" | "level" | "job" | "avatar">;
+export function GearTop({ world, onWorld, characters, current, onPick }: { world: number; onWorld: (w: number) => void; characters: Tab[] | undefined; current: Tab | undefined; onPick: (id: number) => void }) {
   return (
     <section className="block top">
       <div className="page-head">

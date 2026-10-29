@@ -1,11 +1,11 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, GearDetailsInput, GearInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, GearDetailsInput, GearInput, HexaInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, PotentialBoard, PotentialGraph, StarForceBoard, UpgradesBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FlameGraph, FlamesBoard, GearBoard, HexaBoard, HexaTabs, PotentialBoard, PotentialGraph, StarForceBoard, UpgradesBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -26,6 +26,8 @@ export const keys = {
   potential: (id: number, events: string, budget: number) => ["potential", id, events, budget],
   upgrades: (id: number, sf: string, cubes: string) => ["upgrades", id, sf, cubes],
   potentialGraph: (id: number, slot: string, events: string, target: number | null) => ["potential", id, "graph", slot, events, target],
+  hexaTabs: (world: number) => ["hexa-tabs", world],
+  hexa: (id: number) => ["hexa", id],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -259,3 +261,43 @@ export const usePotentialGraph = (id: number | undefined, slot: string | undefin
 // the last numbers until the new ones come (only for the same character).
 export const useUpgrades = (id: number | undefined, sf: string, cubes: string) =>
   useQuery({ queryKey: keys.upgrades(id ?? 0, sf, cubes), queryFn: () => api<UpgradesBoard>(`/gear/${id}/upgrades?sf=${sf}&cubes=${cubes}`), enabled: id !== undefined, placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined) });
+
+// The HEXA page (v3.0.0): a world's characters, and one character's HEXA worked out.
+export const useHexaTabs = (world: number) => useQuery({ queryKey: keys.hexaTabs(world), queryFn: () => api<HexaTabs>(`/hexa?world=${world}`) });
+// (another character's board is never shown while one loads: Loading… instead; it isn't reloaded when the
+// window comes back into focus: a reload while a change is being saved would bring back the input before
+// it, and only this page changes it)
+export const useHexa = (id: number | undefined) => useQuery({ queryKey: keys.hexa(id ?? 0), queryFn: () => api<HexaBoard>(`/hexa/${id}`), enabled: id !== undefined, refetchOnWindowFocus: false });
+// Saving a change to what's typed: made to the latest change still being saved (else the latest input),
+// not the page as last drawn, so quick changes in several boxes all count; shown at once, saved in order,
+// and worked out again once the last one is saved (a reload between them could bring back an older input).
+export function useSaveHexa(id: number | undefined) {
+  const qc = useQueryClient();
+  // the change being saved last, and whose (each save carries its character: one queued while another tab
+  // is picked still goes to its own; a change on another tab is never made to it)
+  const latest = useRef<{ id: number; input: HexaInput } | null>(null);
+  const save = useMutation({
+    // Stryker disable next-line StringLiteral: any fixed name makes one queue
+    scope: { id: "hexa" },
+    mutationFn: (v: { id: number; input: HexaInput }) => api<void>(`/hexa/${v.id}`, { method: "PUT", body: v.input }),
+    onSettled: (_data, _error, v) => {
+      if (latest.current !== v) return;
+      latest.current = null;
+      return qc.invalidateQueries({ queryKey: keys.hexa(v.id) });
+    },
+  });
+  // (the page offers changes only once the board is shown: there's a character)
+  const change = (f: (input: HexaInput) => HexaInput) => {
+    const key = keys.hexa(id!);
+    const b = qc.getQueryData<HexaBoard>(key)!;
+    const prev = latest.current;
+    const v = { id: id!, input: f(prev !== null && prev.id === id ? prev.input : b.input) };
+    latest.current = v;
+    // a reload under way would bring back the input from before this change
+    // Stryker disable next-line ObjectLiteral: cancelling every query cancels this one too; the others the page shows (the tabs, settings) aren't reloading while it's changed
+    void qc.cancelQueries({ queryKey: key });
+    qc.setQueryData<HexaBoard>(key, { ...b, input: v.input });
+    save.mutate(v);
+  };
+  return { change, error: save.error };
+}

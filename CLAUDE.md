@@ -21,14 +21,14 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - `src/lib/`: display logic as plain tested functions.
   - `src/looks/`: canvas drawing only, checked by eye.
   - `src/components/` and `src/pages/`: mostly layout.
-- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
+- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), `hexa-icons.mjs` (download the HEXA page's pictures, by hand), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
 - The data lives outside the repo, in `~/Library/Application Support/MikuTracker/`:
   - `miku.db`: real data; only the always-on app uses it.
   - `dev.db`: development (`npm run dev`, `npm run db:migrate`).
   - `backups/` and `avatars/`: the real data's. The dev copy has its own `dev-backups/` and `dev-avatars/`, so its clean-ups never touch the real files.
   - `theme-art/`: theme pictures (shared).
   - `boss-art/`: the bosses' banners from the game (`<boss id>.png`, shared; Nexon's art, so never in git).
-  - `item-icons/`: the gear tab's item icons (`<item id>.png`, shared, never in git), downloaded by hand with `node scripts/gear-icons.mjs`.
+  - `item-icons/`: the gear tab's item icons (`<item id>.png`, shared, never in git), downloaded by hand with `node scripts/gear-icons.mjs`; its `hexa/` folder: the HEXA page's pictures, with `node scripts/hexa-icons.mjs`.
   - `app/`: the always-on app's own copy of `main`.
 - `tempdata/` is never committed. It holds the research log and the original theme art.
 

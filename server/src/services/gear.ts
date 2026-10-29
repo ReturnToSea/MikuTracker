@@ -1,7 +1,5 @@
-import { readdirSync } from "node:fs";
 import { COOLDOWN_SECONDS, type GearDetailsInput, type GearInput, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
 import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, otherStarLimit, type StarNote, starGains, starNotes, starRange } from "../calc/gearDetails";
-import { getConfig } from "../config";
 import { db } from "../db";
 import { FLAME_KINDS, fits, GEAR_SLOTS, type GearItem, type GearJob, gearFile, itemKey, POTENTIAL_KINDS, RING_SLOTS } from "../gameFigures/gear";
 import { jobStats } from "../gameFigures/jobStats";
@@ -9,6 +7,7 @@ import { type StatBoxes, statBoxes } from "../calc/potential";
 import { nearestLine, potentialOptions } from "../gameFigures/potential";
 import { HttpError } from "../http";
 import { listCharacters, ownCharacter } from "./characters";
+import { iconFiles } from "./icons";
 import { getSettings, type SettingsView } from "./settings";
 
 // An item as the gear tab shows it: what the list file says, its key, and its icon's address (null
@@ -41,14 +40,6 @@ const view = (i: GearItem, icons: Set<string>): GearItemView => {
   const { file: _file, key: _key, ...rest } = i;
   return { ...rest, key: itemKey(i), icon: icons.has(`${i.id}.png`) ? `/item-icons/${i.id}.png` : null };
 };
-// The icon files in the data folder, read once per request (none when the folder doesn't exist).
-function iconFiles(): Set<string> {
-  try {
-    return new Set(readdirSync(getConfig().itemIconDir));
-  } catch {
-    return new Set();
-  }
-}
 
 export async function gearBoard(ownerId: string, worldId: number): Promise<GearBoard> {
   const { items, jobs, generated } = gearFile();

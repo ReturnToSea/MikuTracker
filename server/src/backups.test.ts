@@ -112,13 +112,26 @@ describe("making backups", () => {
     await makeBackup(place, day("2026-09-28"));
     expect(notes(path.join(place.folder, "miku-2026-09-28.db"))).toEqual([{ text: "first" }, { text: "second" }]);
     const before = await makeBackup(place, day("2026-09-28"), true);
-    expect(before).toMatchObject({ name: "miku-2026-09-28-before-update.db", beforeUpdate: true });
+    // named by its UTC time (noon)
+    expect(before).toMatchObject({ name: "miku-2026-09-28-before-update-120000.db", day: "2026-09-28", beforeUpdate: true });
     // Saved last, listed first.
     utimesSync(path.join(place.folder, "miku-2026-09-28.db"), day("2026-09-28"), new Date(Date.UTC(2026, 8, 28, 7, 18)));
-    utimesSync(path.join(place.folder, "miku-2026-09-28-before-update.db"), day("2026-09-28"), new Date(Date.UTC(2026, 8, 28, 7, 22)));
-    expect(listBackups(place.folder).map((f) => f.name)).toEqual(["miku-2026-09-28-before-update.db", "miku-2026-09-28.db"]);
+    utimesSync(path.join(place.folder, "miku-2026-09-28-before-update-120000.db"), day("2026-09-28"), new Date(Date.UTC(2026, 8, 28, 7, 22)));
+    expect(listBackups(place.folder).map((f) => f.name)).toEqual(["miku-2026-09-28-before-update-120000.db", "miku-2026-09-28.db"]);
     utimesSync(path.join(place.folder, "miku-2026-09-28.db"), day("2026-09-28"), new Date(Date.UTC(2026, 8, 28, 7, 30)));
-    expect(listBackups(place.folder).map((f) => f.name)).toEqual(["miku-2026-09-28.db", "miku-2026-09-28-before-update.db"]);
+    expect(listBackups(place.folder).map((f) => f.name)).toEqual(["miku-2026-09-28.db", "miku-2026-09-28-before-update-120000.db"]);
+  });
+
+  it("two updates on the same day keep both before-update copies (v3.0.0: the second used to replace the first)", async () => {
+    await makeBackup(place, new Date(Date.UTC(2026, 9, 29, 4, 36, 12)), true);
+    await makeBackup(place, new Date(Date.UTC(2026, 9, 29, 21, 5, 9)), true);
+    expect(readdirSync(place.folder).sort()).toEqual(["miku-2026-10-29-before-update-043612.db", "miku-2026-10-29-before-update-210509.db"]);
+    // an older copy's name (no time) still counts as a before-update backup
+    writeFileSync(path.join(place.folder, "miku-2026-10-28-before-update.db"), "");
+    expect(listBackups(place.folder).find((f) => f.name === "miku-2026-10-28-before-update.db")).toMatchObject({ day: "2026-10-28", beforeUpdate: true });
+    expect(listBackups(place.folder).some((f) => f.name.endsWith("-before-update-1.db"))).toBe(false);
+    writeFileSync(path.join(place.folder, "miku-2026-10-28-before-update-1.db"), "");
+    expect(listBackups(place.folder).map((f) => f.name)).not.toContain("miku-2026-10-28-before-update-1.db");
   });
 
   it("returns the backup it just made, even when a newer day's is there", async () => {
@@ -195,7 +208,7 @@ describe("when backups happen", () => {
     await makeBackup(place, day("2026-09-28"), true);
     expect((await backupIfDue(place, day("2026-09-28")))!.name).toBe("miku-2026-09-28.db");
     expect(await backupIfDue(place, day("2026-09-28"))).toBeNull();
-    expect(listBackups(place.folder).map((f) => f.name).sort()).toEqual(["miku-2026-09-28-before-update.db", "miku-2026-09-28.db"]);
+    expect(listBackups(place.folder).map((f) => f.name).sort()).toEqual(["miku-2026-09-28-before-update-120000.db", "miku-2026-09-28.db"]);
   });
 
   it("checks when the server starts, then every hour, until stopped", async () => {

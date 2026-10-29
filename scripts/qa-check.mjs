@@ -52,7 +52,7 @@ try {
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "no TBD tab left: Gear comes after Bosses, Checklist and Symbols", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("Gear"));
+  check("Rail", "no TBD tab left: after Bosses, Checklist and Symbols come HEXA (v3.0.0) and Gear", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("HEXA") && (await page.locator(".rail a").nth(5).innerText()).includes("Gear"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -172,6 +172,8 @@ try {
   await go("/");
   check("Reorder", "the order is saved", (await tabNames()).join(",") === "MikuBeam,LeekSpin,MaxedOut");
   await page.locator(".ctab", { hasText: "MaxedOut" }).click();
+  // (the delete link is the picked character's: wait until the tab is picked)
+  await page.locator(".ctab[aria-selected='true']", { hasText: "MaxedOut" }).waitFor({ timeout: 5000 });
   await page.keyboard.press("Alt+ArrowRight"); // already last: a move that goes nowhere
   let asked = "";
   page.once("dialog", (d) => ((asked = d.message()), d.dismiss()));
@@ -888,6 +890,96 @@ try {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
+
+  // ---------- HEXA (v3.0.0) ----------
+  // a Ren, added for these checks and removed after (the checks after count Kronos's characters)
+  const plum = await api("POST", "/characters", { world: 45, name: "PlumBlade" });
+  check("HEXA", "a Ren to check with (added through the API)", plum.status === 201, `${plum.status} ${JSON.stringify(plum.json)}`);
+  const plumId = plum.json?.id;
+  await go("/hexa");
+  check("HEXA", "in the rail, after Symbols; the page's tabs are the world's characters", (await page.locator(".rail .tab", { hasText: "HEXA" }).count()) >= 1 && (await page.getByRole("tab", { name: /PlumBlade/ }).count()) === 1);
+  await page.getByRole("tab", { name: /MikuBeam/ }).click();
+  await settle(300);
+  check("HEXA", "a job not worked out yet says so (Kanna)", /HEXA for Kanna comes later/.test((await text("main")) ?? ""));
+  await page.getByRole("tab", { name: /PlumBlade/ }).click();
+  const hexaSum = page.getByRole("region", { name: "HEXA summary" });
+  await hexaSum.waitFor({ timeout: 10000 });
+  // (Sol Erda and the fragments are pictures, or their names when not downloaded: read as just the numbers)
+  const bare = (t) => t.replace(/Sol Erda|Fragments/g, "").replace(/\s+/g, " ");
+  const sumText = async () => bare(await hexaSum.innerText());
+  // a new Ren: nothing invested; left, by hand (Sol Janus not counted): the nodes, Origin 4,400 + Ascent 4,500 + 4 × 2,252 +
+  // 4 × 3,383 + Sol Hecate 6,268 + Lotus 4,035 = 41,743 (1,464 Sol Erda), and the HEXA Stat nodes: unlocks 560 (30 Sol Erda) and
+  // 3 × 323.1 rank-ups on average (checked by simulation in the tests) = 43,272
+  check("HEXA", "a new Ren: 0 invested; ≈ 1,494 Sol Erda and ≈ 43,272 fragments left (by hand), 0% complete", /Invested 0 0/i.test(await sumText()) && /Left to complete ≈ 1,494 ≈ 43,272/i.test(await sumText()) && /Complete 0%/i.test(await sumText()), await sumText());
+  const hexaIcons = await page.locator(".hexa-page img[src^='/item-icons/hexa/']").count();
+  check("HEXA", "the skills' pictures and Sol Erda's and the fragments' show when downloaded (the QA copy has the data folder's), else names", hexaIcons === 0 || (await page.locator(".hexa-page img[src='/item-icons/hexa/Len_8.png']").first().evaluate((i) => i.naturalWidth > 0)), `${hexaIcons} pictures`);
+  const prio = page.getByRole("region", { name: "Upgrade priority" });
+  const nextText = async () => bare(await prio.getByRole("group", { name: "Next upgrade" }).innerText());
+  check("HEXA", "the next upgrade is MapleScouter's first step: Wish Unending 0 → 1, 3 Sol Erda, 50 fragments, +5.33%", /Wish Unending → 1 \+5\.33% Lv\. 0 → 1 · ready — 3 50/.test(await nextText()), await nextText());
+  const wish = page.getByRole("spinbutton", { name: "Wish Unending level now" });
+  await wish.fill("1");
+  await wish.press("Enter");
+  await settle(800);
+  check("HEXA", "typing Wish Unending 1: 3 / 50 invested, and its first step leaves the priority", /Invested 3 50 /i.test(await sumText()) && !/Wish Unending → 1 /.test(await nextText()), `${await sumText()} | ${await nextText()}`);
+  // (a tick shows once the save has updated the page: click, then wait)
+  await hexaSum.getByRole("checkbox", { name: /Sol Janus/ }).click();
+  await settle(800);
+  check("HEXA", "counting Sol Janus adds its 208 Sol Erda and 6,268 fragments to what's left", /Left to complete ≈ 1,699 ≈ 49,490/i.test(await sumText()), await sumText());
+  await hexaSum.getByRole("checkbox", { name: /Sol Janus/ }).click();
+  await settle(800);
+  const hexaCalc = page.getByRole("region", { name: "Fragment calculator" });
+  await hexaCalc.getByRole("spinbutton", { name: "Fragments a day from farming" }).fill("10");
+  await hexaCalc.getByRole("spinbutton", { name: "Fragments a day from farming" }).press("Enter");
+  await hexaCalc.getByRole("checkbox", { name: "Erda's Request" }).click();
+  await settle(500);
+  await hexaCalc.getByRole("combobox", { name: "Epic Dungeon" }).selectOption("nightmareParadise");
+  await settle(800);
+  const hexaCalcText = (await hexaCalc.innerText()).replace(/\s+/g, " ");
+  check("HEXA", "fragments coming in: 10 a day × 7 + Erda's Request 90 + Nightmare Paradise 70 = 230 a week, and a time to everything wanted", /Coming in 230 a week/.test(hexaCalcText) && /Everything wanted: [\d,]+ days \(/.test(hexaCalcText), hexaCalcText);
+  const firstReady = (await prio.locator("tbody tr").first().locator("td").last().innerText()).trim();
+  check("HEXA", "the priority's rows say when they're ready, as a date", /^[A-Z][a-z]{2} \d{1,2}(, \d{4})?$/.test(firstReady), firstReady);
+  const stat2 = page.getByRole("group", { name: "HEXA Stat II", exact: true });
+  await stat2.getByRole("combobox", { name: "HEXA Stat II Main line stat" }).selectOption("bossDmg");
+  await settle(500);
+  await stat2.getByRole("spinbutton", { name: "HEXA Stat II Main line level" }).fill("2");
+  await stat2.getByRole("spinbutton", { name: "HEXA Stat II Main line level" }).press("Enter");
+  await settle(800);
+  const stat1Main = await page.getByRole("combobox", { name: "HEXA Stat I Main line stat" }).locator("option").allInnerTexts();
+  check("HEXA", "HEXA Stat: a line's stat and level saved, the node unlocked with its rank; Boss DMG not offered for another node's main line", /Rank 2 \/ 20/.test(await stat2.innerText()) && (await stat2.getByRole("checkbox").isChecked()) && !stat1Main.includes("Boss DMG"), `${await stat2.innerText()} | ${stat1Main}`);
+  const hb = (await api("GET", `/hexa/${plumId}`)).json;
+  check("HEXA", "the input was saved (the API agrees)", hb.input.current.mastery3 === 1 && hb.input.perDay === 10 && hb.input.erdaRequest === true && hb.input.dungeon === "nightmareParadise" && hb.input.janus === false && hb.input.stats[1].lines[0].stat === "bossDmg" && hb.input.stats[1].lines[0].level === 2, JSON.stringify(hb.input));
+  // HEXA Stat II at main line 2: its unlock (10 / 200) and two rank-ups at 10 each, exactly: invested 3 + 10 = 13 Sol Erda, 50 + 220 = 270
+  check("HEXA", "HEXA Stat II's spending counts: 13 Sol Erda and 270 fragments invested, exact", /Invested 13 270 /i.test(await sumText()), await sumText());
+  await shot("23-hexa");
+  await page.getByRole("button", { name: "Full order" }).click();
+  const fullOrder = page.getByRole("region", { name: "Full upgrade order" });
+  await fullOrder.waitFor({ timeout: 5000 });
+  const steps = fullOrder.getByRole("listitem");
+  // MapleScouter's 191 steps, 184 with the same skill several in a row joined; Wish Unending 0 → 1 done, Plum Blossom next
+  check("HEXA", "the full order: 184 steps, the first done, the second next", (await steps.count()) === 184 && /done/.test(await steps.nth(0).getAttribute("class")) && /next/.test(await steps.nth(1).getAttribute("class")), `${await steps.count()}`);
+  await steps.nth(1).hover();
+  const tip = bare(await steps.nth(1).getByRole("tooltip").innerText());
+  check("HEXA", "hovering a step shows its levels, cost and gain", (await steps.nth(1).getByRole("tooltip").isVisible()) && /2\. Plum Blossom: Storm Lv\. 0 → 1 3 50 \+2\.06%/.test(tip), tip);
+  await steps.nth(1).click();
+  await settle(400);
+  check("HEXA", "clicking a step changes nothing", (await api("GET", `/hexa/${plumId}`)).json.input.current.mastery1 === 0);
+  await fullOrder.getByRole("checkbox", { name: /Hide done/ }).check();
+  check("HEXA", "hiding what's done leaves 183", (await steps.count()) === 183);
+  await shot("23b-hexa-order");
+  await page.getByRole("button", { name: "Tracker" }).click();
+  await page.setViewportSize({ width: 900, height: 900 });
+  await settle(400);
+  check("Layout", "the HEXA page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  for (const [what, method, where, body, status] of [
+    ["hexa: Origin below 1", "PUT", `/hexa/${plumId}`, { ...hb.input, current: { ...hb.input.current, origin: 0 } }, 400],
+    ["hexa: a character that doesn't exist", "GET", "/hexa/999999", undefined, 404],
+    ["hexa: a world it doesn't know", "GET", "/hexa?world=1", undefined, 400],
+  ]) {
+    const r = await api(method, where, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+  check("HEXA", "the Ren removed again", (await api("DELETE", `/characters/${plumId}`)).status === 204);
 
   // ---------- EXP table ----------
   await go("/exp-table");

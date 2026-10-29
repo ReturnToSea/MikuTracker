@@ -18,5 +18,6 @@ export type { PotentialBoard, PotentialGraph, PotentialItem } from "../../../ser
 export type { CubeMetrics } from "../../../server/src/calc/potential";
 export type { Cube } from "../../../server/src/gameFigures/cubes";
 export type { UpgradeStep, UpgradeSystem, UpgradesBoard } from "../../../server/src/services/upgrades";
+export type { HexaBoard, HexaCharacter, HexaNodeView, HexaOrderStep, HexaStatView, HexaTabs } from "../../../server/src/services/hexa";
 
 export type ThemeArt = Record<ThemeId, string | null>;
