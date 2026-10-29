@@ -158,8 +158,9 @@ describe("the HEXA page", () => {
   });
 
   it("quick changes all count: each built on the one before, even when a save finishes in between (no reload until the last)", async () => {
-    // each save takes 300 ms; the fake server's board never changes, as a reload of an older input would look
-    const s = show(BOARD, { "PUT /hexa/1": () => new Promise((r) => setTimeout(() => r(undefined), 300)) });
+    // each save finishes only when the test says (the fake server's board never changes, as a reload of an older input would look)
+    const finish: ((v: unknown) => void)[] = [];
+    const s = show(BOARD, { "PUT /hexa/1": () => new Promise((r) => finish.push(r)) });
     const levels = await region("Current progress");
     const type = async (name: string, v: string) => {
       const box = levels.getByRole("spinbutton", { name });
@@ -168,23 +169,30 @@ describe("the HEXA page", () => {
     };
     await type("Heartbound Verse level now", "5");
     await type("Sol Hecate level now", "6");
-    // the first save is done, the second isn't: a third change
-    await new Promise((r) => setTimeout(r, 350));
+    // the first save done, the second not: a third change
+    await waitFor(() => expect(finish).toHaveLength(1));
+    finish[0]!(undefined);
+    await waitFor(() => expect(finish).toHaveLength(2));
     await type("Lotus Flower level now", "7");
-    await waitFor(() => expect(sent(s)).toHaveLength(3), { timeout: 3000 });
+    finish[1]!(undefined);
+    await waitFor(() => expect(finish).toHaveLength(3));
     expect(sent(s)[2]!.current).toMatchObject({ ascent: 5, hecate: 6, common3: 7 });
-    // and the page reloads only once, after the last
-    await waitFor(() => expect(s.calls.filter((c) => c.method === "GET" && c.path === "/hexa/1").length).toBe(2), { timeout: 3000 });
+    // no reload until the last is done, then one
+    expect(s.calls.filter((c) => c.method === "GET" && c.path === "/hexa/1").length).toBe(1);
+    finish[2]!(undefined);
+    await waitFor(() => expect(s.calls.filter((c) => c.method === "GET" && c.path === "/hexa/1").length).toBe(2));
     // only this board reloads: not the tabs or the settings
     expect(s.calls.filter((c) => c.method === "GET" && (c.path.startsWith("/hexa?") || c.path === "/settings")).length).toBe(2);
   });
 
   it("a tick shows at once, and a reload under way doesn't bring back the input from before it", async () => {
-    // the first save is quick, the second never finishes; reloads take 200 ms and bring the old board
+    // the first save is quick, the second never finishes; the reload after the first waits for the test, then brings the old board
     let saves = 0;
+    let gets = 0;
+    let reload: (v: unknown) => void = () => {};
     const s = show(BOARD, {
       "PUT /hexa/1": () => (++saves === 1 ? undefined : new Promise(() => {})),
-      "GET /hexa/1": () => new Promise((r) => setTimeout(() => r(BOARD), 200)),
+      "GET /hexa/1": () => (++gets === 1 ? BOARD : new Promise((r) => (reload = r))),
     });
     const sum = await region("HEXA summary");
     await userEvent.click(sum.getByRole("checkbox", { name: /Sol Janus/ }));
@@ -193,7 +201,8 @@ describe("the HEXA page", () => {
     const erda = (await region("Fragment calculator")).getByRole("checkbox", { name: "Erda's Request" }) as HTMLInputElement;
     await userEvent.click(erda);
     expect(erda.checked).toBe(true);
-    await new Promise((r) => setTimeout(r, 400));
+    reload(BOARD);
+    await new Promise((r) => setTimeout(r, 100));
     expect(erda.checked).toBe(true);
     expect((sum.getByRole("checkbox", { name: /Sol Janus/ }) as HTMLInputElement).checked).toBe(true);
   });
@@ -375,8 +384,9 @@ describe("the HEXA page", () => {
   });
 
   it("a change on another character while one's save is still going: each saved to its own, built on its own", async () => {
-    // the first character's saves take 600 ms each, one after the other
-    const s = show(BOARD, { "PUT /hexa/1": () => new Promise((r) => setTimeout(() => r(undefined), 600)), "GET /hexa/3": { ...BOARD, input: { ...INPUT, owned: 333 } }, "PUT /hexa/3": undefined });
+    // the first character's saves finish only when the test says
+    const finish: ((v: unknown) => void)[] = [];
+    const s = show(BOARD, { "PUT /hexa/1": () => new Promise((r) => finish.push(r)), "GET /hexa/3": { ...BOARD, input: { ...INPUT, owned: 333 } }, "PUT /hexa/3": undefined });
     const type = async (name: string, v: string) => {
       const box = (await region("Current progress")).getByRole("spinbutton", { name });
       await userEvent.clear(box);
@@ -388,16 +398,17 @@ describe("the HEXA page", () => {
     await userEvent.click(screen.getByRole("tab", { name: /PlumBlade/ }));
     await waitFor(() => expect((screen.getByRole("spinbutton", { name: "Fragments owned" }) as HTMLInputElement).value).toBe("333"));
     await type("Sol Hecate level now", "6");
-    // (the second save still waiting then)
-    expect(s.sent("PUT", "/hexa/1")).toHaveLength(1);
-    await waitFor(() => expect(s.sent("PUT", "/hexa/3")).toHaveLength(1), { timeout: 3000 });
+    // the first character's saves finish, one after the other; then the Ren's goes
+    await waitFor(() => expect(finish).toHaveLength(1));
+    finish[0]!(undefined);
+    await waitFor(() => expect(finish).toHaveLength(2));
+    finish[1]!(undefined);
+    await waitFor(() => expect(s.sent("PUT", "/hexa/3")).toHaveLength(1));
     // the Ren's change went to it, made to its own input (not the first one's Heartbound Verse 5)
     const three = s.sent("PUT", "/hexa/3")[0] as HexaInput;
     expect([three.current.ascent, three.current.hecate, three.owned]).toEqual([0, 6, 333]);
     // the first one's two saves both went to it, the second made to the first
-    await waitFor(() => expect(s.sent("PUT", "/hexa/1")).toHaveLength(2));
     expect((s.sent("PUT", "/hexa/1") as HexaInput[]).map((i) => [i.current.ascent, i.current.common3])).toEqual([[5, 0], [5, 7]]);
-    expect(s.sent("PUT", "/hexa/3")).toHaveLength(1);
   });
 
   it("a change after leaving a character with a save still going and coming back is made to that save, not to the board reloaded meanwhile", async () => {
