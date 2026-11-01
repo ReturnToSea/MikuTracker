@@ -216,8 +216,8 @@ function readDetails(details: GearDetailsInput, item: string | null): GearDetail
 const cdMinOf = (n: number): StatValuesInput["cdMin"] => (COOLDOWN_SECONDS.some((s) => s === n) ? (n as StatValuesInput["cdMin"]) : 0);
 export const statValuesOf = (row: (Omit<StatValuesInput, "bossDef" | "cdMin"> & { bossDef: number; cdMin: number }) | undefined): StatValuesInput => {
   if (!row) return { ...STAT_VALUE_DEFAULTS };
-  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef, cd2, cd3, cd4, cd5, cd6, cdMin } = row;
-  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cd2, cd3, cd4, cd5, cd6, cdMin: cdMinOf(cdMin) };
+  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, mainFlat, critDmg, ied300, ied380, bossDef, cd2, cd3, cd4, cd5, cd6, cdMin } = row;
+  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, mainFlat, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cd2, cd3, cd4, cd5, cd6, cdMin: cdMinOf(cdMin) };
 };
 
 export async function saveStatValues(ownerId: string, characterId: number, input: StatValuesInput) {

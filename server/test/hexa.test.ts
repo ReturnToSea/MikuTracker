@@ -1,8 +1,9 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { HEXA_DEFAULTS, type HexaInput, type HexaStat } from "@miku/shared";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { statExpected } from "../src/calc/hexa";
+import { forgetHexa } from "../src/services/hexa";
 import { STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../src/gameFigures/hexa";
 import { db } from "../src/db";
 import { SOLE_OWNER } from "../src/owner";
@@ -10,6 +11,8 @@ import { api, ok } from "./api";
 import { NOW, useDbTestSetup } from "./helpers";
 
 useDbTestSetup();
+// (each run works the jobs' figures and orders out afresh: kept from before, mutation testing's planted bugs wouldn't run)
+beforeAll(forgetHexa);
 
 let made = 0;
 async function character(job = "Ren", ownerId = SOLE_OWNER, worldId = 45) {
@@ -37,14 +40,20 @@ afterEach(() => rmSync(iconDir, { recursive: true, force: true }));
 const withLevels = (current: Partial<HexaInput["current"]>, more: Partial<HexaInput> = {}): HexaInput => ({ ...structuredClone(HEXA_DEFAULTS), ...more, current: { ...HEXA_DEFAULTS.current, ...current } });
 
 describe("GET /api/hexa?world=", () => {
-  it("the world's characters, in tab order, each saying whether its job is worked out (Ren only for now)", async () => {
+  it("the world's characters, in tab order, each saying whether its job is worked out (every job but the SHINE classes) and whether it's a SHINE class", async () => {
     await character("Ren");
     await character("Night Walker");
+    await character("Sia Astelle");
+    await character("Erel Light");
+    await character("Jett");
     await character("Ren", SOLE_OWNER, 70);
     const tabs = await get("/api/hexa?world=45");
-    expect(tabs.characters.map((c: { job: string; known: boolean }) => [c.job, c.known])).toEqual([
-      ["Ren", true],
-      ["Night Walker", false],
+    expect(tabs.characters.map((c: { job: string; known: boolean; shine: boolean }) => [c.job, c.known, c.shine])).toEqual([
+      ["Ren", true, false],
+      ["Night Walker", true, false],
+      ["Sia Astelle", false, true],
+      ["Erel Light", false, true],
+      ["Jett", false, false],
     ]);
     expect((await api().get("/api/hexa?world=3")).status).toBe(400);
   });
@@ -56,24 +65,39 @@ describe("GET /api/hexa/:id", () => {
     const b = await get(`/api/hexa/${id}`);
     expect(b.known).toBe(true);
     expect(b.input).toEqual(HEXA_DEFAULTS);
-    expect(b.nodes[0]).toEqual({ key: "origin", name: "Divided Heavens", group: "skill", icon: null, min: 1, max: 30 });
+    expect(b.nodes[0]).toEqual({ key: "origin", name: "Rising Azure Dragon: Divided Heavens", group: "skill", icon: null, min: 1, max: 30 });
     // the fragments a week the page shows and adds up from what's typed
     expect(b.figures).toEqual({ erdaRequest: 90, dungeons: { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 } });
-    expect(b.nodes.map((n: { name: string }) => n.name)).toEqual(["Divided Heavens", "Heartbound Verse", "Plum Blossom: Storm", "Spirit Strike", "Wish Unending", "Raining Blossoms", "Thousand Blossom Flurry", "Soul Immeasurable", "Dancing Annihilation", "Blade of the Unbound Heart", "Sol Janus", "Sol Hecate", "Lotus Flower"]);
+    // the wiki's names (Ren/Skills, "HEXA" dropped from the front)
+    expect(b.nodes.map((n: { name: string }) => n.name)).toEqual([
+      "Rising Azure Dragon: Divided Heavens",
+      "Rising Azure Dragon: Heartbound Verse",
+      "Plum Blossom Sword: Storm",
+      "Imugi Spirit Sword: Spirit Strike",
+      "Wish Unending",
+      "Second Plum Blossom Sword: Raining Blossoms",
+      "Final Plum Blossom Sword: Thousand Blossom Flurry",
+      "Soul Immeasurable",
+      "Final Plum Blossom Sword: Dancing Annihilation",
+      "Final Imugi Spirit Sword: Blade of the Unbound Heart",
+      "Sol Janus",
+      "Sol Hecate",
+      "Lotus Flower",
+    ]);
     // nothing invested (Origin's first level is free)
     expect(b.invested).toEqual({ erda: 0, frags: 0, exact: true });
     // the unlocks: 5 + 10 + 15 Sol Erda, 10 + 200 + 350 fragments
     expect(b.left.erda).toBe(NODES_LEFT.erda + 30);
     expect(b.left.frags).toBeCloseTo(NODES_LEFT.frags + 560 + 3 * FULL, 6);
     expect(b.left.exact).toBe(false);
-    // the priority starts with MapleScouter's first step (Wish Unending 0 → 1, +5.33%) and never lists Sol Janus
+    // the built order starts as MapleScouter's (Wish Unending 0 → 1, +5.33%) and never lists Sol Janus
     expect(b.priority[0]).toMatchObject({ node: "mastery3", name: "Wish Unending", icon: null, from: 0, to: 1, cost: { erda: 3, frags: 50 }, total: { erda: 3, frags: 50 } });
-    expect(b.priority[0].fd).toBeCloseTo(5.326667, 6);
+    expect(b.priority[0].fd).toBeCloseTo(5.326667, 2);
     expect(b.priority.some((r: { node: string }) => r.node === "janus")).toBe(false);
     // the rows add up to everything wanted, which is everything left here
     expect(b.priority.at(-1).total.frags).toBeCloseTo(b.left.frags, 6);
     expect(b.fragments.needed).toBeCloseTo(b.left.frags, 6);
-    expect(b.source).toMatch(/MapleScouter \(GMS, Heroic\)/);
+    expect(b.source).toMatch(/^MapleScouter's figures \(mapledoro's copy, read \d{4}-\d{2}-\d{2}\); the order built from them$/);
   });
 
   it("Sol Janus counts in the totals only when ticked (6,268 fragments and 208 Sol Erda more), never in the priority", async () => {
@@ -125,11 +149,11 @@ describe("GET /api/hexa/:id", () => {
     expect(b.stats[1].left.frags).toBeCloseTo(statExpected(2, 4, 20, STAT_RANK_COST, STAT_PRIMARY_CHANCE), 9);
     expect(b.stats[2].left.erda).toBe(15);
     expect(b.stats[2].left.frags).toBeCloseTo(350 + FULL, 9);
-    // in the priority where MapleScouter's order has them, to 20 (I is done)
+    // in the priority, to 20 (I is done), each with what's still to come of its final damage
     const rows = b.priority.filter((r: { node: string }) => r.node.startsWith("stat"));
-    expect(rows.map((r: { node: string; name: string; from: number; to: number; fd: null }) => [r.node, r.name, r.from, r.to, r.fd])).toEqual([
-      ["stat2", "HEXA Stat II", 4, 20, null],
-      ["stat3", "HEXA Stat III", 0, 20, null],
+    expect(rows.map((r: { node: string; name: string; from: number; to: number; fd: number }) => [r.node, r.name, r.from, r.to, r.fd])).toEqual([
+      ["stat2", "HEXA Stat II", 4, 20, b.stats[1].fdToCome],
+      ["stat3", "HEXA Stat III", 0, 20, b.stats[2].fdToCome],
     ]);
     // every node at its main line 0–2 or nothing yet: exact
     await save(id, { ...structuredClone(HEXA_DEFAULTS), stats: [statNode([0, 10, 10]), statNode([2, 1, 1]), LOCKED] });
@@ -199,38 +223,44 @@ describe("GET /api/hexa/:id", () => {
     expect(b.order.every((s: { done: boolean }) => s.done)).toBe(true);
   });
 
-  it("the final damage left: every row's gains together (about +90% from scratch, MapleScouter's figures)", async () => {
+  it("the final damage left: every row's gains together; the nodes' about +90% from scratch (MapleScouter's +89.97%), each HEXA Stat node's its own", async () => {
     const id = await character();
     const b = await get(`/api/hexa/${id}`);
-    const fds = b.priority.flatMap((r: { fd: number | null }) => (r.fd === null ? [] : [r.fd]));
-    expect(b.fdToDesired).toBeCloseTo((fds.reduce((m: number, g: number) => m * (1 + g / 100), 1) - 1) * 100, 9);
-    expect(b.fdToDesired).toBeGreaterThan(85);
-    expect(b.fdToDesired).toBeLessThan(95);
+    const together = (fds: number[]) => (fds.reduce((m, g) => m * (1 + g / 100), 1) - 1) * 100;
+    expect(b.fdToDesired).toBeCloseTo(together(b.priority.map((r: { fd: number }) => r.fd)), 9);
+    const nodes = together(b.priority.filter((r: { node: string }) => !r.node.startsWith("stat")).map((r: { fd: number }) => r.fd));
+    expect(Math.abs(nodes - 89.97)).toBeLessThan(0.5);
+    expect(b.priority.filter((r: { node: string }) => r.node.startsWith("stat")).map((r: { fd: number }) => r.fd)).toEqual(b.stats.map((s: { fdToCome: number }) => s.fdToCome));
   });
 
   it("the full order: every step, the same node several in a row joined; done, cost, and the days until each", async () => {
     const id = await character();
     await save(id, withLevels({ mastery3: 3, mastery1: 1 }, { owned: 100, perDay: 10, stats: [statNode([6, 7, 7]), LOCKED, LOCKED] }));
     const b = await get(`/api/hexa/${id}`);
-    // MapleScouter's 191 steps, 184 once runs are joined: never the same node twice in a row
-    expect(b.order).toHaveLength(184);
+    // every node to 30 and the three HEXA Stat nodes: never the same node twice in a row
     expect(b.order.every((s: { node: string }, i: number) => i === 0 || s.node !== b.order[i - 1].node)).toBe(true);
-    // the gains are the same together as a new character's whole priority (a joined step's multiply)
-    const all = b.order.flatMap((s: { fd: number | null }) => (s.fd === null ? [] : [s.fd]));
+    // the nodes' gains are the same together as a new character's whole priority's (a joined step's multiply)
+    const nodeFd = (steps: { node: string; fd: number }[]) => (steps.filter((s) => !s.node.startsWith("stat")).reduce((m, s) => m * (1 + s.fd / 100), 1) - 1) * 100;
     const fresh = await get(`/api/hexa/${await character()}`);
-    expect((all.reduce((m: number, g: number) => m * (1 + g / 100), 1) - 1) * 100).toBeCloseTo(fresh.fdToDesired, 6);
+    expect(nodeFd(b.order)).toBeCloseTo(nodeFd(fresh.priority), 6);
     expect(b.order.slice(0, 3)).toMatchObject([
       { node: "mastery3", name: "Wish Unending", from: 0, to: 1, cost: { erda: 3, frags: 50 }, done: true, days: 0 },
       { node: "mastery1", from: 0, to: 1, done: true, days: 0 },
       { node: "mastery2", from: 0, to: 1, cost: { erda: 3, frags: 50 }, done: false, days: 0 },
     ]);
-    // HEXA Stat steps: to 20, done when at 20; their cost: the unlock and every rank-up from 0, on average
+    // HEXA Stat steps: to 20, done when at 20; their cost: the unlock and every rank-up from 0, on average;
+    // their final damage: from rank 0 to 20, on average (I with the stats it's worked out with, the
+    // others assumed: both about +3 to 5%)
     const stat = b.order.filter((s: { node: string }) => s.node.startsWith("stat"));
-    expect(stat.map((s: { node: string; to: number; done: boolean; fd: null }) => [s.node, s.to, s.done, s.fd])).toEqual([
-      ["stat1", 20, true, null],
-      ["stat2", 20, false, null],
-      ["stat3", 20, false, null],
+    expect(stat.map((s: { node: string; to: number; done: boolean }) => [s.node, s.to, s.done])).toEqual([
+      ["stat1", 20, true],
+      ["stat2", 20, false],
+      ["stat3", 20, false],
     ]);
+    for (const s of stat) {
+      expect(s.fd).toBeGreaterThan(3);
+      expect(s.fd).toBeLessThan(5);
+    }
     expect(stat[0].cost.frags).toBeCloseTo(10 + FULL, 9);
     expect(stat.map((x: { name: string }) => x.name)).toEqual(["HEXA Stat I", "HEXA Stat II", "HEXA Stat III"]);
     // a HEXA Stat step's day: the step before's, plus what it still costs (II: its unlock and all 20) at 10 a day
@@ -240,6 +270,76 @@ describe("GET /api/hexa/:id", () => {
     expect(b.order.at(-1).days).toBeCloseTo((b.fragments.needed) / 10, 6);
     const third = 50; // Spirit Strike 0 → 1, the first step not done
     expect(b.order.find((s: { done: boolean; days: number }) => !s.done && s.days > 0).days).toBeGreaterThan((third - 100) / 10);
+  });
+
+  it("another job (Night Walker): the wiki's names, MapleScouter's icons, its own order", async () => {
+    const id = await character("Night Walker");
+    mkdirSync(path.join(iconDir, "hexa"), { recursive: true });
+    for (const f of ["NightWalker_1", "NightWalker_10", "NightWalker_11"]) writeFileSync(path.join(iconDir, "hexa", `${f}.png`), "PNG bytes");
+    const b = await get(`/api/hexa/${id}`);
+    expect(b.known).toBe(true);
+    expect(b.nodes.map((n: { name: string }) => n.name)).toEqual(["Silence", "Stygian Command", "Quintuple Star", "Shadow Bat", "Dark Omen", "Dominion", "Shadow Spear", "Greater Dark Servant", "Shadow Bite", "Rapid Throw", "Sol Janus", "Sol Hecate", "Phalanx Charge"]);
+    expect(b.nodes.filter((n: { icon: string | null }) => n.icon).map((n: { key: string; icon: string }) => [n.key, n.icon])).toEqual([
+      ["origin", "/item-icons/hexa/NightWalker_1.png"],
+      ["ascent", "/item-icons/hexa/NightWalker_10.png"],
+      ["common3", "/item-icons/hexa/NightWalker_11.png"],
+    ]);
+    // not Ren's order: it starts with Shadow Bat (Mastery 2)
+    expect(b.priority[0]).toMatchObject({ node: "mastery2", from: 0, to: 1 });
+    expect(b.priority.some((r: { node: string }) => r.node === "janus")).toBe(false);
+  });
+
+  it("HEXA Stat's damage: each line's amount × what 1 of its stat is worth (the character's stat values) × final damage per main stat", async () => {
+    const id = await character();
+    // made-up stat values: 1 ATT = 4 main stat, 1% boss = 12, 1% crit damage 40, 1% IED 15 (300%) / 20 (380%), 1 flat main stat 0.3; 1% final damage per 100
+    await db().statValues.create({ data: { characterId: id, att: 4, allStat: 14, secRatio: 0.1, bossDmg: 12, fdPer100: 1, attPct: 50, mainFlat: 0.3, critDmg: 40, ied300: 15, ied380: 20, bossDef: 300, cdMin: 0 } });
+    await save(id, { ...structuredClone(HEXA_DEFAULTS), stats: [statNode([10, 5, 5], true, ["att", "mainStat", "critDmg"]), statNode([0, 0, 0], true, ["ied", "dmg", "bossDmg"]), LOCKED] });
+    const b = await get(`/api/hexa/${id}`);
+    // I: ATT main 10 → 100 ATT × 4; main stat additional 5 → 500 × 0.3; crit additional 5 → 1.75% × 40: 619 main stat, 6.19% final damage; at 20: nothing to come
+    expect(b.stats[0]).toMatchObject({ worked: ["att", "mainStat", "critDmg"], assumed: false, fdToCome: 0 });
+    expect(b.stats[0].fdNow).toBeCloseTo((400 + 150 + 70) / 100, 12);
+    // II: nothing yet; at 20 its IED (300% bosses: 15 each), damage and boss lines on average
+    expect(b.stats[1]).toMatchObject({ worked: ["ied", "dmg", "bossDmg"], assumed: false, fdNow: 0 });
+    expect(b.stats[1].fdToCome).toBeGreaterThan(0);
+    // 380% bosses: IED worth more, so II's to come more
+    await db().statValues.update({ where: { characterId: id }, data: { bossDef: 380 } });
+    expect((await get(`/api/hexa/${id}`)).stats[1].fdToCome).toBeGreaterThan(b.stats[1].fdToCome);
+    // III: no stats picked: the best for the character, its main line not I's or II's (ATT, IED)
+    expect(b.stats[2].assumed).toBe(true);
+    expect(["att", "ied"]).not.toContain(b.stats[2].worked[0]);
+    expect(new Set(b.stats[2].worked).size).toBe(3);
+  });
+
+  it("HEXA Stat's assumed stats: each node's main line skips the main lines of the others, picked or assumed before it", async () => {
+    const id = await character();
+    // ATT worth most (1 flat main stat almost nothing): the best main line
+    await db().statValues.create({ data: { characterId: id, att: 4, allStat: 14, secRatio: 0.1, bossDmg: 12, fdPer100: 1, attPct: 50, mainFlat: 0.01, critDmg: 40, ied300: 15, ied380: 20, bossDef: 380, cdMin: 0 } });
+    const b = await get(`/api/hexa/${id}`);
+    // none picked: three different main lines, the best first (ATT 100 × 4 = 400, IED 20 × 20, crit 7 × 40, boss 20 × 12)
+    expect(b.stats.map((s: { worked: string[] }) => s.worked[0])).toEqual(["att", "ied", "critDmg"]);
+    // ATT picked as III's main line: I and II skip it
+    await save(id, { ...structuredClone(HEXA_DEFAULTS), stats: [LOCKED, LOCKED, statNode([0, 0, 0], false, ["att", null, null])] });
+    const picked = await get(`/api/hexa/${id}`);
+    expect(picked.stats.map((s: { worked: string[] }) => s.worked[0])).toEqual(["ied", "critDmg", "att"]);
+  });
+
+  it("HEXA Stat's place in the order: by its damage per fragment, among the nodes' steps (Ren's first comes after a few steps, before most)", async () => {
+    const b = await get(`/api/hexa/${await character()}`);
+    const at = b.priority.findIndex((r: { node: string }) => r.node === "stat1");
+    expect(at).toBeGreaterThan(3);
+    expect(at).toBeLessThan(b.priority.length / 4);
+  });
+
+  it("HEXA Stat's damage: a Xenon's main stat line isn't worked out (All Stats, not main stat): nothing", async () => {
+    const id = await character("Xenon");
+    await save(id, { ...structuredClone(HEXA_DEFAULTS), stats: [statNode([10, 5, 5], true, ["mainStat", "att", "critDmg"]), LOCKED, LOCKED] });
+    const x = await get(`/api/hexa/${id}`);
+    const ren = await character();
+    await save(ren, { ...structuredClone(HEXA_DEFAULTS), stats: [statNode([10, 5, 5], true, ["mainStat", "att", "critDmg"]), LOCKED, LOCKED] });
+    const r = await get(`/api/hexa/${ren}`);
+    // the defaults: 1 flat main stat 0.29, 1 ATT 4, 1% crit damage 42.38, 0.785% final damage per 100
+    expect(x.stats[0].fdNow).toBeCloseTo(((25 * 4 + 1.75 * 42.38) * 0.785) / 100, 12);
+    expect(r.stats[0].fdNow).toBeCloseTo(((2000 * 0.29 + 25 * 4 + 1.75 * 42.38) * 0.785) / 100, 12);
   });
 
   it("icons: none until downloaded into the data folder's item-icons/hexa/, then their addresses, served", async () => {
@@ -258,10 +358,14 @@ describe("GET /api/hexa/:id", () => {
     expect(b.priority[0].icon).toBe("/item-icons/hexa/Len_8.png");
     expect(b.order.find((s: { node: string }) => s.node === "stat1").icon).toBe("/item-icons/hexa/hexa-stat.png");
     expect((await api().get("/item-icons/hexa/Len_1.png")).status).toBe(200);
+    // Mo Xuan: MapleScouter has no icons for it, so none, whatever's in the folder
+    writeFileSync(path.join(iconDir, "hexa", "null.png"), "PNG bytes");
+    const mo = await get(`/api/hexa/${await character("Mo Xuan")}`);
+    expect(mo.nodes.filter((n: { icon: string | null }) => n.icon).map((n: { key: string }) => n.key)).toEqual(["janus"]);
   });
 
-  it("a job not worked out yet: known false, nothing else; another owner's character: 404", async () => {
-    const nw = await character("Night Walker");
+  it("a job not worked out (a SHINE class, one the figures don't have): known false, nothing else; another owner's character: 404", async () => {
+    const nw = await character("Sia Astelle");
     await save(nw, withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }));
     const b = await get(`/api/hexa/${nw}`);
     const none = { erda: 0, frags: 0, exact: true };

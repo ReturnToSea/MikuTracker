@@ -38,8 +38,8 @@ export function fakeServer(routes: Record<string, unknown>) {
   };
 }
 
-export function renderWithApp(ui: ReactNode, path = "/") {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+// (`qc`: a test's own cache, to look into)
+export function renderWithApp(ui: ReactNode, path = "/", qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>

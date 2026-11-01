@@ -164,7 +164,7 @@ const HAT = view("1000001", "Test Hat", "hat", { stats: { str: 40, dex: 40, att:
 const MEDAL = view("1000002", "Test Medal", "medal", { stats: { str: 10 }, starMax: 0, flames: "boss", hammers: OPTIONS.hammers! });
 const OZ = view("1000003-4", "Test Oz Ring Lv. 4", "ring", { oz: { kind: "active", level: 4 }, starMax: 0 });
 const HAT2 = view("1000004", "Other Hat", "hat", { stats: { str: 10 }, starMax: 5, flames: "boss", potential: "hat" });
-const DEFAULTS = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
+const DEFAULTS = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
 const char = (over: Partial<GearCharacter> = {}): GearCharacter => ({ id: 7, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, knownJob: true, fits: [HAT.key, MEDAL.key, OZ.key, HAT2.key], equipped: { hat: { item: HAT.key }, medal: { item: MEDAL.key }, ring1: { item: OZ.key } }, details: {}, statBoxes: { pct: [{ stat: "LUK" as const, field: "lukPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: DEFAULTS, ...over });
 const gearBoard = (c: GearCharacter): GearBoard => ({ generated: "2026-10-24", slots: SLOTS, items: [HAT, MEDAL, OZ, HAT2], jobs: {}, characters: [c] });
 
@@ -492,6 +492,16 @@ describe("stat values", () => {
     await userEvent.click(defense.getByRole("button", { name: "380%" }));
     await userEvent.click(defense.getByRole("button", { name: "300%" }));
     await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, cd4: 3.34 }, DEFAULTS, { ...DEFAULTS, bossDef: 300 }]));
+  });
+
+  it("1 main stat that % doesn't multiply (v3.1.0, for HEXA Stat): its box, the owner's 0.29 to start, saved when typed", async () => {
+    const s = await show(char());
+    const box = within(await screen.findByRole("group", { name: "Stat values" }));
+    const flat = box.getByRole("spinbutton", { name: "1 main stat % doesn't multiply =" }) as HTMLInputElement;
+    expect(flat.value).toBe("0.29");
+    await userEvent.clear(flat);
+    await userEvent.type(flat, "0.31{Enter}");
+    await waitFor(() => expect(s.sent("PUT", "/gear/7/stat-values")).toEqual([{ ...DEFAULTS, mainFlat: 0.31 }]));
   });
 
   it("an empty cooldown box shows what it counts as: the nearest filled box below, else nothing", async () => {

@@ -596,7 +596,7 @@ try {
     ["details: a potential line it can't have", "PUT", `/gear/${miku.id}/hat/details`, { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Boss Damage +40%", null, null] }, hammers: 0 }, 400],
     ["details: an empty slot", "PUT", `/gear/${miku.id}/android/details`, { stars: 0, flames: {}, potential: null, hammers: 0 }, 404],
     ["options: an unknown item", "GET", "/gear/options?item=1234567", undefined, 404],
-    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
+    ["stat values: negative", "PUT", `/gear/${miku.id}/stat-values`, { att: -1, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -831,12 +831,12 @@ try {
   pb = await potBoard();
   check("Stat values", "back to no minimum and empty cooldown boxes: the crown as before", pb.items.find((i) => i.slot === "hat").cooldown?.min === 0 && (await cdBox(4).inputValue()) === "");
   for (const [what, method, where, body, status] of [
-    ["stat values: a hat minimum the game can't have (7 s)", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 7 }, 400],
+    ["stat values: a hat minimum the game can't have (7 s)", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 7 }, 400],
     ["potential: no budget", "GET", `/gear/${miku.id}/potential`, undefined, 400],
     ["potential: an event it doesn't know", "GET", `/gear/${miku.id}/potential?events=free&budget=1`, undefined, 400],
     ["potential: a slot without an item that can have potential", "GET", `/gear/${miku.id}/potential/android`, undefined, 404],
     ["potential: a negative target", "GET", `/gear/${miku.id}/potential/hat?target=-1`, undefined, 400],
-    ["stat values: a bosses' defense it doesn't know", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 350, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
+    ["stat values: a bosses' defense it doesn't know", "PUT", `/gear/${miku.id}/stat-values`, { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 350, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
@@ -899,8 +899,9 @@ try {
   await go("/hexa");
   check("HEXA", "in the rail, after Symbols; the page's tabs are the world's characters", (await page.locator(".rail .tab", { hasText: "HEXA" }).count()) >= 1 && (await page.getByRole("tab", { name: /PlumBlade/ }).count()) === 1);
   await page.getByRole("tab", { name: /MikuBeam/ }).click();
-  await settle(300);
-  check("HEXA", "a job not worked out yet says so (Kanna)", /HEXA for Kanna comes later/.test((await text("main")) ?? ""));
+  await page.getByRole("region", { name: "Current progress" }).waitFor({ timeout: 10000 });
+  const kanna = (await page.getByRole("region", { name: "Current progress" }).innerText()).replace(/\s+/g, " ");
+  check("HEXA", "every job works (v3.1.0): a Kanna gets its own nodes (the wiki's names: Summon Oni, Twilight Bloom)", /Summon Oni/.test(kanna) && /Twilight Bloom/.test(kanna), kanna.slice(0, 200));
   await page.getByRole("tab", { name: /PlumBlade/ }).click();
   const hexaSum = page.getByRole("region", { name: "HEXA summary" });
   await hexaSum.waitFor({ timeout: 10000 });
@@ -950,21 +951,27 @@ try {
   check("HEXA", "the input was saved (the API agrees)", hb.input.current.mastery3 === 1 && hb.input.perDay === 10 && hb.input.erdaRequest === true && hb.input.dungeon === "nightmareParadise" && hb.input.janus === false && hb.input.stats[1].lines[0].stat === "bossDmg" && hb.input.stats[1].lines[0].level === 2, JSON.stringify(hb.input));
   // HEXA Stat II at main line 2: its unlock (10 / 200) and two rank-ups at 10 each, exactly: invested 3 + 10 = 13 Sol Erda, 50 + 220 = 270
   check("HEXA", "HEXA Stat II's spending counts: 13 Sol Erda and 270 fragments invested, exact", /Invested 13 270 /i.test(await sumText()), await sumText());
+  const stat2Text = (await stat2.innerText()).replace(/\s+/g, " ");
+  check("HEXA", "HEXA Stat's damage (v3.1.0): what rank 20 adds on average, its other lines' best stats assumed", /≈ \+\d+\.\d+% to rank 20/.test(stat2Text) && /best stats assumed/.test(stat2Text), stat2Text);
+  const statRow = (await prio.locator("tbody tr", { hasText: "HEXA Stat" }).first().innerText()).replace(/\s+/g, " ");
+  check("HEXA", "a HEXA Stat row in the priority has its final damage (≈)", /≈ \+\d+\.\d+%/.test(statRow), statRow);
   await shot("23-hexa");
   await page.getByRole("button", { name: "Full order" }).click();
   const fullOrder = page.getByRole("region", { name: "Full upgrade order" });
   await fullOrder.waitFor({ timeout: 5000 });
   const steps = fullOrder.getByRole("listitem");
-  // MapleScouter's 191 steps, 184 with the same skill several in a row joined; Wish Unending 0 → 1 done, Plum Blossom next
-  check("HEXA", "the full order: 184 steps, the first done, the second next", (await steps.count()) === 184 && /done/.test(await steps.nth(0).getAttribute("class")) && /next/.test(await steps.nth(1).getAttribute("class")), `${await steps.count()}`);
+  // the built order (the same skill several in a row joined, the three HEXA Stat nodes in it): as many steps as the API's;
+  // Wish Unending 0 → 1 done, Plum Blossom next
+  const orderLength = (await api("GET", `/hexa/${plumId}`)).json.order.length;
+  check("HEXA", "the full order: every step, the first done, the second next", (await steps.count()) === orderLength && orderLength > 150 && /done/.test(await steps.nth(0).getAttribute("class")) && /next/.test(await steps.nth(1).getAttribute("class")), `${await steps.count()} of ${orderLength}`);
   await steps.nth(1).hover();
   const tip = bare(await steps.nth(1).getByRole("tooltip").innerText());
-  check("HEXA", "hovering a step shows its levels, cost and gain", (await steps.nth(1).getByRole("tooltip").isVisible()) && /2\. Plum Blossom: Storm Lv\. 0 → 1 3 50 \+2\.06%/.test(tip), tip);
+  check("HEXA", "hovering a step shows its levels, cost and gain", (await steps.nth(1).getByRole("tooltip").isVisible()) && /2\. Plum Blossom Sword: Storm Lv\. 0 → 1 3 50 \+2\.06%/.test(tip), tip);
   await steps.nth(1).click();
   await settle(400);
   check("HEXA", "clicking a step changes nothing", (await api("GET", `/hexa/${plumId}`)).json.input.current.mastery1 === 0);
   await fullOrder.getByRole("checkbox", { name: /Hide done/ }).check();
-  check("HEXA", "hiding what's done leaves 183", (await steps.count()) === 183);
+  check("HEXA", "hiding what's done leaves one fewer", (await steps.count()) === orderLength - 1);
   await shot("23b-hexa-order");
   await page.getByRole("button", { name: "Tracker" }).click();
   await page.setViewportSize({ width: 900, height: 900 });

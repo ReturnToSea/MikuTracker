@@ -6,7 +6,7 @@ import type { GearBoard, GearCharacter, UpgradesBoard, UpgradeStep } from "../sr
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // A made-up board: the numbers are the server's to work out (tested there); here, what the page shows and does.
-const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
+const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
 const char = (id: number, name: string): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: null, statValues: VALUES });
 const SLOTS = ["hat", "weapon", "belt"].map((key) => ({ key, label: key, kind: key }));
 const GEAR: GearBoard = { generated: "2026-10-24", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit"), char(2, "Second")] };

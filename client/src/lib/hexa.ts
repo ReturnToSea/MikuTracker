@@ -47,6 +47,11 @@ export const doneShare = (b: { invested: Cost; left: Cost }): number => {
 // and HEXA Stat.
 const TAGS: Readonly<Record<string, string>> = { origin: "Origin", ascent: "Ascent", mastery1: "M1", mastery2: "M2", mastery3: "M3", mastery4: "M4", boost1: "E1", boost2: "E2", boost3: "E3", boost4: "E4" };
 export const nodeTag = (node: string): string | null => (Object.hasOwn(TAGS, node) ? TAGS[node]! : null);
+// A node's name, short (where there's little room; the full one on hover): the part after the last colon,
+// without a [stance] or (stance) in front ("Rising Azure Dragon: Divided Heavens" → "Divided Heavens",
+// "(Spirit) Unleash the Radiant Flame" → "Unleash the Radiant Flame").
+export const shortName = (name: string): string => name.split(": ").at(-1)!.replace(/^[[(][^\])]*[\])] /, "");
+
 // A step's level as the order shows it: the level it goes to, MAX at 30 (and a HEXA Stat node's 20).
 export const stepLabel = (s: { node: string; to: number }): string => (s.node.startsWith("stat") || s.to === HEXA_LEVEL_MAX ? "MAX" : String(s.to));
 // A step's or row's levels: a node's "Lv. 4 → 9", a HEXA Stat node's "rank 2 → 20".
@@ -76,6 +81,8 @@ export function withStatLine(input: HexaInput, node: number, line: number, level
   const lv = Math.max(0, Math.min(lineMax(input, node, line), Math.round(level)));
   return withLines(input, node, (l, i) => (i === line ? { ...l, level: lv } : l));
 }
+// Two HEXA Stat nodes' lines the same (each line's stat and level).
+export const sameLines = (a: readonly Line[], b: readonly Line[]): boolean => a.every((l, i) => l.stat === b[i]!.stat && l.level === b[i]!.level);
 // A HEXA Stat node as typed: its rank (its lines' levels together), and unlocked (ticked, or any level).
 export const rankOf = (s: HexaInput["stats"][number]): number => s.lines.reduce((sum, l) => sum + l.level, 0);
 export const unlockedOf = (s: HexaInput["stats"][number]): boolean => s.unlocked || rankOf(s) > 0;

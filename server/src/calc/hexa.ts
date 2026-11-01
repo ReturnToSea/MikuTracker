@@ -1,3 +1,4 @@
+import { HEXA_RANK_MAX, type HexaStat } from "@miku/shared";
 import type { CostTable, HexaStep } from "../gameFigures/hexa";
 
 // The HEXA page's maths (v3.0.0): what levels cost, what's invested and left, the expected cost of a
@@ -64,15 +65,91 @@ export function statSpent(primary: number, additional: number, cost: readonly nu
   return { frags: main + c[additional]! / w[additional]!, exact: additional === 0 || cost[0] === cost[primary] };
 }
 
+// A job's built order with its HEXA Stat nodes put in by their own damage per fragment (the same measure
+// as buildOrder's: the log of the gain per fragment, from scratch): each before the first step worth less,
+// and never before the node before it. `stepFrags`: a step's fragments.
+export function placeStats(
+  steps: readonly { node: string; from: number; to: number; fd: number }[],
+  stepFrags: (s: { node: string; from: number; to: number }) => number,
+  stats: readonly { stat: 1 | 2 | 3; frags: number; fd: number }[],
+): HexaStep[] {
+  const out: HexaStep[] = steps.map((s) => ({ ...s }) as HexaStep);
+  const score = (fd: number, frags: number) => Math.log(1 + fd / 100) / frags;
+  let after = 0;
+  for (const st of stats) {
+    const worth = score(st.fd, st.frags);
+    let at = out.findIndex((s, i) => i >= after && "node" in s && score(s.fd, stepFrags(s)) < worth);
+    if (at === -1) at = out.length;
+    out.splice(at, 0, { stat: st.stat, to: HEXA_RANK_MAX });
+    after = at + 1;
+  }
+  return out;
+}
+
+// Where a HEXA Stat node's lines end up at rank `target`, from their levels now (main line `p`, additional
+// lines `a` and `b`): every way the random rank-ups can go, with its chance. Each rank-up raises the main
+// line with chance[p] (0 at 10), else an additional line, each half the time (the other when one is at 10).
+export function statOutcomes(p: number, a: number, b: number, target: number, chance: readonly number[]): { p: number; a: number; b: number; chance: number }[] {
+  let now = new Map<string, number>([[`${p},${a},${b}`, 1]]);
+  for (let rank = p + a + b; rank < target; rank++) {
+    const next = new Map<string, number>();
+    const add = (key: string, q: number) => next.set(key, (next.get(key) ?? 0) + q);
+    for (const [key, q] of now) {
+      const [x, y, z] = key.split(",").map(Number) as [number, number, number];
+      const main = chance[x]!;
+      if (main > 0) add(`${x + 1},${y},${z}`, q * main);
+      // (one additional line at 10: the other takes it all)
+      const toY = z >= 10 ? 1 : y >= 10 ? 0 : 0.5;
+      if (toY > 0) add(`${x},${y + 1},${z}`, q * (1 - main) * toY);
+      if (toY < 1) add(`${x},${y},${z + 1}`, q * (1 - main) * (1 - toY));
+    }
+    now = next;
+  }
+  return [...now].map(([key, q]) => {
+    const [x, y, z] = key.split(",").map(Number) as [number, number, number];
+    return { p: x, a: y, b: z, chance: q };
+  });
+}
+
+// The final damage (%) a HEXA Stat node's lines give: each line's amount at its level (the main line's
+// table for the first) × what 1 of its stat is worth (`worth`: % final damage per 1). A line without a
+// stat gives nothing.
+export type StatAmounts = Readonly<Record<HexaStat, { main: readonly number[]; additional: readonly number[] }>>;
+export function statFd(lines: readonly { stat: HexaStat | null; level: number }[], amounts: StatAmounts, worth: Readonly<Record<HexaStat, number>>): number {
+  return lines.reduce((sum, l, i) => (l.stat === null ? sum : sum + amounts[l.stat][i === 0 ? "main" : "additional"][l.level]! * worth[l.stat]), 0);
+}
+
+// A HEXA Stat node's stats for working out its damage: the ones picked, and for a line without one the
+// best for the character as players pick them (the guides: the stat worth most on the main line, the next
+// ones on the additional lines; worth: at level 10, what the line gives × what 1 of it is worth), its main
+// line never a stat in `takenMains` (another node's main line), its three stats different. Not the most
+// on average for one run of rank-ups (that would put the best stat on an additional line, which ends
+// higher on average): players reset the node to push the main line up. `assumed`: a line was filled in.
+export function bestStats(
+  lines: readonly { stat: HexaStat | null; level: number }[],
+  takenMains: readonly (HexaStat | null)[],
+  amounts: StatAmounts,
+  worth: Readonly<Record<HexaStat, number>>,
+  stats: readonly HexaStat[],
+): { stats: [HexaStat, HexaStat, HexaStat]; assumed: boolean } {
+  const ranked = [...stats].sort((x, y) => amounts[y].main[10]! * worth[y] - amounts[x].main[10]! * worth[x]);
+  const picked = new Set(lines.map((l) => l.stat));
+  const free = ranked.filter((st) => !picked.has(st));
+  const main = lines[0]!.stat ?? free.find((st) => !takenMains.includes(st))!;
+  const rest = free.filter((st) => st !== main);
+  const out = lines.map((l, i) => l.stat ?? (i === 0 ? main : rest.shift()!)) as [HexaStat, HexaStat, HexaStat];
+  return { stats: out, assumed: lines.some((l) => l.stat === null) };
+}
+
 // One row of the upgrade priority: a node from one level to another (the same node's steps in a row
-// merged), or a HEXA Stat node to a rank; what it costs, and the final damage it adds (%; null: not
-// known, HEXA Stat's depends on its random rank-ups).
+// merged), or a HEXA Stat node to a rank; what it costs, and the final damage it adds (%; a HEXA Stat
+// node's: on average, its rank-ups being random).
 export interface PriorityRow {
   node: string; // a HexaNode, or "stat1" to "stat3"
   from: number;
   to: number;
   cost: Cost;
-  fd: number | null;
+  fd: number;
   partial: boolean; // part of a step of the order: its final damage taken in proportion to its fragments
 }
 
@@ -85,21 +162,21 @@ export function priority(
   levels: Readonly<Record<string, number>>,
   wanted: Readonly<Record<string, number>>,
   tables: Readonly<Record<string, CostTable>>,
-  stat: (n: 1 | 2 | 3, to: number) => { from: number; to: number; cost: Cost } | null,
+  stat: (n: 1 | 2 | 3, to: number) => { from: number; to: number; cost: Cost; fd: number } | null,
 ): PriorityRow[] {
   const at: Record<string, number> = { ...levels };
   const rows: PriorityRow[] = [];
   // (a node's steps follow on from each other: its level is kept as they go)
-  const push = (row: PriorityRow & { fd: number }) => {
+  const push = (row: PriorityRow) => {
     const last = rows.at(-1);
-    if (last?.node === row.node) rows[rows.length - 1] = { ...last, to: row.to, cost: addCost(last.cost, row.cost), fd: ((1 + last.fd! / 100) * (1 + row.fd / 100) - 1) * 100, partial: last.partial || row.partial };
+    if (last?.node === row.node) rows[rows.length - 1] = { ...last, to: row.to, cost: addCost(last.cost, row.cost), fd: ((1 + last.fd / 100) * (1 + row.fd / 100) - 1) * 100, partial: last.partial || row.partial };
     else rows.push(row);
   };
   for (const s of steps) {
     // (a HEXA Stat node is in the order once: its row is never merged)
     if ("stat" in s) {
       const r = stat(s.stat, s.to);
-      if (r) rows.push({ node: `stat${s.stat}`, from: r.from, to: r.to, cost: r.cost, fd: null, partial: false });
+      if (r) rows.push({ node: `stat${s.stat}`, from: r.from, to: r.to, cost: r.cost, fd: r.fd, partial: false });
       continue;
     }
     const start = Math.max(s.from, at[s.node]!);
@@ -113,6 +190,33 @@ export function priority(
     at[s.node] = end;
   }
   return rows;
+}
+
+// A job's order, built (v3.1.0): from every node at the level the 6th job gives (Origin 1), each time the
+// jump (one node to any higher level) with the most damage per fragment, until every node is at 30; each
+// step with the final damage it adds there (%). Damage per fragment: the log of the gain per fragment, so a
+// jump of several levels compares fairly with one of a single level (two in a row add up). Ties: the first
+// node, then the shortest jump. It gives MapleScouter's own order for Ren and Hoyoung (the tests). A step
+// never shows a loss (the figures' rounding can make a worthless core's look like −0.000001%).
+export function buildOrder(nodes: readonly { key: string; costs: CostTable; free: number }[], damage: (levels: Readonly<Record<string, number>>) => number): { node: string; from: number; to: number; fd: number }[] {
+  const at: Record<string, number> = Object.fromEntries(nodes.map((n) => [n.key, n.free]));
+  const out: { node: string; from: number; to: number; fd: number }[] = [];
+  for (;;) {
+    const now = damage(at);
+    let best: { score: number; key: string; to: number; gain: number } | null = null;
+    for (const n of nodes) {
+      let frags = 0;
+      for (let to = at[n.key]! + 1; to <= 30; to++) {
+        frags += n.costs.frags[to - 1]!;
+        const gain = damage({ ...at, [n.key]: to }) / now;
+        const score = Math.log(gain) / frags;
+        if (!best || score > best.score) best = { score, key: n.key, to, gain };
+      }
+    }
+    if (!best) return out;
+    out.push({ node: best.key, from: at[best.key]!, to: best.to, fd: Math.max(0, (best.gain - 1) * 100) });
+    at[best.key] = best.to;
+  }
 }
 
 // The job's order with the same node several steps in a row as one step, to the last one's level (their

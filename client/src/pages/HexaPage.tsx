@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useHexa, useHexaTabs, useSaveHexa, useSettings, useUpdateSettings } from "../api/hooks";
 import type { HexaBoard, HexaOrderStep } from "../api/types";
 import { GearTop, NoCharacters, useGearCharacter } from "../components/GearTop";
-import { approx, dateAfter, doneShare, dungeonLabels, formatCount, formatDays, HEXA_GROUPS, levelsText, lineMax, nodeTag, perWeekOf, rankOf, readyText, STAT_LABELS, statChoices, stepLabel, unlockedOf, wantedOf, withAllDesired, withLevel, withStatLine, withStatPick, withStatUnlocked } from "../lib/hexa";
+import { approx, dateAfter, doneShare, dungeonLabels, formatCount, formatDays, HEXA_GROUPS, levelsText, lineMax, nodeTag, perWeekOf, rankOf, readyText, sameLines, shortName, STAT_LABELS, statChoices, stepLabel, unlockedOf, wantedOf, withAllDesired, withLevel, withStatLine, withStatPick, withStatUnlocked } from "../lib/hexa";
 import { formatFd } from "../lib/upgrades";
 
 type Save = (f: (input: HexaInput) => HexaInput) => void;
@@ -96,7 +96,8 @@ const LINE_NAMES = ["Main line", "Additional line 1", "Additional line 2"] as co
 function StatCard({ b, i, onSave }: { b: HexaBoard; i: number; onSave: Save }) {
   const s = b.input.stats[i]!;
   const [rank, unlocked] = [rankOf(s), unlockedOf(s)];
-  const needs = b.stats[i]!.needs;
+  const view = b.stats[i]!;
+  const needs = view.needs;
   const name = STAT_NAMES[i]!;
   return (
     <div className={`hexa-stat${unlocked ? "" : " locked"}`} role="group" aria-label={name}>
@@ -129,6 +130,13 @@ function StatCard({ b, i, onSave }: { b: HexaBoard; i: number; onSave: Save }) {
           <i style={{ width: `${rank * 5}%` }} />
         </span>
       </div>
+      {/* (worked out from the lines as saved, every node's: one node's assumed stats skip the others' main
+          lines; while a change to any of them is being saved, not yet) */}
+      <p className="tiny muted">
+        {!b.stats.every((v, j) => sameLines(v.lines, b.input.stats[j]!.lines))
+          ? "working out…"
+          : `${rank >= 20 ? formatFd(view.fdNow) : `≈ ${formatFd(view.fdToCome)} to rank 20`}${view.assumed ? ` · best stats assumed (${view.worked.map((st) => STAT_LABELS[st]).join(", ")})` : ""}`}
+      </p>
       {needs !== null && <p className="tiny muted">Needs Lv. {needs}</p>}
     </div>
   );
@@ -161,7 +169,7 @@ function Progress({ b, onSave }: { b: HexaBoard; onSave: Save }) {
                   <NodeIcon icon={n.icon} name={n.name} />
                   <span className="hexa-name" title={n.name}>
                     {nodeTag(n.key) && <span className="hexa-tag">{nodeTag(n.key)}</span>}
-                    {n.name}
+                    {shortName(n.name)}
                   </span>
                   <NumBox value={b.input.current[n.key]} label={`${n.name} level now`} min={n.min} max={n.max} onCommit={(v) => onSave((i) => withLevel(i, "current", n.key, v, n.min, n.max))} />
                   <span className="tiny muted">→</span>
@@ -247,17 +255,17 @@ function Priority({ b }: { b: HexaBoard }) {
             <div className="hexa-next-row">
               <span className="hexa-next-name">
                 <NodeIcon icon={next.icon} name={next.name} />
-                <b>
-                  {next.name} → {next.to}
+                <b title={next.name}>
+                  {shortName(next.name)} → {next.to}
                 </b>
               </span>
-              {next.fd !== null && <b className="good">{`${next.partial ? "≈ " : ""}${formatFd(next.fd)}`}</b>}
+              <b className="good">{`${next.partial || next.node.startsWith("stat") ? "≈ " : ""}${formatFd(next.fd)}`}</b>
             </div>
             <div className="hexa-next-row">
               <span className="tiny muted">
                 {levelsText(next)} · ready {readyText(next.days, now)}
               </span>
-              <Mats icons={b.icons} cost={next.cost} prefix={next.fd === null ? "≈ " : ""} />
+              <Mats icons={b.icons} cost={next.cost} prefix={next.node.startsWith("stat") ? "≈ " : ""} />
             </div>
           </div>
           <div className="hexa-priority">
@@ -278,16 +286,16 @@ function Priority({ b }: { b: HexaBoard }) {
                     <td>
                       <span className="hexa-cell" title={`${r.name} ${levelsText(r)}`}>
                         <NodeIcon icon={r.icon} name={r.name} />
-                        <span className="hexa-name">{r.name}</span>
+                        <span className="hexa-name">{shortName(r.name)}</span>
                       </span>
                     </td>
                     <td className="num">{r.to}</td>
                     <td className="num">{formatCount(r.cost.erda)}</td>
                     <td className="num">
-                      {r.fd === null && "≈ "}
+                      {r.node.startsWith("stat") && "≈ "}
                       {formatCount(r.cost.frags)}
                     </td>
-                    <td className="num good">{r.fd === null ? "—" : `${r.partial ? "≈ " : ""}${formatFd(r.fd)}`}</td>
+                    <td className="num good">{`${r.partial || r.node.startsWith("stat") ? "≈ " : ""}${formatFd(r.fd)}`}</td>
                     <td className="num tiny">{readyText(r.days, now)}</td>
                   </tr>
                 ))}
@@ -296,7 +304,7 @@ function Priority({ b }: { b: HexaBoard }) {
           </div>
         </>
       )}
-      <p className="tiny muted">FD: MapleScouter's figures for GMS Heroic, skills only. Sol Janus isn't listed (no damage). Green: you have the fragments now.</p>
+      <p className="tiny muted">FD: the skills', MapleScouter's figures (the order built from them); HEXA Stat's, from your stat values, on average. Sol Janus isn't listed (no damage). Green: you have the fragments now.</p>
     </section>
   );
 }
@@ -316,7 +324,8 @@ function Step({ s, n, state, icons, now }: { s: HexaOrderStep; n: number; state:
           {n}. {s.name} {stat ? "unlock → rank 20" : levelsText(s)}
         </b>
         <Mats icons={icons} cost={s.cost} prefix={stat ? "≈ " : ""} />
-        {s.fd === null ? <span className="muted">rank-ups on average; their damage depends on the stats</span> : <span className="good">{formatFd(s.fd)}</span>}
+        <span className="good">{`${stat ? "≈ " : ""}${formatFd(s.fd)}`}</span>
+        {stat && <span className="muted">rank 0 to 20 on average, with its stats (or the best for you)</span>}
         <span className="muted">{s.done ? "done" : s.days === 0 ? "you have the fragments now" : `ready ${readyText(s.days, now)}`}</span>
       </span>
     </li>
@@ -354,7 +363,7 @@ function FullOrder({ b }: { b: HexaBoard }) {
   );
 }
 
-// The HEXA page (v3.0.0): a character's HEXA Matrix, Ren only for now. Two views: the tracker, and the
+// The HEXA page (v3.0.0; every job from v3.1.0): a character's HEXA Matrix. Two views: the tracker, and the
 // full order.
 export function HexaPage() {
   const settings = useSettings();
@@ -380,7 +389,7 @@ export function HexaPage() {
       )}
       {(tabs.isPending || (c?.known && board.isPending)) && <p className="notice muted block">Loading…</p>}
       {list?.length === 0 && <NoCharacters world={world} />}
-      {c && !c.known && <p className="notice block">HEXA for {c.job} comes later: only Ren is worked out for now.</p>}
+      {c && !c.known && <p className="notice block">{c.shine ? `${c.job} is a SHINE class: it has Erda Link instead of the HEXA Matrix.` : `HEXA for ${c.job} isn't in the figures yet.`}</p>}
       {c?.known && b?.known && (
         <>
           <div className="hexa-view">

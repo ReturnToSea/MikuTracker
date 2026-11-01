@@ -346,7 +346,7 @@ export function FlameTable({ rows, flames, onChange }: { rows: DetailOptions["fl
 // What each stat is worth to the character, typed in; saved when you leave a box. One set for every
 // page (Flames, Star Force, Potential): the potential lines' values from v2.3.0. Only the boxes the
 // character needs, in its own stats' names (the server lists them: statBoxes).
-type NumberField = "att" | "allStat" | "secRatio" | "bossDmg" | "fdPer100" | "attPct" | "critDmg" | "ied300" | "ied380";
+type NumberField = "att" | "allStat" | "secRatio" | "bossDmg" | "fdPer100" | "attPct" | "mainFlat" | "critDmg" | "ied300" | "ied380";
 function fieldsFor(c: GearCharacter): [NumberField, string, string][] {
   const b = c.statBoxes;
   const attack = b?.magic ? "Magic ATT" : "ATT";
@@ -357,6 +357,8 @@ function fieldsFor(c: GearCharacter): [NumberField, string, string][] {
     ["bossDmg", "1% Boss / Damage =", "main stat"],
     ["fdPer100", "Final damage per 100 score", "%"],
     ["attPct", `1% ${attack} =`, "main stat"],
+    // (HEXA Stat's main stat lines, from v3.1.0: MapleScouter's "Not Affected by % STR")
+    ["mainFlat", "1 main stat % doesn't multiply =", "main stat"],
     ["critDmg", "1% Crit Damage =", "main stat"],
     ["ied300", "1% IED (300% defense) =", "main stat"],
     ["ied380", "1% IED (380% defense) =", "main stat"],

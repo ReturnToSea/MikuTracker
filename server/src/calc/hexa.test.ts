@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { BOOST, type CostTable, type HexaStep, MASTERY, REN_NODES, REN_ORDER, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
-import { addCost, daysFor, fdTogether, joinRuns, levelCost, NO_COST, priority, statExpected, statSpent } from "./hexa";
+import { beforeAll, describe, expect, it } from "vitest";
+import { HEXA_STATS } from "@miku/shared";
+import { BOOST, type CostTable, hexaJob, type HexaStep, MASTERY, STAT_AMOUNTS, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
+import { forgetHexa, jobOrder, orderFor } from "../services/hexa";
+import hoyoungCapture from "../../test/fixtures/maplescouter-hoyoung.json";
+import renCapture from "../../test/fixtures/maplescouter-ren.json";
+import { addCost, bestStats, buildOrder, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
 
 // (mulberry32, a small generator good enough for these simulations; a plain multiply-and-add one was 0.9% off)
 function generator(start: number): () => number {
@@ -12,6 +16,7 @@ function generator(start: number): () => number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+const REN_NODES = hexaJob("Ren")!.nodes;
 const table = (key: string): CostTable => REN_NODES.find((n) => n.key === key)!.costs;
 
 describe("levelCost", () => {
@@ -191,12 +196,12 @@ describe("priority: the job's order, without what's done or past what's wanted",
     ]);
     expect(priority(steps, { a: 3, b: 4 }, { a: 30, b: 30 }, tables, noStat)).toEqual([]);
   });
-  it("a HEXA Stat step: the row the callback gives (none: left out), with no final damage, never merged", () => {
-    const rows = priority(steps, { a: 0, b: 0 }, { a: 30, b: 30 }, tables, (n, to) => ({ from: 3, to, cost: { erda: 5, frags: 99 + n } }));
+  it("a HEXA Stat step: the row the callback gives (none: left out), with its final damage, never merged", () => {
+    const rows = priority(steps, { a: 0, b: 0 }, { a: 30, b: 30 }, tables, (n, to) => ({ from: 3, to, cost: { erda: 5, frags: 99 + n }, fd: 2.5 + n }));
     expect(rows.map((r) => [r.node, r.from, r.to, r.cost.frags, r.fd, r.partial])).toEqual([
       ["a", 0, 2, 20, expect.closeTo(3.02, 12), false],
       ["b", 0, 4, 40, 4, false],
-      ["stat1", 3, 20, 100, null, false],
+      ["stat1", 3, 20, 100, 3.5, false],
       ["a", 2, 3, 10, 1, false],
     ]);
   });
@@ -225,16 +230,208 @@ describe("priority: the job's order, without what's done or past what's wanted",
     ];
     expect(priority(late, { a: 0 }, { a: 2 }, { a: T }, () => null).map((r) => [r.from, r.to, r.partial])).toEqual([[0, 2, true]]);
   });
+});
+
+// A job's order built from its figures, the HEXA page's own way (services/hexa.ts), afresh (nothing kept
+// from before: mutation testing's planted bugs then run).
+beforeAll(forgetHexa);
+const built = (job: string) => orderFor(hexaJob(job)!);
+// Each node's level after `frags` fragments spent along an order (its node steps only).
+function levelsAfter(steps: readonly ({ node: string; from: number; to: number } | { stat: number })[], frags: number): Record<string, number> {
+  const at: Record<string, number> = { origin: 1 };
+  let spent = 0;
+  for (const s of steps) {
+    if ("stat" in s) continue;
+    spent += levelCost(table(s.node), s.from, s.to).frags;
+    if (spent > frags) break;
+    at[s.node] = s.to;
+  }
+  return at;
+}
+
+describe("buildOrder: each time the jump with the most damage per fragment", () => {
+  it("by hand: two nodes, a's level 1 worth +10% for 100, b's +4% for 30 (more per fragment): b first, then a", () => {
+    const t = (first: number): CostTable => ({ erda: Array(30).fill(1), frags: [first, ...Array(29).fill(10_000)] });
+    const gain: Record<string, number> = { a: 0.1, b: 0.04 };
+    // damage: 1 plus each node's gain once it's at level 1 or more (past 1: nothing more)
+    const order = buildOrder(
+      [
+        { key: "a", costs: t(100), free: 0 },
+        { key: "b", costs: t(30), free: 0 },
+      ],
+      (lv) => 1 + (lv.a! >= 1 ? gain.a! : 0) + (lv.b! >= 1 ? gain.b! : 0),
+    );
+    // b: ln 1.04 / 30 = 0.00131 a fragment beats a's ln 1.1 / 100 = 0.00095; then a: 1.14 / 1.04 − 1 = +9.6%
+    expect(order.slice(0, 2).map((s) => [s.node, s.from, s.to])).toEqual([["b", 0, 1], ["a", 0, 1]]);
+    expect(order[0]!.fd).toBeCloseTo(4, 12);
+    expect(order[1]!.fd).toBeCloseTo((1.14 / 1.04 - 1) * 100, 12);
+    // then every level to 30, one at a time (nothing more to gain: the first, shortest jump wins ties)
+    expect(order).toHaveLength(60);
+    expect(order.slice(2, 4).map((s) => [s.node, s.from, s.to, s.fd])).toEqual([["a", 1, 2, 0], ["a", 2, 3, 0]]);
+  });
+  it("a jump of several levels when the levels between add little (a's level 2 holds the gain)", () => {
+    const t: CostTable = { erda: Array(30).fill(1), frags: Array(30).fill(10) };
+    const order = buildOrder([{ key: "a", costs: t, free: 0 }, { key: "b", costs: t, free: 0 }], (lv) => 1 + (lv.a! >= 2 ? 0.2 : 0) + lv.b! * 0.001);
+    expect(order[0]).toMatchObject({ node: "a", from: 0, to: 2 });
+    expect(order[0]!.fd).toBeCloseTo(20, 12);
+  });
+  it("starts from each node's free level (Origin 1)", () => {
+    const t: CostTable = { erda: Array(30).fill(1), frags: Array(30).fill(10) };
+    const order = buildOrder([{ key: "o", costs: t, free: 1 }], (lv) => 1 + lv.o! * 0.01);
+    expect(order[0]).toMatchObject({ node: "o", from: 1, to: 2 });
+    expect(order.at(-1)).toMatchObject({ to: 30 });
+  });
+
+  // How far an order is from a captured one: each node's level every 500 fragments, the gap on average per
+  // node, and the most at any one point, all nodes together (a jump of several levels just either side of
+  // a point counts its whole jump there).
+  function gap(ours: readonly HexaStep[], theirs: readonly HexaStep[]): { average: number; most: number } {
+    let [total, count, most] = [0, 0, 0];
+    for (let f = 500; f <= 42_000; f += 500) {
+      const [a, b] = [levelsAfter(ours, f), levelsAfter(theirs, f)];
+      const here = Object.keys({ ...a, ...b }).reduce((sum, n) => sum + Math.abs((a[n] ?? 0) - (b[n] ?? 0)), 0);
+      total += here;
+      count += Object.keys({ ...a, ...b }).length;
+      most = Math.max(most, here);
+    }
+    return { average: total / count, most };
+  }
+  it("Ren's built order is MapleScouter's (GMS Heroic, 2026-10-01): within a tenth of a level a node on average (0.07)", () => {
+    const ours = built("Ren") as HexaStep[];
+    const theirs = renCapture.steps as HexaStep[];
+    const g = gap(ours, theirs);
+    expect(g.average).toBeLessThan(0.1);
+    expect(g.most).toBeLessThanOrEqual(16);
+    // its first steps exactly, with MapleScouter's gains to 0.01
+    expect(ours.slice(0, 4).map((s) => ("node" in s ? [s.node, s.from, s.to] : []))).toEqual([["mastery3", 0, 1], ["mastery1", 0, 1], ["mastery2", 0, 1], ["hecate", 0, 1]]);
+    ours.slice(0, 4).forEach((s, i) => expect((s as { fd: number }).fd).toBeCloseTo((theirs[i] as { fd: number }).fd, 2));
+  });
+  it("Hoyoung's too (its figures barely measured, most levels filled in): within a tenth of a level a node on average (0.08)", () => {
+    const g = gap(built("Hoyoung") as HexaStep[], hoyoungCapture.steps as HexaStep[]);
+    expect(g.average).toBeLessThan(0.1);
+    expect(g.most).toBeLessThanOrEqual(16);
+  });
+  it("a job's nodes: MapleScouter's icon names (none for Mo Xuan: MapleScouter has none)", () => {
+    expect(hexaJob("Night Walker")!.nodes.map((n) => n.icon)).toEqual(["NightWalker_1", "NightWalker_10", "NightWalker_2", "NightWalker_7", "NightWalker_8", "NightWalker_9", "NightWalker_3", "NightWalker_4", "NightWalker_5", "NightWalker_6", "General_1_0", "General_2", "NightWalker_11"]);
+    expect(hexaJob("Mo Xuan")!.nodes.filter((n) => n.icon !== null).map((n) => n.key)).toEqual(["janus", "hecate"]);
+  });
+  it("a job's figures are kept once built, until forgotten (the tests' fresh start)", () => {
+    const first = hexaJob("Ren");
+    const order = jobOrder("Ren");
+    expect(hexaJob("Ren")).toBe(first);
+    forgetHexa();
+    expect(hexaJob("Ren")).not.toBe(first);
+    expect(hexaJob("Ren")).toEqual(first);
+    // and its order, built again
+    expect(jobOrder("Ren")).not.toBe(order);
+  });
+  it("the page's order: built once per job and kept; none for a job it doesn't work out", () => {
+    expect(jobOrder("Ren")).toBe(jobOrder("Ren"));
+    expect(jobOrder("Ren")).toEqual(built("Ren"));
+    expect([jobOrder("Sia Astelle"), jobOrder("Jett")]).toEqual([null, null]);
+  });
   it("Ren's order: every node but Sol Janus reaches 30, each step starting where the last ended (Origin from 1)", () => {
     const end: Record<string, number> = {};
-    for (const s of REN_ORDER.steps) {
-      if ("stat" in s) continue;
+    for (const s of built("Ren")) {
       expect(s.from).toBe(end[s.node] ?? (s.node === "origin" ? 1 : 0));
       end[s.node] = s.to;
     }
     expect(Object.keys(end).sort()).toEqual(["ascent", "boost1", "boost2", "boost3", "boost4", "common3", "hecate", "mastery1", "mastery2", "mastery3", "mastery4", "origin"]);
     expect(Object.values(end).every((l) => l === 30)).toBe(true);
-    expect(REN_ORDER.steps.filter((s) => "stat" in s).map((s) => s.to)).toEqual([20, 20, 20]);
+  });
+});
+
+describe("placeStats: HEXA Stat nodes put in by their damage per fragment", () => {
+  const T: CostTable = { erda: Array(30).fill(1), frags: Array(30).fill(100) };
+  const steps = [
+    { node: "a", from: 0, to: 1, fd: 10 }, // ln 1.1 / 100 = 0.000953 a fragment
+    { node: "b", from: 0, to: 1, fd: 2 }, //  0.000198
+    { node: "a", from: 1, to: 2, fd: 1 }, //  0.0000995
+  ];
+  const frags = () => 100;
+  it("each before the first step worth less, in order, never before the node before it", () => {
+    // I: +6% for 500 (0.000117 a fragment): after a and b, before a 1 → 2; II: +50% for 200 (0.00203): it
+    // would go first, but not before I
+    const out = placeStats(steps, frags, [
+      { stat: 1, frags: 500, fd: 6 },
+      { stat: 2, frags: 200, fd: 50 },
+    ]);
+    expect(out.map((s) => ("stat" in s ? `stat${s.stat}` : `${s.node}${s.to}`))).toEqual(["a1", "b1", "stat1", "stat2", "a2"]);
+    expect(out.find((s) => "stat" in s)).toEqual({ stat: 1, to: 20 });
+  });
+  it("one worth exactly as much as a step goes after it", () => {
+    // ln 1.02 / 100 a fragment, the same as b's
+    expect(placeStats(steps, frags, [{ stat: 1, frags: 100, fd: 2 }]).map((s) => ("stat" in s ? "stat" : s.node))).toEqual(["a", "b", "stat", "a"]);
+  });
+  it("one worth less than every step goes last; one worth more than all, first", () => {
+    expect(placeStats(steps, frags, [{ stat: 1, frags: 1000, fd: 0.1 }]).map((s) => ("stat" in s ? "stat" : s.node))).toEqual(["a", "b", "a", "stat"]);
+    expect(placeStats(steps, frags, [{ stat: 1, frags: 10, fd: 50 }]).map((s) => ("stat" in s ? "stat" : s.node))).toEqual(["stat", "a", "b", "a"]);
+  });
+});
+
+describe("HEXA Stat's damage: statOutcomes, statFd, bestStats", () => {
+  it("statOutcomes by hand: one rank-up from main line 0: main 35%, each additional 32.5%; at 10 / one additional at 10: the rest", () => {
+    const one = statOutcomes(0, 0, 0, 1, STAT_PRIMARY_CHANCE);
+    expect(one.map((o) => [o.p, o.a, o.b, o.chance])).toEqual([
+      [1, 0, 0, 0.35],
+      [0, 1, 0, 0.325],
+      [0, 0, 1, 0.325],
+    ]);
+    // main line at 10 (never chosen), one additional at 10: the other takes it
+    expect(statOutcomes(10, 10, 0, 21, STAT_PRIMARY_CHANCE).map((o) => [o.p, o.a, o.b, o.chance])).toEqual([[10, 10, 1, 1]]);
+    // already there: as it is
+    expect(statOutcomes(6, 7, 7, 20, STAT_PRIMARY_CHANCE)).toEqual([{ p: 6, a: 7, b: 7, chance: 1 }]);
+  });
+  it("statOutcomes: the chances add up to 1, every end at rank 20, and agree with rank-ups simulated one at a time (200,000 runs, main line's average level)", () => {
+    const ends = statOutcomes(0, 0, 0, 20, STAT_PRIMARY_CHANCE);
+    expect(ends.reduce((s, o) => s + o.chance, 0)).toBeCloseTo(1, 12);
+    expect(ends.every((o) => o.p + o.a + o.b === 20 && o.p <= 10 && o.a <= 10 && o.b <= 10)).toBe(true);
+    const rand = generator(5);
+    let mainTotal = 0;
+    let aTen = 0;
+    for (let i = 0; i < 200_000; i++) {
+      let [p, a, b] = [0, 0, 0];
+      while (p + a + b < 20) {
+        const q = STAT_PRIMARY_CHANCE[p]!;
+        const r = rand();
+        if (r < q) p++;
+        else if (a >= 10) b++;
+        else if (b >= 10) a++;
+        else if (r < q + (1 - q) / 2) a++;
+        else b++;
+      }
+      mainTotal += p;
+      if (a === 10) aTen++;
+    }
+    const exp = ends.reduce((s, o) => s + o.chance * o.p, 0);
+    expect(Math.abs(mainTotal / 200_000 - exp)).toBeLessThan(0.01);
+    expect(Math.abs(aTen / 200_000 - ends.filter((o) => o.a === 10).reduce((s, o) => s + o.chance, 0))).toBeLessThan(0.003);
+  });
+  it("statFd by hand: ATT main 10 (100) × 0.04 + main stat additional 5 (500) × 0.003 + crit additional 5 (1.75) × 0.4: 6.2; a line without a stat: nothing", () => {
+    const worth = { mainStat: 0.003, att: 0.04, bossDmg: 0.12, ied: 0.15, dmg: 0.12, critDmg: 0.4 };
+    expect(statFd([{ stat: "att", level: 10 }, { stat: "mainStat", level: 5 }, { stat: "critDmg", level: 5 }], STAT_AMOUNTS, worth)).toBeCloseTo(4 + 1.5 + 0.7, 12);
+    // the same stat as an additional line gives the additional table (ATT 10: 50)
+    expect(statFd([{ stat: null, level: 10 }, { stat: "att", level: 10 }, { stat: null, level: 0 }], STAT_AMOUNTS, worth)).toBeCloseTo(2, 12);
+  });
+  it("bestStats by hand: the stat worth most on the main line, the next two on the others; picked lines stay; a taken main line is skipped", () => {
+    const worth = { mainStat: 0, att: 1, bossDmg: 0.5, ied: 0.1, dmg: 0.01, critDmg: 0.2 };
+    const none = [{ stat: null, level: 0 }, { stat: null, level: 0 }, { stat: null, level: 0 }];
+    // by what a line gives at 10 × its worth: ATT 100, boss 10, IED 2, crit 1.4, damage 0.15, main stat 0
+    // ATT (worth most) main; boss and IED the additional ones
+    const best = bestStats(none, [], STAT_AMOUNTS, worth, HEXA_STATS);
+    expect(best.stats).toEqual(["att", "bossDmg", "ied"]);
+    expect(best.assumed).toBe(true);
+    // ATT taken by another node's main line: boss main, ATT an additional line
+    const taken = bestStats(none, ["att"], STAT_AMOUNTS, worth, HEXA_STATS);
+    expect(taken.stats[0]).toBe("bossDmg");
+    expect(taken.stats.slice(1)).toContain("att");
+    // all picked: as picked, not assumed
+    const picked = [{ stat: "dmg" as const, level: 0 }, { stat: "ied" as const, level: 0 }, { stat: "mainStat" as const, level: 0 }];
+    expect(bestStats(picked, ["dmg"], STAT_AMOUNTS, worth, HEXA_STATS)).toEqual({ stats: ["dmg", "ied", "mainStat"], assumed: false });
+    // a line picked, the others filled around it: crit damage on the main line, ATT and boss (worth most) on the others
+    expect(bestStats([{ stat: "critDmg", level: 2 }, { stat: null, level: 1 }, { stat: null, level: 0 }], [], STAT_AMOUNTS, worth, HEXA_STATS)).toEqual({ stats: ["critDmg", "att", "bossDmg"], assumed: true });
+    // its main line picked but an additional line's stat worth most: kept where picked
+    expect(bestStats([{ stat: null, level: 0 }, { stat: "att", level: 0 }, { stat: null, level: 0 }], [], STAT_AMOUNTS, worth, HEXA_STATS).stats).toEqual(["bossDmg", "att", "ied"]);
   });
 });
 

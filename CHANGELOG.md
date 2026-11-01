@@ -2,6 +2,18 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v3.1.0: HEXA for every job, and HEXA Stat's damage (2026-11-01)
+
+- **Every job's HEXA** (all but the SHINE classes, Erel Light and Sia Astelle, which have Erda Link: the page says so): each job's nodes with the MapleStory Wiki's names and MapleScouter's icons, and its damage per core level, **MapleScouter's figures through mapledoro's copy** (53 classes, collected before MapleScouter blocked scripts), put together with mapledoro's method in our own code.
+- **The order is built from those figures** (each time the jump with the most damage per fragment), for every job, Ren included. Checked against MapleScouter's own orders for Ren and Hoyoung (the two published): within a tenth of a level a node on average; the step gains within 5% for 187 of Ren's 188 steps and 171 of Hoyoung's 183.
+- **HEXA Stat's damage**, worked out from the character's stat values: each line's amount per level (MapleScouter's and the wiki's tables agree) × what 1 of its stat is worth, on average over the random rank-ups. A line without a stat counts as the best for the character (the stat worth most on the main line), shown as "best stats assumed". HEXA Stat rows now have a final damage and their own place in the order.
+- **A new stat value: 1 main stat that % doesn't multiply** (HEXA Stat's main stat is flat; MapleScouter's "Not Affected by % STR"; 0.29 to start, from the owner's sheet), on the gear pages' stat values.
+- **`node scripts/hexa-data.mjs`** rebuilds every job's figures (the wiki's names, mapledoro's figures) by hand after a patch.
+- **Long wiki names shown short** where room is tight (the part after the colon: "Divided Heavens"), the full name on hover.
+- **From the review pass** (10 findings, all handled): Lynn's and Mo Xuan's 3rd Common node, which the figures put above its level 30 at level 0, counts as worth nothing (it showed a −0.41% step), and a step never shows a loss; saving stat values reloads the HEXA page too; a HEXA Stat node's damage says "working out…" while a change is being saved; a gap-filling case that would have crashed on a future figures file; the job figures built on first use; repeated work trimmed; the tests use the page's own order; DESIGN.md and PLAN.md corrected.
+- **From a second review pass** (10 findings: 7 fixed, 3 left for v3.2.0, noted in PLAN.md): three click-through checks of the stat values were refused for the missing new value, not for what they test (fixed); every HEXA Stat node says "working out…" while any node's change is being saved (their assumed stats depend on each other); a figures refresh can't make a multiplier core divide by zero; Mo Xuan's nodes never take a stray picture; the saved input and the stat values read together; the figures script says which page the wiki failed on; two comments corrected.
+- **Mutation testing: 100%.** The HEXA tests clear the kept job figures and orders before each run (kept, mutation testing's planted bugs never ran); the gap-filling paths no job's figures use are tested on made-up figures; a core without even level 1 measured follows Ren's curve (mapledoro's bend to levels 5, 15 and 25 left out: no job needs it).
+
 ## v3.0.0: HEXA, for Ren (2026-10-29)
 
 - **A new HEXA page** (its own tab, after Symbols), Ren only for now: the 6th job's matrix as typed, per character. **Laid out after the owner's review** (layout A of five mockups, like hexa-matrix-tracker: small, little text, the skills' pictures), with two views:

@@ -1,18 +1,20 @@
-import { HEXA_DEFAULTS, type HexaInput, type HexaStat } from "@miku/shared";
+import { HEXA_DEFAULTS, type HexaInput, type HexaStat, STAT_VALUE_DEFAULTS } from "@miku/shared";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { focusManager } from "@tanstack/react-query";
+import { focusManager, QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { App } from "../src/App";
+import { useSaveStatValues } from "../src/api/hooks";
 import type { HexaBoard, HexaTabs } from "../src/api/types";
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // A made-up board: the numbers are the server's to work out (tested there); here, what the page shows and does.
 const TABS: HexaTabs = {
   characters: [
-    { id: 1, name: "RemyRabbit", job: "Ren", level: 279, avatar: null, known: true },
-    { id: 2, name: "meowoblush", job: "Night Walker", level: 275, avatar: null, known: false },
-    { id: 3, name: "PlumBlade", job: "Ren", level: 275, avatar: null, known: true },
+    { id: 1, name: "RemyRabbit", job: "Ren", level: 279, avatar: null, known: true, shine: false },
+    { id: 2, name: "StarGazer", job: "Sia Astelle", level: 275, avatar: null, known: false, shine: true },
+    { id: 3, name: "PlumBlade", job: "Ren", level: 275, avatar: null, known: true, shine: false },
+    { id: 4, name: "Newcomer", job: "Jett", level: 270, avatar: null, known: false, shine: false },
   ],
 };
 const NODES: HexaBoard["nodes"] = [
@@ -30,7 +32,7 @@ const NODES: HexaBoard["nodes"] = [
   ["hecate", "Sol Hecate", "common", 0],
   ["common3", "Lotus Flower", "common", 0],
 ].map(([key, name, group, min]) => ({ key, name, group, icon: key === "origin" ? "/item-icons/hexa/Len_1.png" : null, min, max: 30 }) as HexaBoard["nodes"][number]);
-const row = (node: string, name: string, from: number, to: number, frags: number, fd: number | null, total: number, days: number | null, partial = false) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags }, fd, partial, total: { erda: 3, frags: total }, days });
+const row = (node: string, name: string, from: number, to: number, frags: number, fd: number, total: number, days: number | null, partial = false) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags }, fd, partial, total: { erda: 3, frags: total }, days });
 const line = (stat: HexaStat | null, level: number) => ({ stat, level });
 const INPUT: HexaInput = {
   ...structuredClone(HEXA_DEFAULTS),
@@ -40,7 +42,7 @@ const INPUT: HexaInput = {
     { lines: [line(null, 0), line(null, 0), line(null, 0)], unlocked: false },
   ],
 };
-const step = (node: string, name: string, from: number, to: number, fd: number | null, done: boolean, days: number | null) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags: 50 }, fd, done, days });
+const step = (node: string, name: string, from: number, to: number, fd: number, done: boolean, days: number | null) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags: 50 }, fd, done, days });
 const BOARD: HexaBoard = {
   known: true,
   input: INPUT,
@@ -48,14 +50,14 @@ const BOARD: HexaBoard = {
   invested: { erda: 25, frags: 3000, exact: false },
   left: { erda: 1439, frags: 38743, exact: true },
   stats: [
-    { lines: INPUT.stats[0].lines, rank: 20, unlocked: true, needs: null, spent: { erda: 5, frags: 351.2 }, left: { erda: 0, frags: 0 } },
-    { lines: INPUT.stats[1].lines, rank: 2, unlocked: true, needs: null, spent: { erda: 10, frags: 220 }, left: { erda: 0, frags: 298.4 } },
-    { lines: INPUT.stats[2].lines, rank: 0, unlocked: false, needs: null, spent: { erda: 0, frags: 0 }, left: { erda: 15, frags: 673.1 } },
+    { lines: INPUT.stats[0].lines, rank: 20, unlocked: true, needs: null, spent: { erda: 5, frags: 351.2 }, left: { erda: 0, frags: 0 }, worked: ["att", "mainStat", "critDmg"], assumed: false, fdNow: 4.86, fdToCome: 0 },
+    { lines: INPUT.stats[1].lines, rank: 2, unlocked: true, needs: null, spent: { erda: 10, frags: 220 }, left: { erda: 0, frags: 298.4 }, worked: ["bossDmg", "att", "mainStat"], assumed: true, fdNow: 0.19, fdToCome: 3.51 },
+    { lines: INPUT.stats[2].lines, rank: 0, unlocked: false, needs: null, spent: { erda: 0, frags: 0 }, left: { erda: 15, frags: 673.1 }, worked: ["ied", "att", "mainStat"], assumed: true, fdNow: 0, fdToCome: 3.87 },
   ],
   priority: [
     row("mastery3", "Wish Unending", 0, 1, 50, 5.33, 50, 0),
     row("hecate", "Sol Hecate", 0, 1, 125, 3.75, 175, 2.5),
-    row("stat2", "HEXA Stat II", 2, 20, 298, null, 473, 40),
+    row("stat2", "HEXA Stat II", 2, 20, 298, 3.51, 473, 40),
     row("boost1", "Thousand Blossom Flurry", 1, 4, 300, 0.12, 773, null, true),
   ],
   fdToDesired: 89.97,
@@ -63,7 +65,7 @@ const BOARD: HexaBoard = {
   order: [
     step("mastery3", "Wish Unending", 0, 1, 5.33, true, 0),
     step("mastery1", "Plum Blossom: Storm", 0, 1, 2.06, false, 0),
-    step("stat1", "HEXA Stat I", 0, 20, null, true, 0),
+    step("stat1", "HEXA Stat I", 0, 20, 3.92, true, 0),
     step("hecate", "Sol Hecate", 0, 1, 3.75, false, 2.5),
     step("origin", "Divided Heavens", 29, 30, 1.2, false, null),
   ],
@@ -86,17 +88,29 @@ describe("the HEXA page", () => {
     show();
     const rail = screen.getByRole("navigation");
     expect(within(rail).getByRole("link", { name: /HEXA/ }).getAttribute("aria-current")).toBe("page");
-    expect(within(await screen.findByRole("tablist", { name: "Characters" })).getAllByRole("tab").map((t) => t.textContent)).toEqual(["RemyRabbitLv. 279 · Ren", "meowoblushLv. 275 · Night Walker", "PlumBladeLv. 275 · Ren"]);
+    expect(within(await screen.findByRole("tablist", { name: "Characters" })).getAllByRole("tab").map((t) => t.textContent)).toEqual(["RemyRabbitLv. 279 · Ren", "StarGazerLv. 275 · Sia Astelle", "PlumBladeLv. 275 · Ren", "NewcomerLv. 270 · Jett"]);
     await screen.findByRole("region", { name: "HEXA summary" });
   });
 
-  it("a job not worked out yet: says so, nothing asked for", async () => {
+  it("a SHINE class, or a job not in the figures: says so, nothing asked for", async () => {
     const s = show();
-    await userEvent.click(await screen.findByRole("tab", { name: /meowoblush/ }));
-    expect(await screen.findByText(/HEXA for Night Walker comes later/)).toBeTruthy();
+    await userEvent.click(await screen.findByRole("tab", { name: /StarGazer/ }));
+    expect(await screen.findByText(/Sia Astelle is a SHINE class: it has Erda Link instead of the HEXA Matrix/)).toBeTruthy();
     expect(screen.queryByRole("region", { name: "HEXA summary" })).toBeNull();
-    // nothing asked for it (no character's board at all)
+    await userEvent.click(screen.getByRole("tab", { name: /Newcomer/ }));
+    expect(await screen.findByText(/HEXA for Jett isn't in the figures yet/)).toBeTruthy();
+    // nothing asked for them (no character's board at all)
     expect(s.calls.filter((c) => c.path.startsWith("/hexa/")).map((c) => c.path)).toEqual(["/hexa/1"]);
+  });
+
+  it("HEXA Stat's damage on each node: at rank 20 what it gives; else what rank 20 adds on average; the best stats assumed where none are picked", async () => {
+    show();
+    const levels = await region("Current progress");
+    const text = (n: string) => levels.getByRole("group", { name: n }).textContent!;
+    expect(text("HEXA Stat I")).toContain("+4.86%");
+    expect(text("HEXA Stat I")).not.toContain("assumed");
+    expect(text("HEXA Stat II")).toContain("≈ +3.51% to rank 20");
+    expect(text("HEXA Stat II")).toContain("best stats assumed (Boss DMG, ATT, Main stat)");
   });
 
   it("switching to another Ren shows Loading…, not the first one's board, until its own comes", async () => {
@@ -282,7 +296,7 @@ describe("the HEXA page", () => {
     expect((await region("Fragment calculator")).getByRole("status").textContent).toContain("never");
   });
 
-  it("the upgrade priority: the next upgrade on top, then each row's node, level, costs, final damage (— for HEXA Stat) and when it's ready", async () => {
+  it("the upgrade priority: the next upgrade on top, then each row's node, level, costs, final damage (≈ for HEXA Stat) and when it's ready", async () => {
     show();
     const list = await region("Upgrade priority");
     const next = list.getByRole("group", { name: "Next upgrade" }).textContent!;
@@ -294,7 +308,7 @@ describe("the HEXA page", () => {
     const inDays = (n: number) => new Date(today.getTime() + n * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", ...(new Date(today.getTime() + n * 86_400_000).getFullYear() === today.getFullYear() ? {} : { year: "numeric" }) });
     expect(rows.map((r) => [...r.querySelectorAll("td")].map((td) => td.textContent))).toEqual([
       ["SSol Hecate", "1", "3", "125", "+3.75%", inDays(3)],
-      ["HHEXA Stat II", "20", "3", "≈ 298", "—", inDays(40)],
+      ["HHEXA Stat II", "20", "3", "≈ 298", "≈ +3.51%", inDays(40)],
       ["TThousand Blossom Flurry", "4", "3", "300", "≈ +0.12%", "—"],
     ]);
     expect(rows.map((r) => r.classList.contains("affordable"))).toEqual([false, false, false]);
@@ -439,6 +453,39 @@ describe("the HEXA page", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(gets()).toBe(1);
     focusManager.setFocused(undefined);
+  });
+
+  it("saving a character's stat values (another page) marks its HEXA board to be worked out again (HEXA Stat's damage follows them)", async () => {
+    fakeServer({ ...BASE_ROUTES, "PUT /gear/:id/stat-values": undefined });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    qc.setQueryData(["hexa", 1], BOARD);
+    function Save() {
+      const save = useSaveStatValues(45);
+      return (
+        <button type="button" onClick={() => save.mutate({ id: 1, values: { ...STAT_VALUE_DEFAULTS, att: 3 } })}>
+          save
+        </button>
+      );
+    }
+    renderWithApp(<Save />, "/", qc);
+    expect(qc.getQueryState(["hexa", 1])!.isInvalidated).toBe(false);
+    await userEvent.click(screen.getByRole("button", { name: "save" }));
+    await waitFor(() => expect(qc.getQueryState(["hexa", 1])!.isInvalidated).toBe(true));
+  });
+
+  it("HEXA Stat's damage waits for the lines as saved: while a change to any node is being saved, every node says \"working out…\"", async () => {
+    show(BOARD, { "PUT /hexa/1": () => new Promise(() => {}) });
+    const levels = await region("Current progress");
+    const two = within(levels.getByRole("group", { name: "HEXA Stat II" }));
+    expect(levels.getByRole("group", { name: "HEXA Stat II" }).textContent).toContain("≈ +3.51% to rank 20");
+    const lv = two.getByRole("spinbutton", { name: "HEXA Stat II Main line level" });
+    await userEvent.clear(lv);
+    await userEvent.type(lv, "3{Enter}");
+    expect(levels.getByRole("group", { name: "HEXA Stat II" }).textContent).toContain("working out…");
+    expect(levels.getByRole("group", { name: "HEXA Stat II" }).textContent).not.toContain("+3.51%");
+    // the others too (their assumed stats skip the others' main lines): "working out…" until it's saved
+    expect(levels.getByRole("group", { name: "HEXA Stat I" }).textContent).toContain("working out…");
+    expect(levels.getByRole("group", { name: "HEXA Stat I" }).textContent).not.toContain("+4.86%");
   });
 
   it("a failed save says so", async () => {

@@ -1,6 +1,6 @@
 import { EPIC_DUNGEONS, HEXA_DEFAULTS, HEXA_STATS, type HexaInput } from "@miku/shared";
 import { describe, expect, it } from "vitest";
-import { approx, dateAfter, doneShare, dungeonLabels, formatCount, formatDays, HEXA_GROUPS, levelsText, lineMax, nodeTag, perWeekOf, rankOf, readyText, STAT_LABELS, statChoices, stepLabel, unlockedOf, wantedOf, withAllDesired, withLevel, withStatLine, withStatPick, withStatUnlocked } from "../src/lib/hexa";
+import { approx, dateAfter, doneShare, dungeonLabels, formatCount, formatDays, HEXA_GROUPS, levelsText, lineMax, nodeTag, perWeekOf, rankOf, readyText, sameLines, shortName, STAT_LABELS, statChoices, stepLabel, unlockedOf, wantedOf, withAllDesired, withLevel, withStatLine, withStatPick, withStatUnlocked } from "../src/lib/hexa";
 
 const input = () => structuredClone(HEXA_DEFAULTS);
 
@@ -120,6 +120,28 @@ describe("the HEXA page's display rules", () => {
     expect(unlockedOf({ ...input().stats[1]!, unlocked: true })).toBe(true);
     const w = { ...input(), current: { ...input().current, ascent: 8 }, desired: { ...input().desired, ascent: 5, hecate: 12 } };
     expect([wantedOf(w, "ascent"), wantedOf(w, "hecate")]).toEqual([8, 12]);
+  });
+
+  it("shortName: after the last colon, without a [stance] or (stance) in front; a short name as it is", () => {
+    expect(["Rising Azure Dragon: Divided Heavens", "(Spirit) Unleash the Radiant Flame", "[Divine Will] Advent of Crimson", "Silence", "Sol Janus", "Soul-Shatter Talisman: Dance", "Sage: Apotheosis"].map(shortName)).toEqual([
+      "Divided Heavens",
+      "Unleash the Radiant Flame",
+      "Advent of Crimson",
+      "Silence",
+      "Sol Janus",
+      "Dance",
+      "Apotheosis",
+    ]);
+    // a bracket further in is part of the name
+    expect(shortName("Orbital Flame [Normal] Storm")).toBe("Orbital Flame [Normal] Storm");
+  });
+
+  it("sameLines: each line's stat and level the same", () => {
+    const a = [L("att", 3), L(null, 2), L("ied", 0)];
+    expect(sameLines(a, [L("att", 3), L(null, 2), L("ied", 0)])).toBe(true);
+    expect(sameLines(a, [L("att", 3), L(null, 2), L("ied", 1)])).toBe(false);
+    expect(sameLines(a, [L("att", 3), L("dmg", 2), L("ied", 0)])).toBe(false);
+    expect(sameLines(a, [L("bossDmg", 3), L(null, 2), L("ied", 0)])).toBe(false);
   });
 
   it("approx, nodeTag, stepLabel", () => {

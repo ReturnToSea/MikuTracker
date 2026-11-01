@@ -252,6 +252,7 @@ model StatValues {
   cd5         Float?
   cd6         Float?
   cdMin       Int     @default(0)
+  mainFlat    Float   @default(0.29) // 1 main stat that % doesn't multiply (v3.1.0: HEXA Stat)
 }
 
 // A character's HEXA page (v3.0.0), as typed: `data` is the JSON of @miku/shared's HexaInput (each

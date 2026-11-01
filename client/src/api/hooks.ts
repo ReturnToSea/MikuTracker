@@ -172,10 +172,10 @@ export function useSaveSymbol(world: number) {
   });
 }
 
-// After a gear save: the board, and the Flames, Star Force, Potential and Upgrades pages' numbers (which follow
-// the items, their details and the stat values).
+// After a gear save: the board, and the Flames, Star Force, Potential, Upgrades and HEXA pages' numbers (which
+// follow the items, their details and the stat values: HEXA Stat's damage, v3.1.0).
 const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) =>
-  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] }), qc.invalidateQueries({ queryKey: ["upgrades"] })]);
+  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] }), qc.invalidateQueries({ queryKey: ["upgrades"] }), qc.invalidateQueries({ queryKey: ["hexa"] })]);
 
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });

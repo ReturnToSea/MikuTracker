@@ -21,7 +21,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - `src/lib/`: display logic as plain tested functions.
   - `src/looks/`: canvas drawing only, checked by eye.
   - `src/components/` and `src/pages/`: mostly layout.
-- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), `hexa-icons.mjs` (download the HEXA page's pictures, by hand), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
+- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), `hexa-icons.mjs` / `hexa-data.mjs` (download the HEXA page's pictures, and rebuild every job's HEXA figures after a patch, by hand), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
 - The data lives outside the repo, in `~/Library/Application Support/MikuTracker/`:
   - `miku.db`: real data; only the always-on app uses it.
   - `dev.db`: development (`npm run dev`, `npm run db:migrate`).
@@ -53,7 +53,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 
 - **Game time is UTC.** Daily resets and "EXP per day" use UTC days, computed explicitly in UTC, and are shown in local time.
 - **Big numbers (EXP, raid power) are `BigInt` in the database** and plain numbers in JSON, which are exact up to 9,007,199,254,740,991. The most EXP a character can have, 8,509,498,537,428,819, fits.
-- **Game figures** (worlds, the EXP table, boss crystal prices, symbols, the gear list, Star Force, flames, potential) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table and boss prices after each GMS patch, and rebuild the gear list (`node scripts/gear-data.mjs`) and the potential list.
+- **Game figures** (worlds, the EXP table, boss crystal prices, symbols, the gear list, Star Force, flames, potential, HEXA) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table and boss prices after each GMS patch, and rebuild the gear list (`node scripts/gear-data.mjs`), the potential list and the HEXA figures (`node scripts/hexa-data.mjs`).
 - **The server binds `127.0.0.1`** and refuses other addresses until login exists. The only exception is Docker: `HOST=0.0.0.0` with `MIKU_IN_CONTAINER=1`, port published to `127.0.0.1`.
 - **Front end:** no hard-coded colors; only theme CSS variables (`client/src/styles/themes.css`). Ren is the default.
 - **Theme art, boss art and item icons never go in git.** They live in the data folder's `theme-art/`, `boss-art/` and `item-icons/`.
