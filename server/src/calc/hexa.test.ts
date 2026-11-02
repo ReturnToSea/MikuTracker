@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { HEXA_STATS } from "@miku/shared";
-import { BOOST, type CostTable, hexaJob, type HexaStep, MASTERY, STAT_AMOUNTS, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
+import { attOf, BOOST, type CostTable, hexaJob, type HexaStep, MASTERY, STAT_AMOUNTS, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
 import { forgetHexa, jobOrder, orderFor } from "../services/hexa";
 import hoyoungCapture from "../../test/fixtures/maplescouter-hoyoung.json";
 import renCapture from "../../test/fixtures/maplescouter-ren.json";
-import { addCost, bestStats, buildOrder, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
+import { addCost, bestStats, buildOrder, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
 
 // (mulberry32, a small generator good enough for these simulations; a plain multiply-and-add one was 0.9% off)
 function generator(start: number): () => number {
@@ -325,6 +325,41 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     // and its order, built again
     expect(jobOrder("Ren")).not.toBe(order);
   });
+  it("a job's flat-ATT node, from MapleScouter's figures: Kanna's 3rd Common node, Zero's 4th Mastery; none for Ren", () => {
+    expect(hexaJob("Kanna")!.att).toEqual({ node: "common3", points: [[1, 30.6], [15, 39], [30, 48]] });
+    expect(hexaJob("Zero")!.att).toEqual({ node: "mastery4", points: [[1, 15], [15, 36], [30, 60]] });
+    expect(hexaJob("Ren")!.att).toBeNull();
+    expect(hexaJob("Night Walker")!.att).toBeNull();
+  });
+  it("a flat-ATT table naming a core no node is (a figures refresh): none, not a crash", () => {
+    expect(attOf({ core: "generalCore9", points: [[1, 2], [30, 9]] })).toBeNull();
+    expect(attOf(null)).toBeNull();
+    expect(attOf({ core: "masteryCore4", points: [[1, 2], [30, 9]] })).toEqual({ node: "mastery4", points: [[1, 2], [30, 9]] });
+  });
+  it("an ATT node's order: with ATT worth more, the node comes earlier and every step together gains more; worth nothing, the figures' order", () => {
+    const kanna = hexaJob("Kanna")!;
+    const firstAt = (steps: ReturnType<typeof orderFor>) => steps.findIndex((s) => s.node === "common3");
+    const together = (steps: ReturnType<typeof orderFor>) => steps.reduce((m, s) => m * (1 + s.fd / 100), 1);
+    const [none, some, lots] = [orderFor(kanna, 0), orderFor(kanna, 0.05), orderFor(kanna, 0.2)];
+    expect(firstAt(lots)).toBeLessThan(firstAt(some));
+    expect(firstAt(some)).toBeLessThan(firstAt(none));
+    // every step together: the figures' whole gain × what 48 ATT adds (at 0.2% a 1 ATT: × 1.096)
+    expect(together(lots) / together(none)).toBeCloseTo(1 + (48 * 0.2) / 100, 6);
+    // a job without one: the same order at any ATT worth
+    expect(orderFor(hexaJob("Ren")!, 0.2)).toEqual(orderFor(hexaJob("Ren")!, 0));
+    // (several orders built: slow under mutation testing's instrumented code)
+  }, 60_000);
+  it("the page's order for an ATT job: kept per 1 ATT's worth; for another job, one per job whatever the worth", () => {
+    expect(jobOrder("Kanna", 0.05)).toBe(jobOrder("Kanna", 0.05));
+    expect(jobOrder("Kanna", 0.05)).not.toEqual(jobOrder("Kanna", 0.2));
+    expect(jobOrder("Kanna", 0.2)).toEqual(orderFor(hexaJob("Kanna")!, 0.2));
+    expect(jobOrder("Ren", 0.05)).toBe(jobOrder("Ren", 0.2));
+    // to 4 decimals: the same order kept for the same value typed slightly differently; built with that value
+    expect(jobOrder("Kanna", 0.05000001)).toBe(jobOrder("Kanna", 0.05));
+    expect(jobOrder("Kanna", 0.12344)).toEqual(orderFor(hexaJob("Kanna")!, 0.1234));
+    expect(jobOrder("Kanna", 0.12346)).not.toBe(jobOrder("Kanna", 0.12344));
+    // (several orders built: slow under mutation testing's instrumented code)
+  }, 60_000);
   it("the page's order: built once per job and kept; none for a job it doesn't work out", () => {
     expect(jobOrder("Ren")).toBe(jobOrder("Ren"));
     expect(jobOrder("Ren")).toEqual(built("Ren"));
@@ -432,6 +467,32 @@ describe("HEXA Stat's damage: statOutcomes, statFd, bestStats", () => {
     expect(bestStats([{ stat: "critDmg", level: 2 }, { stat: null, level: 1 }, { stat: null, level: 0 }], [], STAT_AMOUNTS, worth, HEXA_STATS)).toEqual({ stats: ["critDmg", "att", "bossDmg"], assumed: true });
     // its main line picked but an additional line's stat worth most: kept where picked
     expect(bestStats([{ stat: null, level: 0 }, { stat: "att", level: 0 }, { stat: null, level: 0 }], [], STAT_AMOUNTS, worth, HEXA_STATS).stats).toEqual(["bossDmg", "att", "ied"]);
+  });
+});
+
+describe("coreAttAt: a node's flat ATT at a level", () => {
+  // Kanna's: 30.6 at 1, 39 at 15, 48 at 30 (MapleScouter's)
+  const KANNA = [[1, 30.6], [15, 39], [30, 48]] as const;
+  it("nothing at level 0; the measured levels as measured; straight lines between them (worked out by hand)", () => {
+    expect(coreAttAt(KANNA, 0)).toBe(0);
+    expect(coreAttAt(KANNA, 1)).toBe(30.6);
+    expect(coreAttAt(KANNA, 15)).toBe(39);
+    expect(coreAttAt(KANNA, 30)).toBe(48);
+    // 8: halfway from 1 to 15: 30.6 + 8.4 / 2 = 34.8; 22: 7/15 of the way from 15 to 30: 39 + 9 × 7/15 = 43.2
+    expect(coreAttAt(KANNA, 8)).toBeCloseTo(34.8, 12);
+    expect(coreAttAt(KANNA, 22)).toBeCloseTo(43.2, 12);
+    // 2: 1/14 of the way: 30.6 + 0.6
+    expect(coreAttAt(KANNA, 2)).toBeCloseTo(31.2, 12);
+  });
+  it("points that start past level 1 rise from nothing at 0; past the last point, the last (a figures refresh can't crash it)", () => {
+    // from 5 at 10: level 4 is 4/10 of the way from 0; level 30 past the last (20): 8
+    expect(coreAttAt([[10, 5], [20, 8]], 4)).toBeCloseTo(2, 12);
+    expect(coreAttAt([[10, 5], [20, 8]], 30)).toBe(8);
+    expect(coreAttAt([[10, 5], [20, 8]], 20)).toBe(8);
+  });
+  it("two points only (1 and 30)", () => {
+    // Adele's: 10 at 1, 77 at 30: level 16 is 15/29 of the way: 10 + 67 × 15/29
+    expect(coreAttAt([[1, 10], [30, 77]], 16)).toBeCloseTo(10 + (67 * 15) / 29, 12);
   });
 });
 

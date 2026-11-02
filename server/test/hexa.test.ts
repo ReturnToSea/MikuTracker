@@ -342,6 +342,37 @@ describe("GET /api/hexa/:id", () => {
     expect(r.stats[0].fdNow).toBeCloseTo(((2000 * 0.29 + 25 * 4 + 1.75 * 42.38) * 0.785) / 100, 12);
   });
 
+  it("an ATT node (Kanna's 3rd Common node): named, its rows' damage an estimate; the more 1 ATT is worth, the earlier it comes", async () => {
+    const id = await character("Kanna");
+    const values = (att: number) => ({ characterId: id, att, allStat: 14, secRatio: 0.1, bossDmg: 12, fdPer100: 1, attPct: 50, mainFlat: 0.3, critDmg: 40, ied300: 15, ied380: 20, bossDef: 380, cdMin: 0 });
+    await db().statValues.create({ data: values(1) });
+    const low = await get(`/api/hexa/${id}`);
+    expect(low.attNode).toBe(low.nodes.find((n: { key: string }) => n.key === "common3").name);
+    const firstAt = (b: { priority: { node: string }[] }) => b.priority.findIndex((r) => r.node === "common3");
+    await db().statValues.update({ where: { characterId: id }, data: { att: 20 } });
+    const high = await get(`/api/hexa/${id}`);
+    expect(firstAt(high)).toBeLessThan(firstAt(low));
+    // its rows: the damage an estimate, the cost not; HEXA Stat's: both; an ordinary node's: neither
+    const est = (b: { priority: { node: string; partial: boolean; estimate: { cost: boolean; fd: boolean } }[] }, node: string) => b.priority.filter((r) => r.node === node).map((r) => r.estimate);
+    expect(new Set(est(high, "common3").map((e) => JSON.stringify(e)))).toEqual(new Set([JSON.stringify({ cost: false, fd: true })]));
+    expect(est(high, "stat1")).toEqual([{ cost: true, fd: true }]);
+    expect(high.order.filter((s: { node: string }) => s.node === "common3").every((s: { estimate: { fd: boolean; cost: boolean } }) => s.estimate.fd && !s.estimate.cost)).toBe(true);
+    expect(high.order.find((s: { node: string }) => s.node === "stat2").estimate).toEqual({ cost: true, fd: true });
+    expect(high.order.find((s: { node: string }) => s.node === "origin").estimate).toEqual({ cost: false, fd: false });
+  });
+
+  it("estimates on a job without an ATT node (Ren): HEXA Stat's rows, and a row that's part of a step (its damage in proportion)", async () => {
+    const id = await character();
+    // Raining Blossoms wanted at 2 only: its first step is 0 → 3, so its row is part of that step
+    await save(id, withLevels({}, { desired: { ...HEXA_DEFAULTS.desired, mastery4: 2 } }));
+    const b = await get(`/api/hexa/${id}`);
+    expect(b.attNode).toBeNull();
+    for (const r of b.priority) expect(r.estimate).toEqual({ cost: r.node.startsWith("stat"), fd: r.node.startsWith("stat") || r.partial });
+    expect(b.priority.some((r: { partial: boolean }) => r.partial)).toBe(true);
+    expect(b.priority.some((r: { estimate: { fd: boolean } }) => !r.estimate.fd)).toBe(true);
+    expect(b.order.filter((s: { estimate: { fd: boolean } }) => s.estimate.fd).map((s: { node: string }) => s.node)).toEqual(["stat1", "stat2", "stat3"]);
+  });
+
   it("icons: none until downloaded into the data folder's item-icons/hexa/, then their addresses, served", async () => {
     const id = await character();
     const none = await get(`/api/hexa/${id}`);
@@ -369,7 +400,7 @@ describe("GET /api/hexa/:id", () => {
     await save(nw, withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }));
     const b = await get(`/api/hexa/${nw}`);
     const none = { erda: 0, frags: 0, exact: true };
-    expect(b).toEqual({ known: false, input: withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }), nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek: 145, needed: 0, days: 0 }, order: [], icons: { stat: null, erda: null, frags: null }, figures: { erdaRequest: 90, dungeons: { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 } }, source: "" });
+    expect(b).toEqual({ known: false, input: withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }), nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek: 145, needed: 0, days: 0 }, order: [], icons: { stat: null, erda: null, frags: null }, figures: { erdaRequest: 90, dungeons: { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 } }, source: "", attNode: null });
     const theirs = await character("Ren", "someone-else");
     expect((await api().get(`/api/hexa/${theirs}`)).status).toBe(404);
     expect((await api().put(`/api/hexa/${theirs}`).send(HEXA_DEFAULTS)).status).toBe(404);

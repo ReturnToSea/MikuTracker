@@ -4,6 +4,7 @@ import { ThemeEffect } from "./components/ThemeEffect";
 import { BossesPage } from "./pages/BossesPage";
 import { ChecklistPage } from "./pages/ChecklistPage";
 import { ExpTablePage } from "./pages/ExpTablePage";
+import { FamiliarsPage } from "./pages/FamiliarsPage";
 import { HexaPage } from "./pages/HexaPage";
 import { SymbolsPage } from "./pages/SymbolsPage";
 import { HomePage } from "./pages/HomePage";
@@ -28,6 +29,7 @@ export function App() {
             <Route path="/checklist" element={<ChecklistPage />} />
             <Route path="/symbols" element={<SymbolsPage />} />
             <Route path="/hexa" element={<HexaPage />} />
+            <Route path="/familiars" element={<FamiliarsPage />} />
             <Route path="/gear" element={<GearPage />} />
             <Route path="/gear/flames" element={<FlamesPage />} />
             <Route path="/gear/starforce" element={<StarForcePage />} />

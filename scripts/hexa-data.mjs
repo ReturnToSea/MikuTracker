@@ -9,6 +9,10 @@
 //   - each job's node names: the MapleStory Wiki's "<job>/Skills" page, "HEXA Skills" sections: Origin and
 //     Ascent, Mastery 1–4, Boost 1–4 (the 5th job skill each boosts) and the 3rd Common node. A job whose
 //     nodes are "SHINE …" is a SHINE class (Erda Link, no HEXA Matrix).
+//   - the flat ATT a core also gives (v3.2.0: the 3rd Common node of about 20 jobs, a buff, and Zero's 4th
+//     Mastery node), by core level, which MapleScouter measured apart from the core figures: mapledoro's
+//     CORE_ATT table (src/features/characters/scouter/engine/scouterEngine.ts), uptime-weighted ATT at a
+//     few levels, straight lines between them, nothing at level 0.
 //   - the jobs: the gear list's (gear-items.json), keyed by the name Nexon's rankings use.
 // Whatever doesn't parse is reported, and the file isn't written.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -17,8 +21,11 @@ import path from "node:path";
 const OUT = path.resolve(import.meta.dirname, "../server/src/gameFigures/hexa-jobs.json");
 const GEAR = path.resolve(import.meta.dirname, "../server/src/gameFigures/gear-items.json");
 const ENGINE = "https://raw.githubusercontent.com/chablades/mapledoro/main/public/data/scouter-engine.json";
+const ENGINE_CODE = "https://raw.githubusercontent.com/chablades/mapledoro/main/src/features/characters/scouter/engine/scouterEngine.ts";
 const UA = { "User-Agent": "MikuTracker HEXA figures (personal, by hand)" };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+// The cores a node can be (server/src/calc/hexaDamage.ts CORE_KEYS, but Sol Janus's: none)
+const CORES = ["skillCore1", "skillCore2", "masteryCore1", "masteryCore2", "masteryCore3", "masteryCore4", "reinCore1", "reinCore2", "reinCore3", "reinCore4", "generalCore2", "generalCore3"];
 
 // The wiki's page names where they differ from Nexon's job names; mapledoro's class ids where they don't
 // follow from the name; MapleScouter's icon names (hexa-matrix-tracker's class registry).
@@ -67,6 +74,16 @@ const strip = (name) => name.replace(/^(HEXA|SHINE) /, "");
 
 const jobs = Object.keys(JSON.parse(readFileSync(GEAR, "utf8")).jobs).sort();
 const engine = await (await fetch(ENGINE, { headers: UA })).json();
+// CORE_ATT: `class: ["core", { level: ATT, … }]` entries, read from its block
+const code = await (await fetch(ENGINE_CODE, { headers: UA })).text();
+const block = code.slice(code.indexOf("export const CORE_ATT"), code.indexOf("};", code.indexOf("export const CORE_ATT")));
+const coreAtt = Object.fromEntries(
+  [...block.matchAll(/["']?(\w+)["']?: \["(\w+)", \{([^}]*)\}\]/g)].map(([, id, core, pts]) => [id, { core, points: pts.split(",").map((p) => p.split(":").map(Number)) }]),
+);
+if (Object.keys(coreAtt).length < 10) {
+  console.log(`mapledoro's CORE_ATT wasn't found (${Object.keys(coreAtt).length} entries). Nothing written.`);
+  process.exit(1);
+}
 const out = {};
 const problems = [];
 for (const job of jobs) {
@@ -83,9 +100,12 @@ for (const job of jobs) {
   const shine = [...mastery, ...common].some((n) => n.startsWith("SHINE"));
   const id = CLASS[job] ?? job.toLowerCase().replace(/[^a-z]+/g, "_");
   const figures = engine.classes[id];
-  const entry = { class: id, shine, icons: ICONS[job] ?? null, names: { origin: skill[0], ascent: skill[1], mastery: mastery.map(strip), boost, common3: common[2] ? strip(common[2]) : null }, cores: figures?.cores ?? null };
+  const entry = { class: id, shine, icons: ICONS[job] ?? null, names: { origin: skill[0], ascent: skill[1], mastery: mastery.map(strip), boost, common3: common[2] ? strip(common[2]) : null }, cores: figures?.cores ?? null, coreAtt: coreAtt[id] ?? null };
   const names = [entry.names.origin, entry.names.ascent, ...entry.names.mastery, ...entry.names.boost, entry.names.common3];
   if (!figures) problems.push(`${job}: no mapledoro class "${id}"`);
+  // (what the app relies on: a core it knows, points from level 1 to 30 in order, no negative ATT)
+  const pts = entry.coreAtt?.points ?? [];
+  if (entry.coreAtt && (!CORES.includes(entry.coreAtt.core) || pts[0]?.[0] !== 1 || pts.at(-1)?.[0] !== 30 || pts.some(([L, att], i) => !(att >= 0) || (i > 0 && !(L > pts[i - 1][0]))))) problems.push(`${job}: odd CORE_ATT ${JSON.stringify(entry.coreAtt)}`);
   if (!shine && (entry.names.mastery.length !== 4 || entry.names.boost.length !== 4 || names.some((n) => !n || n === "TBA" || n.includes("[[")))) problems.push(`${job}: names ${JSON.stringify(entry.names)}`);
   // (a core the figures put above its level 30 at level 0: the app counts it as worth nothing; worth a look)
   for (const [key, value] of Object.entries(entry.cores ?? {})) if (/=0$/.test(key) && value > 1) console.log(`  note: ${job}'s ${key} is ${value} (above 1)`);
@@ -97,5 +117,5 @@ if (problems.length) {
   process.exit(1);
 }
 const generated = new Date().toISOString().slice(0, 10);
-writeFileSync(OUT, `${JSON.stringify({ generated, sources: { figures: ENGINE, names: "https://maplestorywiki.net/w/<job>/Skills (HEXA Skills)" }, curves: engine.curves, jobs: out })}\n`);
+writeFileSync(OUT, `${JSON.stringify({ generated, sources: { figures: ENGINE, coreAtt: ENGINE_CODE, names: "https://maplestorywiki.net/w/<job>/Skills (HEXA Skills)" }, curves: engine.curves, jobs: out })}\n`);
 console.log(`${jobs.length} jobs written to ${OUT}.`);

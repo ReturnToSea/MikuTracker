@@ -52,6 +52,7 @@ model Character {
   symbols        SymbolState[]
   gear           GearSlot[]
   hexa           HexaPlan?
+  familiars      FamiliarPlan?
   statValues     StatValues?
 
   @@unique([ownerId, worldId, nameKey])
@@ -259,6 +260,15 @@ model StatValues {
 // node's level now and wanted, the HEXA Stat nodes, the fragment calculator), checked on saving and on
 // reading. No row: the defaults (HEXA_DEFAULTS).
 model HexaPlan {
+  characterId Int       @id
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  data        String
+}
+
+// A character's Familiars page (v3.2.0), as typed: `data` is the JSON of @miku/shared's FamiliarInput (the
+// three summoned familiars' ranks and lines, the badges equipped), checked on saving and on reading. No
+// row: the defaults (FAMILIAR_DEFAULTS).
+model FamiliarPlan {
   characterId Int       @id
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   data        String

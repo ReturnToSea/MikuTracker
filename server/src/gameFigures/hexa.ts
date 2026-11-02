@@ -52,7 +52,7 @@ const node = (key: HexaNode, name: string, group: HexaGroup, costs: CostTable, i
 // damage per core level (through mapledoro's copy, calc/hexaDamage.ts). SHINE classes (Erel Light, Sia
 // Astelle) have Erda Link instead of HEXA: not listed.
 export const HEXA_FIGURES = { generated: figures.generated, sources: figures.sources };
-type JobFigures = { class: string; shine: boolean; icons: string | null; names: { origin: string; ascent: string; mastery: string[]; boost: string[]; common3: string }; cores: Record<string, number> };
+type JobFigures = { class: string; shine: boolean; icons: string | null; names: { origin: string; ascent: string; mastery: string[]; boost: string[]; common3: string }; cores: Record<string, number>; coreAtt: { core: string; points: number[][] } | null };
 
 // Which of MapleScouter's cores each node is, and its icon's number (MapleScouter's <job>_<n>.png):
 // checked against the wiki's own pictures for Ren, Night Walker and Kanna.
@@ -99,6 +99,14 @@ const stepsTable = (): Record<string, Partial<Record<CoreKey, number[]>>> => ({
 export interface HexaJob {
   nodes: readonly HexaNodeFigure[];
   model: HexaModel; // its damage per core level (calc/hexaDamage.ts)
+  // the node that also gives flat ATT (v3.2.0), with MapleScouter's measured ATT by level (calc/hexa.ts
+  // coreAttAt), or null: none does
+  att: { node: HexaNode; points: (readonly [number, number])[] } | null;
+}
+// A job's flat-ATT node from the figures (null: none, or a core no node is)
+export function attOf(coreAtt: JobFigures["coreAtt"]): HexaJob["att"] {
+  const node = coreAtt && (Object.keys(CORE_OF) as (keyof typeof CORE_OF)[]).find((k) => CORE_OF[k] === coreAtt.core);
+  return node ? { node, points: coreAtt.points.map(([L, a]) => [L!, a!] as const) } : null;
 }
 function job(f: JobFigures): HexaJob {
   const icon = (key: string) => (key === "janus" ? "General_1_0" : key === "hecate" ? "General_2" : f.icons ? `${f.icons}_${ICON_NUMBER[key]}` : null);
@@ -115,6 +123,7 @@ function job(f: JobFigures): HexaJob {
       n("common3", common3, "common", COMMON_BOOST),
     ],
     model: { cores: f.cores, curves: figures.curves as Record<CurveKey, number[]>, steps: coreSteps(f.class) },
+    att: attOf(f.coreAtt),
   };
 }
 

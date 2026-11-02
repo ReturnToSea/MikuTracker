@@ -21,14 +21,14 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
   - `src/lib/`: display logic as plain tested functions.
   - `src/looks/`: canvas drawing only, checked by eye.
   - `src/components/` and `src/pages/`: mostly layout.
-- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), `hexa-icons.mjs` / `hexa-data.mjs` (download the HEXA page's pictures, and rebuild every job's HEXA figures after a patch, by hand), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
+- `scripts/`: the Stryker helpers, `nexon-watch.mjs` (research only, never part of the app), `gear-data.mjs` / `gear-icons.mjs` (rebuild the gear list and download its icons, by hand, after a GMS patch), `hexa-icons.mjs` / `hexa-data.mjs` (download the HEXA page's pictures, and rebuild every job's HEXA figures after a patch, by hand), `familiar-data.mjs` (rebuild the familiar badges list and download their pictures, by hand), and `potential-fetch.mjs` / `potential-data.mjs` (download Nexon Korea's potential tables into `tempdata/` and turn them into the potential list, by hand).
 - The data lives outside the repo, in `~/Library/Application Support/MikuTracker/`:
   - `miku.db`: real data; only the always-on app uses it.
   - `dev.db`: development (`npm run dev`, `npm run db:migrate`).
   - `backups/` and `avatars/`: the real data's. The dev copy has its own `dev-backups/` and `dev-avatars/`, so its clean-ups never touch the real files.
   - `theme-art/`: theme pictures (shared).
   - `boss-art/`: the bosses' banners from the game (`<boss id>.png`, shared; Nexon's art, so never in git).
-  - `item-icons/`: the gear tab's item icons (`<item id>.png`, shared, never in git), downloaded by hand with `node scripts/gear-icons.mjs`; its `hexa/` folder: the HEXA page's pictures, with `node scripts/hexa-icons.mjs`.
+  - `item-icons/`: the gear tab's item icons (`<item id>.png`, shared, never in git), downloaded by hand with `node scripts/gear-icons.mjs`; its `hexa/` folder: the HEXA page's pictures, with `node scripts/hexa-icons.mjs`; its `familiars/` folder: the badges' pictures, with `node scripts/familiar-data.mjs`.
   - `app/`: the always-on app's own copy of `main`.
 - `tempdata/` is never committed. It holds the research log and the original theme art.
 
@@ -53,7 +53,7 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
 
 - **Game time is UTC.** Daily resets and "EXP per day" use UTC days, computed explicitly in UTC, and are shown in local time.
 - **Big numbers (EXP, raid power) are `BigInt` in the database** and plain numbers in JSON, which are exact up to 9,007,199,254,740,991. The most EXP a character can have, 8,509,498,537,428,819, fits.
-- **Game figures** (worlds, the EXP table, boss crystal prices, symbols, the gear list, Star Force, flames, potential, HEXA) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table and boss prices after each GMS patch, and rebuild the gear list (`node scripts/gear-data.mjs`), the potential list and the HEXA figures (`node scripts/hexa-data.mjs`).
+- **Game figures** (worlds, the EXP table, boss crystal prices, symbols, the gear list, Star Force, flames, potential, HEXA, familiars) live in `server/src/gameFigures/` with their source and patch/date. Re-check the EXP table and boss prices after each GMS patch, and rebuild the gear list (`node scripts/gear-data.mjs`), the potential list, the HEXA figures (`node scripts/hexa-data.mjs`) and the familiar badges (`node scripts/familiar-data.mjs`).
 - **The server binds `127.0.0.1`** and refuses other addresses until login exists. The only exception is Docker: `HOST=0.0.0.0` with `MIKU_IN_CONTAINER=1`, port published to `127.0.0.1`.
 - **Front end:** no hard-coded colors; only theme CSS variables (`client/src/styles/themes.css`). Ren is the default.
 - **Theme art, boss art and item icons never go in git.** They live in the data folder's `theme-art/`, `boss-art/` and `item-icons/`.
@@ -102,8 +102,8 @@ Personal website for tracking MapleStory (GMS) characters on Kronos and Hyperion
     1. tests and typecheck, `npm run qa:check`;
     2. the code review of the final changes;
     3. its fixes, each with a test that fails on the old code;
-    4. **mutation testing once**, on all the changed files (the fixes included), then survivors fixed and **rechecked in Stryker's incremental mode, only the files that had them** (decided 2026-10-29: mutation before the review meant running it again after the fixes, 3–7 long runs a version);
-    5. every test and `qa:check` again (if they need a code change, one incremental recheck of that file);
+    4. **mutation testing once**, on all the changed files (the fixes included), then survivors fixed and **rechecked with `--force`, only the files that had them** (decided 2026-10-29: mutation before the review meant running it again after the fixes, 3–7 long runs a version; `--force` since 2026-11-02: the incremental mode kept missing that a new test covers an old survivor, through the API or the whole app, so its rechecks had to be redone forced anyway);
+    5. every test and `qa:check` again (if they need a code change, one forced recheck of that file);
     6. the owner agrees to the version, then the commit.
 
     One review is enough; a second only when its fixes are large, or when the owner asks.

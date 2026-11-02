@@ -32,7 +32,7 @@ const NODES: HexaBoard["nodes"] = [
   ["hecate", "Sol Hecate", "common", 0],
   ["common3", "Lotus Flower", "common", 0],
 ].map(([key, name, group, min]) => ({ key, name, group, icon: key === "origin" ? "/item-icons/hexa/Len_1.png" : null, min, max: 30 }) as HexaBoard["nodes"][number]);
-const row = (node: string, name: string, from: number, to: number, frags: number, fd: number, total: number, days: number | null, partial = false) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags }, fd, partial, total: { erda: 3, frags: total }, days });
+const row = (node: string, name: string, from: number, to: number, frags: number, fd: number, total: number, days: number | null, partial = false) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags }, fd, partial, total: { erda: 3, frags: total }, days, estimate: { cost: node.startsWith("stat"), fd: node.startsWith("stat") || partial } });
 const line = (stat: HexaStat | null, level: number) => ({ stat, level });
 const INPUT: HexaInput = {
   ...structuredClone(HEXA_DEFAULTS),
@@ -42,7 +42,7 @@ const INPUT: HexaInput = {
     { lines: [line(null, 0), line(null, 0), line(null, 0)], unlocked: false },
   ],
 };
-const step = (node: string, name: string, from: number, to: number, fd: number, done: boolean, days: number | null) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags: 50 }, fd, done, days });
+const step = (node: string, name: string, from: number, to: number, fd: number, done: boolean, days: number | null) => ({ node, name, icon: null, from, to, cost: { erda: 3, frags: 50 }, fd, estimate: { cost: node.startsWith("stat"), fd: node.startsWith("stat") }, done, days });
 const BOARD: HexaBoard = {
   known: true,
   input: INPUT,
@@ -73,6 +73,7 @@ const BOARD: HexaBoard = {
   // (made-up figures, not the game's: the page shows and adds the server's)
   figures: { erdaRequest: 91, dungeons: { none: 0, highMountain: 41, anglerCompany: 56, nightmareParadise: 71 } },
   source: "MapleScouter (GMS, Heroic)",
+  attNode: null,
 };
 
 function show(board: HexaBoard = BOARD, routes: Record<string, unknown> = {}) {
@@ -313,6 +314,23 @@ describe("the HEXA page", () => {
     ]);
     expect(rows.map((r) => r.classList.contains("affordable"))).toEqual([false, false, false]);
     expect(list.getByText(/4 upgrades/).textContent).toContain("+89.97%");
+  });
+
+  it("estimates are the server's marks: an ATT node's damage (≈), named under the list; its cost exact", async () => {
+    const lotus = { ...row("common3", "Lotus Flower", 0, 1, 125, 1.5, 175, 2.5), estimate: { cost: false, fd: true } };
+    show({ ...BOARD, priority: [{ ...BOARD.priority[0]!, estimate: { cost: true, fd: false } }, lotus], attNode: "Lotus Flower" });
+    const list = await region("Upgrade priority");
+    // the next upgrade marked as the server says (made up: its cost an estimate, its damage not)
+    const next = list.getByRole("group", { name: "Next upgrade" }).textContent!;
+    expect(next).toContain("≈ 3");
+    expect(next).not.toContain("≈ +5.33%");
+    expect([...list.getAllByRole("row")[1]!.querySelectorAll("td")].map((td) => td.textContent).slice(3, 5)).toEqual(["125", "≈ +1.50%"]);
+    expect(list.getByText(/Lotus Flower's flat ATT counted from your 1 ATT value/)).toBeTruthy();
+  });
+
+  it("no ATT node: nothing said about flat ATT", async () => {
+    show();
+    expect((await region("Upgrade priority")).queryByText(/flat ATT/)).toBeNull();
   });
 
   it("nothing left: says so instead of a list", async () => {

@@ -49,6 +49,17 @@ export const HexaIcon = () => (
   </svg>
 );
 
+// A paw: the Familiars page.
+export const FamiliarIcon = () => (
+  <svg {...common}>
+    <ellipse cx="12" cy="16" rx="4.5" ry="3.5" />
+    <circle cx="6" cy="10" r="1.8" />
+    <circle cx="9.5" cy="6" r="1.8" />
+    <circle cx="14.5" cy="6" r="1.8" />
+    <circle cx="18" cy="10" r="1.8" />
+  </svg>
+);
+
 // A helmet: the gear tab.
 export const GearIcon = () => (
   <svg {...common}>

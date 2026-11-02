@@ -1,0 +1,528 @@
+{
+ "generated": "2026-11-02",
+ "source": "https://maplestorywiki.net/w/Familiars/Badges",
+ "badges": [
+  {
+   "id": "starter",
+   "name": "Starter Badge",
+   "effects": [
+    "Max HP: +5"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "snowflake",
+   "name": "Snowflake Badge",
+   "effects": [
+    "Max HP: +5"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "oppressor",
+   "name": "Oppressor Badge",
+   "effects": [
+    "Max HP: +5"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "secret",
+   "name": "Secret Badge",
+   "effects": [
+    "Attack Power: +1",
+    "Defense: +5"
+   ],
+   "stats": {
+    "att": 1
+   }
+  },
+  {
+   "id": "mesa",
+   "name": "Mesa Badge",
+   "effects": [
+    "STR: +2"
+   ],
+   "stats": {
+    "str": 2
+   }
+  },
+  {
+   "id": "peaceful",
+   "name": "Peaceful Badge",
+   "effects": [
+    "DEX: +2"
+   ],
+   "stats": {
+    "dex": 2
+   }
+  },
+  {
+   "id": "rebel",
+   "name": "Rebel Badge",
+   "effects": [
+    "Critical Rate: +1%"
+   ],
+   "stats": {
+    "critRate": 1
+   }
+  },
+  {
+   "id": "mineral",
+   "name": "Mineral Badge",
+   "effects": [
+    "Defense: +5",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "ied": 3
+   }
+  },
+  {
+   "id": "sandy",
+   "name": "Sandy Badge",
+   "effects": [
+    "Damage: +1%",
+    "Defense: +5"
+   ],
+   "stats": {
+    "dmg": 1
+   }
+  },
+  {
+   "id": "clockwork",
+   "name": "Clockwork Badge",
+   "effects": [
+    "Max HP: +1%",
+    "Defense: +5"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "wave",
+   "name": "Wave Badge",
+   "effects": [
+    "Magic Attack: +1%",
+    "Defense: +10"
+   ],
+   "stats": {
+    "mattPct": 1
+   }
+  },
+  {
+   "id": "snow",
+   "name": "Snow Badge",
+   "effects": [
+    "Attack Power: +1",
+    "DEX: +1"
+   ],
+   "stats": {
+    "att": 1,
+    "dex": 1
+   }
+  },
+  {
+   "id": "depths",
+   "name": "Depths Badge",
+   "effects": [
+    "Attack Power: +1%",
+    "Magic Attack: +2"
+   ],
+   "stats": {
+    "attPct": 1,
+    "matt": 2
+   }
+  },
+  {
+   "id": "cloud",
+   "name": "Cloud Badge",
+   "effects": [
+    "All Stats: +1",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "allStat": 1,
+    "ied": 3
+   }
+  },
+  {
+   "id": "hatching",
+   "name": "Hatching Badge",
+   "effects": [
+    "All Skill Levels: +1 (except 5th Job Skills)"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "time",
+   "name": "Time Badge",
+   "effects": [
+    "3% chance to recover 20 HP when attacking",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "ied": 3
+   }
+  },
+  {
+   "id": "shuriken",
+   "name": "Shuriken Badge",
+   "effects": [
+    "DEX: +1",
+    "Damage: +1%"
+   ],
+   "stats": {
+    "dex": 1,
+    "dmg": 1
+   }
+  },
+  {
+   "id": "showa",
+   "name": "Showa Badge",
+   "effects": [
+    "All Stats: +1",
+    "Damage: +1%"
+   ],
+   "stats": {
+    "allStat": 1,
+    "dmg": 1
+   }
+  },
+  {
+   "id": "tyrant",
+   "name": "Tyrant Badge",
+   "effects": [
+    "All Stats: +1%"
+   ],
+   "stats": {
+    "allStatPct": 1
+   }
+  },
+  {
+   "id": "lion",
+   "name": "Lion Badge",
+   "effects": [
+    "Attack Power: +1%",
+    "Max HP: +1%"
+   ],
+   "stats": {
+    "attPct": 1
+   }
+  },
+  {
+   "id": "future",
+   "name": "Future Badge",
+   "effects": [
+    "Attack Power: +1%",
+    "Magic Attack: +1%"
+   ],
+   "stats": {
+    "attPct": 1,
+    "mattPct": 1
+   }
+  },
+  {
+   "id": "mariner",
+   "name": "Mariner Badge",
+   "effects": [
+    "Jump: +1",
+    "LUK: +2"
+   ],
+   "stats": {
+    "luk": 2
+   }
+  },
+  {
+   "id": "commerci",
+   "name": "Commerci Badge",
+   "effects": [
+    "Defense: +2%",
+    "Critical Rate: +1%"
+   ],
+   "stats": {
+    "critRate": 1
+   }
+  },
+  {
+   "id": "mushking",
+   "name": "Mushking Badge",
+   "effects": [
+    "Attack Power: +2",
+    "Magic Attack: +2"
+   ],
+   "stats": {
+    "att": 2,
+    "matt": 2
+   }
+  },
+  {
+   "id": "void",
+   "name": "Void Badge",
+   "effects": [
+    "Magic Attack: +1%",
+    "Magic Attack:+2"
+   ],
+   "stats": {
+    "mattPct": 1,
+    "matt": 2
+   }
+  },
+  {
+   "id": "labyrinth",
+   "name": "Labyrinth Badge",
+   "effects": [
+    "All Stats: +1%",
+    "Damage: +1%"
+   ],
+   "stats": {
+    "allStatPct": 1,
+    "dmg": 1
+   }
+  },
+  {
+   "id": "apocalypse",
+   "name": "Apocalypse Badge",
+   "effects": [
+    "Attack Power: +1%",
+    "Attack Power: +2"
+   ],
+   "stats": {
+    "attPct": 1,
+    "att": 2
+   }
+  },
+  {
+   "id": "ocean",
+   "name": "Ocean Badge",
+   "effects": [
+    "Critical Rate: +1%",
+    "Damage: +1%"
+   ],
+   "stats": {
+    "critRate": 1,
+    "dmg": 1
+   }
+  },
+  {
+   "id": "swamp",
+   "name": "Swamp Badge",
+   "effects": [
+    "All Stats: +1%",
+    "Attack Power: +2"
+   ],
+   "stats": {
+    "allStatPct": 1,
+    "att": 2
+   }
+  },
+  {
+   "id": "holy",
+   "name": "Holy Badge",
+   "effects": [
+    "Attack Power: +1%",
+    "Critical Rate: +1%"
+   ],
+   "stats": {
+    "attPct": 1,
+    "critRate": 1
+   }
+  },
+  {
+   "id": "wasteland",
+   "name": "Wasteland Badge",
+   "effects": [
+    "Magic Attack: +1%",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "mattPct": 1,
+    "ied": 3
+   }
+  },
+  {
+   "id": "researcher",
+   "name": "Researcher Badge",
+   "effects": [
+    "Damage: +1%",
+    "Max HP: +1%"
+   ],
+   "stats": {
+    "dmg": 1
+   }
+  },
+  {
+   "id": "flora-army",
+   "name": "Flora Army Badge",
+   "effects": [
+    "All Stats: +1%",
+    "Max MP: +1%"
+   ],
+   "stats": {
+    "allStatPct": 1
+   }
+  },
+  {
+   "id": "crucible",
+   "name": "Crucible Badge",
+   "effects": [
+    "Critical Damage: +1%",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "critDmg": 1,
+    "ied": 3
+   }
+  },
+  {
+   "id": "shadow",
+   "name": "Shadow Badge",
+   "effects": [
+    "LUK: +2"
+   ],
+   "stats": {
+    "luk": 2
+   }
+  },
+  {
+   "id": "magical",
+   "name": "Magical Badge",
+   "effects": [
+    "INT: +2"
+   ],
+   "stats": {
+    "int": 2
+   }
+  },
+  {
+   "id": "beach",
+   "name": "Beach Badge",
+   "effects": [
+    "Speed: +1",
+    "Magic Attack: +1%"
+   ],
+   "stats": {
+    "mattPct": 1
+   }
+  },
+  {
+   "id": "machine",
+   "name": "Machine Badge",
+   "effects": [
+    "INT: +2",
+    "Magic Attack: +1"
+   ],
+   "stats": {
+    "int": 2,
+    "matt": 1
+   }
+  },
+  {
+   "id": "toy",
+   "name": "Toy Badge",
+   "effects": [
+    "Max HP: +10",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "ied": 3
+   }
+  },
+  {
+   "id": "forest",
+   "name": "Forest Badge",
+   "effects": [
+    "Max HP: +5",
+    "Defense: +5"
+   ],
+   "stats": {}
+  },
+  {
+   "id": "wings",
+   "name": "Wings Badge",
+   "effects": [
+    "Speed: +1",
+    "All Stats: +1%"
+   ],
+   "stats": {
+    "allStatPct": 1
+   }
+  },
+  {
+   "id": "shrine",
+   "name": "Shrine Badge",
+   "effects": [
+    "15% chance to recover 40 MP after defeating a monster",
+    "Damage: +1%"
+   ],
+   "stats": {
+    "dmg": 1
+   }
+  },
+  {
+   "id": "city",
+   "name": "City Badge",
+   "effects": [
+    "Attack Power: +1",
+    "Magic Attack: +2"
+   ],
+   "stats": {
+    "att": 1,
+    "matt": 2
+   }
+  },
+  {
+   "id": "mighty",
+   "name": "Mighty Badge",
+   "effects": [
+    "STR: +2",
+    "Attack Power: +2"
+   ],
+   "stats": {
+    "str": 2,
+    "att": 2
+   }
+  },
+  {
+   "id": "exorcism",
+   "name": "Exorcism Badge",
+   "effects": [
+    "All Stats: +1%"
+   ],
+   "stats": {
+    "allStatPct": 1
+   }
+  },
+  {
+   "id": "cursed",
+   "name": "Cursed Badge",
+   "effects": [
+    "Defense: +2%",
+    "Critical Rate: +1%"
+   ],
+   "stats": {
+    "critRate": 1
+   }
+  },
+  {
+   "id": "dragon",
+   "name": "Dragon Badge",
+   "effects": [
+    "Max HP: +5",
+    "Ignored Enemy Defense: +3%"
+   ],
+   "stats": {
+    "ied": 3
+   }
+  },
+  {
+   "id": "darkness",
+   "name": "Darkness Badge",
+   "effects": [
+    "Damage: +1%"
+   ],
+   "stats": {
+    "dmg": 1
+   }
+  }
+ ]
+}

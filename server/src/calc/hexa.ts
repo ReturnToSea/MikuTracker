@@ -65,6 +65,20 @@ export function statSpent(primary: number, additional: number, cost: readonly nu
   return { frags: main + c[additional]! / w[additional]!, exact: additional === 0 || cost[0] === cost[primary] };
 }
 
+// The flat ATT a core gives at a level (v3.2.0: the 3rd Common node's buff on about 20 jobs, Zero's 4th
+// Mastery node): MapleScouter's measured points (level, ATT, in level order), straight lines between them
+// and from nothing at level 0 (the node isn't learnt); past the last point, the last.
+export function coreAttAt(points: readonly (readonly [number, number])[], level: number): number {
+  const pts: (readonly [number, number])[] = [[0, 0], ...points];
+  // Stryker disable next-line EqualityOperator: at a measured level, > finds the next point and the line from this one gives the same ATT
+  const i = pts.findIndex(([L]) => L >= level);
+  if (i === -1) return pts.at(-1)![1];
+  const [L1, a1] = pts[i]!;
+  if (L1 === level) return a1;
+  const [L0, a0] = pts[i - 1]!;
+  return a0 + ((a1 - a0) * (level - L0)) / (L1 - L0);
+}
+
 // A job's built order with its HEXA Stat nodes put in by their own damage per fragment (the same measure
 // as buildOrder's: the log of the gain per fragment, from scratch): each before the first step worth less,
 // and never before the node before it. `stepFrags`: a step's fragments.

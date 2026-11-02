@@ -775,3 +775,51 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .hexa-legend .next::before { border-color: var(--accent); }
 .hexa-legend .affordable::before { border-color: var(--good); }
 .hexa-legend .done::before { opacity: 0.35; }
+
+/* ── The Familiars page (v3.2.0): the familiars and badges on the left, the totals on the right, held in view ── */
+/* (as wide as the HEXA page: the badges get more columns) */
+.page:has(.familiar-page) { max-width: 1440px; }
+.familiar-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); gap: 16px; align-items: start; }
+.familiar-split > div > .block:last-child { margin-bottom: 0; }
+.familiar-side { position: sticky; top: 12px; margin-bottom: 0; }
+@media (max-width: 1100px) { .familiar-split { grid-template-columns: minmax(0, 1fr); } .familiar-side { position: static; margin-top: 16px; } }
+.rank-common { color: var(--text-muted); }
+/* the three familiars: one box, three columns, each with its rank's dot */
+.familiars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.familiar { padding: 0 14px; border-left: var(--border-width) solid var(--border); }
+.familiar:first-child { padding-left: 0; border-left: 0; }
+.familiar:last-child { padding-right: 0; }
+.familiar-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.familiar-head b { display: inline-flex; align-items: center; gap: 6px; color: var(--text); white-space: nowrap; }
+.familiar-head b::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.familiar.rank-common .familiar-head b::before { background: var(--text-muted); }
+.familiar.rank-rare .familiar-head b::before { background: var(--rank-rare); }
+.familiar.rank-epic .familiar-head b::before { background: var(--rank-epic); }
+.familiar.rank-unique .familiar-head b::before { background: var(--rank-unique); }
+.familiar.rank-legendary .familiar-head b::before { background: var(--rank-legendary); }
+.familiar-head select { font-weight: 700; }
+.familiar-line { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 8px; align-items: center; padding: 2px 0; }
+.familiar-line select { min-width: 0; width: 100%; }
+.familiar p { margin: 4px 0 0; }
+@media (max-width: 1250px) { .familiars { grid-template-columns: 1fr; gap: 10px; } .familiar { padding: 0; border-left: 0; } }
+/* the badges */
+.familiar-tools { display: inline-flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.familiar-tools .accent { color: var(--accent); }
+.familiar-tools .link-button { text-decoration: underline; }
+.familiar-tools .link-button:disabled { opacity: 0.5; cursor: default; }
+.fam-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 8px; }
+.fam-badge-effect.tiny { font-size: 12px; }
+.fam-badge { display: grid; grid-template-columns: auto 32px minmax(0, 1fr); gap: 8px; align-items: center; padding: 7px 9px; border: var(--border-width) solid var(--border); border-radius: 10px; background: var(--surface-2); cursor: pointer; }
+.fam-badge.on { border-color: var(--accent); background: var(--accent-soft); }
+.fam-badge.off { opacity: 0.6; cursor: not-allowed; }
+.fam-badge-icon { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
+.fam-badge-icon.none { display: inline-grid; place-items: center; border-radius: 6px; background: var(--bg); color: var(--text-muted); font-weight: 700; }
+.fam-badge b { display: block; }
+.fam-badge-effect { display: block; line-height: 1.3; }
+/* the totals */
+.familiar-totals { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.familiar-totals th { padding: 2px 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; }
+.familiar-totals td { padding: 4px 6px; white-space: nowrap; border-top: var(--border-width) solid var(--border); text-align: right; }
+.familiar-totals th:first-child, .familiar-totals td:first-child { text-align: left; }
+.familiar-over { display: block; color: var(--accent); font-weight: 600; }
+.familiar-side > p { margin: 8px 0 0; }

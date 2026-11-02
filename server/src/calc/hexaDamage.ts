@@ -25,37 +25,41 @@ const isMastery = (c: CoreKey) => c.startsWith("mastery");
 // Interpolating between two points (x0, y0) and (x1, y1) along a shape: the shape's share of the way.
 const between = (y0: number, y1: number, share: number) => y0 + (y1 - y0) * share;
 
-// The share of a core's value kept at level L (0 at level 0, 1 at 30).
-function kept(m: HexaModel, c: CoreKey, level: number): number {
-  const L = Math.max(0, Math.min(30, Math.round(level)));
+// The share of a core's value kept at each level 0–30 (0 at level 0, 1 at 30): its measured levels, and the
+// shape filling the gaps between them, worked out once for the core.
+function keptLevels(m: HexaModel, c: CoreKey): number[] {
   const z = m.cores[`${c}=0`]!;
   // (a core worth nothing in the figures: always all of it; one the figures put above its level 30 at
   // level 0, Lynn's and Mo Xuan's 3rd Common node, counts as worth nothing too: a level never lowers damage)
-  if (z >= 1 || L === 30) return 1;
+  if (z >= 1) return Array<number>(31).fill(1);
   const has = (k: number) => m.cores[`${c}=${k}`] !== undefined;
   const at = (k: number) => (k === 30 ? 1 : (m.cores[`${c}=${k}`]! - z) / (1 - z));
-  // (level 0 is always measured: the figures' "core at 0")
-  if (has(L)) return at(L);
   const ren = (k: number) => m.curves[curveOf(c)][k]!;
   // Not even level 1 measured: Ren's curve for its kind of core (mapledoro bends it to the job's levels 5,
   // 15 and 25 when those were measured; no job's figures need that)
-  if (!has(1)) return ren(L);
+  if (!has(1)) return Array.from({ length: 31 }, (_, L) => (L === 30 ? 1 : has(L) ? at(L) : ren(L)));
   const measured = [...Array.from({ length: 29 }, (_, k) => k + 1).filter(has), 30];
-  // Stryker disable next-line EqualityOperator: L is never a measured level here (has(L) returned above), so ≥ finds the same
-  const i = measured.findIndex((k) => k > L);
-  const [x0, x1] = [measured[i - 1]!, measured[i]!];
   // Mastery cores and the 3rd common node rise evenly, or evenly plus the wiki's steps; the others follow
   // Ren's curve or a straight line, whichever predicts their own inner measured levels better
+  let shape: (x: number, a: number, b: number) => number;
   if (isMastery(c) || c === "generalCore3") {
     const stair = stairs(m.steps[c], measured.map((k) => [k, at(k)]));
-    return between(at(x0), at(x1), stair ? (stair(L) - stair(x0)) / (stair(x1) - stair(x0)) : (L - x0) / (x1 - x0));
+    shape = stair ? (x, a, b) => (stair(x) - stair(a)) / (stair(b) - stair(a)) : (x, a, b) => (x - a) / (b - a);
+  } else {
+    const lin = (x: number, a: number, b: number) => (x - a) / (b - a);
+    const curve = (x: number, a: number, b: number) => (ren(x) - ren(a)) / (ren(b) - ren(a));
+    const miss = (f: typeof lin) => measured.slice(1, -1).reduce((sum, x, j) => sum + Math.abs(between(at(measured[j]!), at(measured[j + 2]!), f(x, measured[j]!, measured[j + 2]!)) - at(x)), 0);
+    // Stryker disable next-line EqualityOperator: on an exact tie both shapes predict the core's levels as well (in floating point, practically never exact)
+    shape = measured.length > 3 && miss(lin) < miss(curve) ? lin : curve;
   }
-  const lin = (x: number, a: number, b: number) => (x - a) / (b - a);
-  const curve = (x: number, a: number, b: number) => (ren(x) - ren(a)) / (ren(b) - ren(a));
-  const miss = (shape: typeof lin) => measured.slice(1, -1).reduce((sum, x, j) => sum + Math.abs(between(at(measured[j]!), at(measured[j + 2]!), shape(x, measured[j]!, measured[j + 2]!)) - at(x)), 0);
-  // Stryker disable next-line EqualityOperator: on an exact tie both shapes predict the core's levels as well (in floating point, practically never exact)
-  const shape = measured.length > 3 && miss(lin) < miss(curve) ? lin : curve;
-  return between(at(x0), at(x1), shape(L, x0, x1));
+  return Array.from({ length: 31 }, (_, L) => {
+    // (level 0 is always measured: the figures' "core at 0")
+    if (L === 30 || has(L)) return at(L);
+    // Stryker disable next-line EqualityOperator: L is never a measured level here (has(L) returned above), so ≥ finds the same
+    const i = measured.findIndex((k) => k > L);
+    const [x0, x1] = [measured[i - 1]!, measured[i]!];
+    return between(at(x0), at(x1), shape(L, x0, x1));
+  });
 }
 
 // The wiki's steps fitted to a core's measured levels: y = a + s L + J (steps so far), by least squares
@@ -134,7 +138,7 @@ function prepare(m: HexaModel): Prepared {
   if (known) return known;
   const pairList = pairs(m);
   const p: Prepared = {
-    kept: Object.fromEntries(CORE_KEYS.map((c) => [c, Array.from({ length: 31 }, (_, L) => kept(m, c, L))])) as Record<CoreKey, number[]>,
+    kept: Object.fromEntries(CORE_KEYS.map((c) => [c, keptLevels(m, c)])) as Record<CoreKey, number[]>,
     pairs: pairList,
     shares: multipliers(m, new Set(pairList.flatMap((x) => [x.a, x.b]))),
   };

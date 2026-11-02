@@ -306,3 +306,55 @@ export const HEXA_DEFAULTS: HexaInput = {
   erdaRequest: false,
   dungeon: "none",
 };
+
+// ── v3.2.0: Familiars ──────────────────────────────────────────────────────────────────────────
+// A familiar's ranks, lowest first, and the stats its lines and badges can add up to, in the order the
+// totals list them (the owner, 2026-11-01: Boss, ATT, IED, Crit DMG, then the rest). "…Pct": a %; the
+// rest flat. Which lines each rank has: the server's game figures (gameFigures/familiars.ts).
+export const FAMILIAR_RANKS = ["common", "rare", "epic", "unique", "legendary"] as const;
+export type FamiliarRank = (typeof FAMILIAR_RANKS)[number];
+export const FAMILIAR_STATS = ["bossDmg", "attPct", "ied", "critDmg", "dmg", "critRate", "mattPct", "strPct", "dexPct", "intPct", "lukPct", "allStatPct", "att", "matt", "str", "dex", "int", "luk", "allStat"] as const;
+export type FamiliarStat = (typeof FAMILIAR_STATS)[number];
+// The badges equipped at once, at most (3 familiars are summoned at most: the input's three).
+export const BADGE_SLOTS = 8;
+// One line as typed: a stat and its value, "other" for a line that isn't a damage stat (HP, drops…), or
+// null: not entered yet.
+const familiarLine = z.strictObject({ stat: z.enum([...FAMILIAR_STATS, "other"]), value: z.number().int().min(0).max(100) }).nullable();
+const familiar = z.strictObject({ rank: z.enum(FAMILIAR_RANKS), lines: z.tuple([familiarLine, familiarLine]) });
+// A character's Familiars page, as typed (v3.2.0): each summoned familiar's rank and two lines (whether a
+// line is one its rank can have: the server checks), and the badges equipped, by id.
+export const familiarInput = z
+  .strictObject({
+    familiars: z.tuple([familiar, familiar, familiar]),
+    badges: z.array(z.string().min(1).max(40)).max(BADGE_SLOTS),
+  })
+  .refine((f) => new Set(f.badges).size === f.badges.length, { message: "Each badge is equipped once at most" });
+export type FamiliarInput = z.infer<typeof familiarInput>;
+// A line a familiar can have, and the lines a familiar of a rank can have (from the server's figures): its
+// 1st from its own rank's; its 2nd usually from the rank below's (none below Common), rarely from its own.
+export interface FamiliarLine {
+  stat: FamiliarStat;
+  value: number;
+}
+export interface FamiliarChoices {
+  first: readonly FamiliarLine[];
+  usual: readonly FamiliarLine[] | null;
+  rare: readonly FamiliarLine[];
+}
+export function familiarChoices(rank: FamiliarRank, lines: Readonly<Record<FamiliarRank, readonly FamiliarLine[]>>): FamiliarChoices {
+  const below = FAMILIAR_RANKS[FAMILIAR_RANKS.indexOf(rank) - 1];
+  return { first: lines[rank], usual: below ? lines[below] : null, rare: lines[rank] };
+}
+// Whether a line as typed is one a familiar's line (0: the 1st, 1: the 2nd) can be: not entered, or
+// "other" (a line that isn't a damage stat, worth 0), always.
+export function familiarLineFits(typed: FamiliarInput["familiars"][number]["lines"][number], slot: 0 | 1, choices: FamiliarChoices): boolean {
+  if (typed === null) return true;
+  if (typed.stat === "other") return typed.value === 0;
+  const pools = slot === 0 ? [choices.first] : [choices.usual, choices.rare];
+  return pools.some((pool) => pool?.some((l) => l.stat === typed.stat && l.value === typed.value));
+}
+// A new character's: three Common familiars with no lines entered, no badges.
+export const FAMILIAR_DEFAULTS: FamiliarInput = {
+  familiars: [0, 1, 2].map(() => ({ rank: "common", lines: [null, null] })) as FamiliarInput["familiars"],
+  badges: [],
+};

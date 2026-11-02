@@ -10,6 +10,7 @@ import { charactersRouter } from "./routes/characters";
 import { checklistRouter } from "./routes/checklist";
 import { expTableRouter } from "./routes/expTable";
 import { gearRouter } from "./routes/gear";
+import { familiarsRouter } from "./routes/familiars";
 import { hexaRouter } from "./routes/hexa";
 import { refreshRouter } from "./routes/refresh";
 import { searchRouter } from "./routes/search";
@@ -59,6 +60,7 @@ export function createApp({ clientDist = CLIENT_DIST, nexon = realNexon, extraRo
   app.use("/api/bosses", bossesRouter);
   app.use("/api/checklist", checklistRouter);
   app.use("/api/hexa", hexaRouter);
+  app.use("/api/familiars", familiarsRouter);
   app.use("/api/symbols", symbolsRouter);
   app.use("/api/gear", gearRouter);
   extraRoutes?.(app);

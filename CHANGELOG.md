@@ -2,6 +2,19 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v3.2.0: Familiars, and a node's flat ATT (2026-11-02)
+
+- **A new Familiars page** (its own tab, after HEXA): each character's **3 summoned familiars** and **equipped badges**, and what their damage stats add up to, for the stat sheet later (v4). Layout A of five mockups, the familiars in one box.
+  - **Familiars:** pick a rank, then line 1 from its rank's lines and line 2 from the rank below's (usual) or its own (rare), the wiki's rule. Every damage line (Boss, IED, ATT, Damage, main stat, All Stats, Crit Rate, Crit DMG, and the flat lines), from the MapleStory Wiki's tables after v.264 (Unique Boss DMG is 40% only); anything else is "Other line". A new rank keeps the lines it still allows.
+  - **Badges:** the wiki's 48, each with its picture and effects, ticked when equipped (8 at most); "Damage badges only"; "Untick all". `node scripts/familiar-data.mjs` rebuilds the list and downloads the pictures by hand (never in git).
+  - **Totals:** Boss %, ATT %, IED %, Crit DMG %, then the rest; familiar Boss DMG counts up to 120% ("130% → 120%"); IED combines instead of adding. No upgrade calculator (line odds aren't published since v.264) and no final damage yet (crit rate needs v4).
+- **HEXA: the flat ATT some nodes give** (19 jobs' 3rd Common node, a buff; Zero's 4th Mastery node), which MapleScouter measured apart from the core figures (mapledoro's table, read by the figures script), now counts: from the character's 1 ATT value, so those jobs' order moves with it; the node is named under the priority and its damage marked ≈.
+- **HEXA: estimates come from the server** (each row's and step's cost and damage), instead of the page guessing from the node.
+- **HEXA: each core's gaps filled once**, not once per level (faster first load of a job). Building every order ahead in the figures script was dropped: an ATT job's order depends on the character.
+- **Caught by the click-through:** the new badge styles reused the Checklist's `badges` class name and widened its columns at 900 px; renamed.
+- **From the review pass** (10 findings, all handled): after a patch, a saved familiar line or badge the figures no longer have is dropped on its own instead of the whole setup (which the next click would have saved over); a changed flat-ATT table can't crash the HEXA page (the maths copes, the figures loader skips an unknown core, the script refuses an odd table and reads quoted names); the ATT jobs' kept orders are keyed to 4 decimals, not every stat value ever typed; the line rule lives once (shared) for the server and the page; one save hook for HEXA and Familiars; the Familiars tabs are the character list's (no separate request); the familiar lines are built on first use; the badges script refuses ids over 40 characters; the rank names use the existing helper.
+- **Mutation testing: 100%** (the changed files, forced; 20 survivors of ~9,200: tests added for each stat's wording, the Familiars board's loading rules, the cap being Boss DMG's only and level 30 always counting in full; four that can't change behaviour simplified away or marked). Rechecks after fixing survivors are now forced too (the incremental mode kept missing new tests, so its rechecks had to be redone).
+
 ## v3.1.0: HEXA for every job, and HEXA Stat's damage (2026-11-01)
 
 - **Every job's HEXA** (all but the SHINE classes, Erel Light and Sia Astelle, which have Erda Link: the page says so): each job's nodes with the MapleStory Wiki's names and MapleScouter's icons, and its damage per core level, **MapleScouter's figures through mapledoro's copy** (53 classes, collected before MapleScouter blocked scripts), put together with mapledoro's method in our own code.

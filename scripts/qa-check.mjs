@@ -52,7 +52,7 @@ try {
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "no TBD tab left: after Bosses, Checklist and Symbols come HEXA (v3.0.0) and Gear", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("HEXA") && (await page.locator(".rail a").nth(5).innerText()).includes("Gear"));
+  check("Rail", "no TBD tab left: after Bosses, Checklist and Symbols come HEXA (v3.0.0), Familiars (v3.2.0) and Gear", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("HEXA") && (await page.locator(".rail a").nth(5).innerText()).includes("Familiars") && (await page.locator(".rail a").nth(6).innerText()).includes("Gear"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -902,6 +902,11 @@ try {
   await page.getByRole("region", { name: "Current progress" }).waitFor({ timeout: 10000 });
   const kanna = (await page.getByRole("region", { name: "Current progress" }).innerText()).replace(/\s+/g, " ");
   check("HEXA", "every job works (v3.1.0): a Kanna gets its own nodes (the wiki's names: Summon Oni, Twilight Bloom)", /Summon Oni/.test(kanna) && /Twilight Bloom/.test(kanna), kanna.slice(0, 200));
+  const kannaPrio = page.getByRole("region", { name: "Upgrade priority" });
+  const kannaNote = (await kannaPrio.innerText()).replace(/\s+/g, " ");
+  const kannaBoard = (await api("GET", `/hexa/${(await api("GET", "/hexa?world=45")).json.characters.find((c) => c.name === "MikuBeam").id}`)).json;
+  const attRow = (await kannaPrio.locator("tbody tr", { hasText: kannaBoard.attNode }).first().innerText()).replace(/\s+/g, " ");
+  check("HEXA", "a Kanna's 3rd Common node also gives flat ATT (v3.2.0): named under the priority, its rows' damage ≈", kannaBoard.attNode !== null && kannaNote.includes(`${kannaBoard.attNode}'s flat ATT counted from your 1 ATT value`) && /≈ \+\d/.test(attRow), `${kannaBoard.attNode} | ${attRow}`);
   await page.getByRole("tab", { name: /PlumBlade/ }).click();
   const hexaSum = page.getByRole("region", { name: "HEXA summary" });
   await hexaSum.waitFor({ timeout: 10000 });
@@ -987,6 +992,70 @@ try {
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
   }
   check("HEXA", "the Ren removed again", (await api("DELETE", `/characters/${plumId}`)).status === 204);
+
+  // ---------- Familiars (v3.2.0) ----------
+  await go("/familiars");
+  const famBox = page.getByRole("region", { name: "Familiars" });
+  await famBox.waitFor({ timeout: 10000 });
+  check("Familiars", "in the rail after HEXA; the world's characters as tabs, MikuBeam first; three Common familiars, no lines, no totals", (await page.getByRole("tab", { name: /MikuBeam/ }).getAttribute("aria-selected")) === "true" && (await famBox.getByRole("group").count()) === 3 && /Nothing entered yet/.test(await page.getByRole("region", { name: "Totals" }).innerText()));
+  const famPick = async (label, value) => {
+    await famBox.getByRole("combobox", { name: label, exact: true }).selectOption(value);
+    await settle(250);
+  };
+  const line2Groups = async (n) => famBox.getByRole("combobox", { name: `Familiar ${n} line 2`, exact: true }).locator("optgroup").evaluateAll((gs) => gs.map((g) => g.label));
+  await famPick("Familiar 1 rank", "unique");
+  check("Familiars", "a Unique's 2nd line: Epic (usual) or Unique (rare); its Boss DMG line is 40% only", JSON.stringify(await line2Groups(1)) === JSON.stringify(["Epic (usual)", "Unique (rare)"]) && (await famBox.getByRole("combobox", { name: "Familiar 1 line 1", exact: true }).locator("option", { hasText: "Boss DMG" }).allInnerTexts()).join() === "Boss DMG +40%");
+  await famPick("Familiar 1 rank", "legendary");
+  await famPick("Familiar 1 line 1", "bossDmg:50");
+  await famPick("Familiar 1 line 2", "attPct:6");
+  await famPick("Familiar 2 rank", "unique");
+  await famPick("Familiar 2 line 1", "bossDmg:40");
+  await famPick("Familiar 2 line 2", "ied:30");
+  await famPick("Familiar 3 rank", "unique");
+  await famPick("Familiar 3 line 1", "bossDmg:40");
+  await famPick("Familiar 3 line 2", "critRate:4");
+  const badgeBox = page.getByRole("region", { name: "Badges" });
+  check("Familiars", "the wiki's 48 badges, each with what it gives", (await badgeBox.getByRole("checkbox", { name: /Badge|^[A-Z]/ }).count()) >= 48 && /Critical Damage: \+1%/.test(await badgeBox.locator("label.fam-badge", { hasText: "Crucible" }).innerText()));
+  for (const name of ["Labyrinth", "Ocean", "Holy", "Crucible", "Swamp", "Apocalypse", "Showa", "Cloud"]) {
+    // (a click: the box shows its tick once the change is made, a moment after, which check() doesn't wait for)
+    await badgeBox.locator("label.fam-badge", { hasText: name }).first().getByRole("checkbox").click();
+    await settle(150);
+  }
+  await settle(500);
+  check("Familiars", "8 badges equipped: the rest can't be ticked", /8 \/ 8/.test(await badgeBox.innerText()) && (await badgeBox.locator("label.fam-badge", { hasText: "Rebel" }).getByRole("checkbox").isDisabled()));
+  const totRows = async () => (await page.getByRole("region", { name: "Totals" }).locator("tbody tr").allInnerTexts()).map((r) => r.replace(/\s+/g, " ").trim());
+  const tr = await totRows();
+  // by hand: Boss 50 + 40 + 40 = 130, 120 counts; ATT 6 + badges (Apocalypse 1, Holy 1) = 8; IED: familiars 30, badges Crucible 3 and Cloud 3:
+  // 1 − 0.97² = 5.91%, all of them 1 − 0.7 × 0.97² = 34.14%; Crit DMG: Crucible 1; Damage: Labyrinth, Ocean, Showa 3; Crit Rate 4 + Ocean, Holy 2 = 6
+  check("Familiars", "the totals, by hand: Boss 130% → 120%, ATT 8%, IED 34.14% (combined), Crit DMG 1%, Damage 3%, Crit Rate 6%", tr[0] === "Boss DMG % 130% – 120% 130% → 120%" && tr[1] === "ATT % 6% 2% 8%" && tr[2] === "IED % 30% 5.91% 34.14%" && tr[3] === "Crit DMG % – 1% 1%" && tr[4] === "Damage % – 3% 3%" && tr[5] === "Crit Rate % 4% 2% 6%", tr.join(" | "));
+  const mikuId = (await api("GET", "/characters?world=45")).json.characters.find((c) => c.name === "MikuBeam").id;
+  const famSaved = (await api("GET", `/familiars/${mikuId}`)).json;
+  check("Familiars", "what's typed was saved (the API agrees)", famSaved.input.familiars[0].rank === "legendary" && famSaved.input.familiars[0].lines[0].value === 50 && famSaved.input.familiars[2].lines[1].stat === "critRate" && famSaved.input.badges.length === 8, JSON.stringify(famSaved.input));
+  await shot("23c-familiars");
+  await badgeBox.getByRole("checkbox", { name: "Damage badges only" }).click();
+  check("Familiars", "damage badges only hides the ones that give none (Starter)", (await badgeBox.locator("label.fam-badge", { hasText: "Starter" }).count()) === 0);
+  await badgeBox.getByRole("checkbox", { name: "Damage badges only" }).click();
+  await famPick("Familiar 2 rank", "epic");
+  check("Familiars", "a lower rank clears the line it can't have (Boss 40) and keeps the one it can (IED 30)", (await famBox.getByRole("combobox", { name: "Familiar 2 line 1", exact: true }).inputValue()) === "" && (await famBox.getByRole("combobox", { name: "Familiar 2 line 2", exact: true }).inputValue()) === "ied:30");
+  await badgeBox.getByRole("button", { name: "Untick all" }).click();
+  await settle(500);
+  check("Familiars", "untick all: no badges", /0 \/ 8/.test(await badgeBox.innerText()) && (await api("GET", `/familiars/${mikuId}`)).json.input.badges.length === 0);
+  await page.setViewportSize({ width: 900, height: 900 });
+  await settle(400);
+  check("Layout", "the Familiars page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const famLine = (stat, value) => ({ stat, value });
+  for (const [what, body, status] of [
+    ["familiars: a Unique with Boss 35% (not since v.264)", { familiars: [{ rank: "unique", lines: [famLine("bossDmg", 35), null] }, ...famSaved.input.familiars.slice(1)], badges: [] }, 400],
+    ["familiars: a badge that doesn't exist", { ...famSaved.input, badges: ["nope"] }, 400],
+    ["familiars: 9 badges", { ...famSaved.input, badges: famSaved.input.badges.concat(["rebel"]) }, 400],
+  ]) {
+    const r = await api("PUT", `/familiars/${mikuId}`, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+  check("API", "familiars: a character that doesn't exist: 404", (await api("GET", "/familiars/999999")).status === 404);
+  // (back to nothing, for the checks after)
+  check("Familiars", "cleared again", (await api("PUT", `/familiars/${mikuId}`, { familiars: [0, 1, 2].map(() => ({ rank: "common", lines: [null, null] })), badges: [] })).status === 204);
 
   // ---------- EXP table ----------
   await go("/exp-table");

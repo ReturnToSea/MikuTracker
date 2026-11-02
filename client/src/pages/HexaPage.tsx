@@ -259,13 +259,13 @@ function Priority({ b }: { b: HexaBoard }) {
                   {shortName(next.name)} → {next.to}
                 </b>
               </span>
-              <b className="good">{`${next.partial || next.node.startsWith("stat") ? "≈ " : ""}${formatFd(next.fd)}`}</b>
+              <b className="good">{`${approx(!next.estimate.fd)}${formatFd(next.fd)}`}</b>
             </div>
             <div className="hexa-next-row">
               <span className="tiny muted">
                 {levelsText(next)} · ready {readyText(next.days, now)}
               </span>
-              <Mats icons={b.icons} cost={next.cost} prefix={next.node.startsWith("stat") ? "≈ " : ""} />
+              <Mats icons={b.icons} cost={next.cost} prefix={approx(!next.estimate.cost)} />
             </div>
           </div>
           <div className="hexa-priority">
@@ -292,10 +292,10 @@ function Priority({ b }: { b: HexaBoard }) {
                     <td className="num">{r.to}</td>
                     <td className="num">{formatCount(r.cost.erda)}</td>
                     <td className="num">
-                      {r.node.startsWith("stat") && "≈ "}
+                      {approx(!r.estimate.cost)}
                       {formatCount(r.cost.frags)}
                     </td>
-                    <td className="num good">{`${r.partial || r.node.startsWith("stat") ? "≈ " : ""}${formatFd(r.fd)}`}</td>
+                    <td className="num good">{`${approx(!r.estimate.fd)}${formatFd(r.fd)}`}</td>
                     <td className="num tiny">{readyText(r.days, now)}</td>
                   </tr>
                 ))}
@@ -304,7 +304,9 @@ function Priority({ b }: { b: HexaBoard }) {
           </div>
         </>
       )}
-      <p className="tiny muted">FD: the skills', MapleScouter's figures (the order built from them); HEXA Stat's, from your stat values, on average. Sol Janus isn't listed (no damage). Green: you have the fragments now.</p>
+      <p className="tiny muted">
+        FD: the skills', MapleScouter's figures (the order built from them); HEXA Stat's, from your stat values, on average.{b.attNode && ` ${b.attNode}'s flat ATT counted from your 1 ATT value (≈).`} Sol Janus isn't listed (no damage). Green: you have the fragments now.
+      </p>
     </section>
   );
 }
@@ -323,8 +325,8 @@ function Step({ s, n, state, icons, now }: { s: HexaOrderStep; n: number; state:
         <b>
           {n}. {s.name} {stat ? "unlock → rank 20" : levelsText(s)}
         </b>
-        <Mats icons={icons} cost={s.cost} prefix={stat ? "≈ " : ""} />
-        <span className="good">{`${stat ? "≈ " : ""}${formatFd(s.fd)}`}</span>
+        <Mats icons={icons} cost={s.cost} prefix={approx(!s.estimate.cost)} />
+        <span className="good">{`${approx(!s.estimate.fd)}${formatFd(s.fd)}`}</span>
         {stat && <span className="muted">rank 0 to 20 on average, with its stats (or the best for you)</span>}
         <span className="muted">{s.done ? "done" : s.days === 0 ? "you have the fragments now" : `ready ${readyText(s.days, now)}`}</span>
       </span>

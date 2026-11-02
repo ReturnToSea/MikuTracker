@@ -1,5 +1,5 @@
 import { HEXA_DEFAULTS, HEXA_NODES, HEXA_STATS, type HexaInput, type HexaNode, type HexaStat, hexaInput } from "@miku/shared";
-import { addCost, bestStats, buildOrder, type Cost, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, type PriorityRow, statExpected, statFd, statOutcomes, statSpent } from "../calc/hexa";
+import { addCost, bestStats, buildOrder, type Cost, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, type PriorityRow, statExpected, statFd, statOutcomes, statSpent } from "../calc/hexa";
 import { type CoreKey, hexaDamage } from "../calc/hexaDamage";
 import { db } from "../db";
 import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, HEXA_FIGURES, HEXA_ICONS, forgetHexaJobs, HEXA_MAX, type HexaGroup, type HexaJob, hexaJob, isShine, STAT_AMOUNTS, STAT_LEVEL, STAT_MAIN_NOT_WORKED_OUT, STAT_MAX_RANK, STAT_PRIMARY_CHANCE, STAT_RANK_COST, STAT_UNLOCK } from "../gameFigures/hexa";
@@ -47,6 +47,13 @@ export interface HexaStatView {
   fdNow: number;
   fdToCome: number;
 }
+// Which of a row's figures are estimates (≈ on the page): its cost (a HEXA Stat node's rank-ups: an
+// average), its final damage (a HEXA Stat node's; part of a step of the order; a node's flat ATT, from
+// the character's 1 ATT value).
+export interface Estimate {
+  cost: boolean;
+  fd: boolean;
+}
 // One step of the job's whole order (the same node several steps in a row joined), for the full order view.
 export interface HexaOrderStep {
   node: string; // a HexaNode, or "stat1" to "stat3"
@@ -56,6 +63,7 @@ export interface HexaOrderStep {
   to: number; // a HEXA Stat node: 20
   cost: Cost; // the whole step's (a HEXA Stat node: its unlock and its rank-ups from 0, on average)
   fd: number; // a HEXA Stat node's: rank 0 to 20, on average, with the stats it's worked out with
+  estimate: Estimate;
   done: boolean;
   days: number | null; // until the fragments up to the end of this step are in (0: now)
 }
@@ -68,7 +76,7 @@ export interface HexaBoard {
   invested: Cost & { exact: boolean };
   left: Cost & { exact: boolean };
   stats: HexaStatView[];
-  priority: (PriorityRow & { name: string; icon: string | null; total: Cost; days: number | null })[]; // total: fragments and Sol Erda through this row
+  priority: (PriorityRow & { name: string; icon: string | null; total: Cost; days: number | null; estimate: Estimate })[]; // total: fragments and Sol Erda through this row
   fdToDesired: number; // the final damage the priority's rows add together (%; HEXA Stat's on average)
   // perWeek: Erda's Request and the Epic Dungeon; needed: still to get for every level wanted (and every
   // HEXA Stat node that can be taken to 20), after the fragments owned
@@ -79,6 +87,7 @@ export interface HexaBoard {
   // what comes in from the input as typed)
   figures: { erdaRequest: number; dungeons: Record<HexaInput["dungeon"], number> };
   source: string; // where the order and final damage come from
+  attNode: string | null; // the node that also gives flat ATT (its name), counted from the 1 ATT value
 }
 
 // A HEXA picture's address, when it's downloaded (into the data folder's item-icons/hexa/).
@@ -104,22 +113,29 @@ async function savedInput(characterId: number): Promise<HexaInput> {
   return parsed?.success ? parsed.data : structuredClone(HEXA_DEFAULTS);
 }
 
-// A job's order (calc/hexa.ts buildOrder) from its figures.
-export function orderFor(job: HexaJob): ReturnType<typeof buildOrder> {
+// A job's order (calc/hexa.ts buildOrder) from its figures; a job with a node that also gives flat ATT
+// (v3.2.0), with that ATT's final damage too: `attWorth`, % final damage per 1 ATT (the character's 1 ATT
+// value), on top of the figures' (which leave it out).
+export function orderFor(job: HexaJob, attWorth = 0): ReturnType<typeof buildOrder> {
   // (every core is one node's)
   const cores = (levels: Readonly<Record<string, number>>) => Object.fromEntries(Object.entries(CORE_OF).map(([node, core]) => [core, levels[node]!])) as Record<CoreKey, number>;
+  const att = job.att;
   return buildOrder(
     job.nodes.filter((n) => n.key !== "janus"),
-    (levels) => hexaDamage(job.model, cores(levels)),
+    (levels) => hexaDamage(job.model, cores(levels)) * (att ? 1 + (attWorth * coreAttAt(att.points, levels[att.node]!)) / 100 : 1),
   );
 }
-// The same, built once per job and kept (a third of a second each; null: a job the page doesn't work out).
+// The same, built once per job (and 1 ATT's worth, for a job with an ATT node, to 4 decimals: stat values
+// typed again or another character's land on the same order) and kept (a third of a second each; null: a
+// job the page doesn't work out).
 const orders = new Map<string, ReturnType<typeof buildOrder>>();
-export function jobOrder(name: string): ReturnType<typeof buildOrder> | null {
+export function jobOrder(name: string, attWorth = 0): ReturnType<typeof buildOrder> | null {
   const job = hexaJob(name);
   if (!job) return null;
-  const known = orders.get(name) ?? orderFor(job);
-  orders.set(name, known);
+  const worth = Math.round(attWorth * 10_000) / 10_000;
+  const key = job.att ? `${name}|${worth}` : name;
+  const known = orders.get(key) ?? orderFor(job, worth);
+  orders.set(key, known);
   return known;
 }
 // (for the tests: forget every job's figures and order, so the next ask works them out again; with
@@ -145,7 +161,7 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   const icons = { stat: icon(HEXA_ICONS.stat), erda: icon(HEXA_ICONS.erda), frags: icon(HEXA_ICONS.frags) };
   const none = { ...NO_COST, exact: true };
   const figures = { erdaRequest: ERDA_REQUEST_FRAGS, dungeons: DUNGEON_FRAGS };
-  if (!job) return { known: false, input, nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek, needed: 0, days: 0 }, order: [], icons, figures, source: "" };
+  if (!job) return { known: false, input, nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek, needed: 0, days: 0 }, order: [], icons, figures, source: "", attNode: null };
   const values = statValuesOf(valuesRow ?? undefined);
   // (a level wanted below the level now is the level now: nothing to do)
   const desired = Object.fromEntries(HEXA_NODES.map((n) => [n, Math.max(input.current[n], input.desired[n])])) as Record<HexaNode, number>;
@@ -213,7 +229,7 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   // each HEXA Stat node from scratch: its unlock and every rank-up on average (its place in the order, its step)
   const fullCost = input.stats.map((_, i) => statLeft(i, false, 0, 0));
   const steps = placeStats(
-    jobOrder(c.job)!,
+    jobOrder(c.job, job.att ? worth.att : 0)!,
     (st) => levelCost(tables[st.node]!, st.from, st.to).frags,
     worked.map((w, i) => ({ stat: (i + 1) as 1 | 2 | 3, frags: fullCost[i]!.frags, fd: w.fromZero })),
   );
@@ -223,10 +239,11 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   });
   const names: Record<string, string> = { ...Object.fromEntries(job.nodes.map((f) => [f.key, f.name])), stat1: "HEXA Stat I", stat2: "HEXA Stat II", stat3: "HEXA Stat III" };
   const icons1: Record<string, string | null> = { ...Object.fromEntries(job.nodes.map((f) => [f.key, icon(f.icon)])), stat1: icons.stat, stat2: icons.stat, stat3: icons.stat };
+  const estimateOf = (node: string, partial = false): Estimate => ({ cost: node.startsWith("stat"), fd: node.startsWith("stat") || partial || node === job.att?.node });
   let through = NO_COST;
   const listed = rows.map((r) => {
     through = addCost(through, r.cost);
-    return { ...r, name: names[r.node]!, icon: icons1[r.node]!, total: through, days: daysFor(through.frags - input.owned, input.perDay, perWeek) };
+    return { ...r, name: names[r.node]!, icon: icons1[r.node]!, total: through, days: daysFor(through.frags - input.owned, input.perDay, perWeek), estimate: estimateOf(r.node, r.partial) };
   });
 
   // the whole order, every node to 30 and every HEXA Stat node to 20: what each step still costs adds up
@@ -237,11 +254,11 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
       const i = st.stat - 1;
       const s = stats[i]!;
       if (!s.needs) owed += s.left.frags;
-      return { node: `stat${st.stat}`, name: names[`stat${st.stat}`]!, icon: icons.stat, from: 0, to: STAT_MAX_RANK, cost: fullCost[i]!, fd: worked[i]!.fromZero, done: s.rank >= STAT_MAX_RANK, days: daysFor(owed - input.owned, input.perDay, perWeek) };
+      return { node: `stat${st.stat}`, name: names[`stat${st.stat}`]!, icon: icons.stat, from: 0, to: STAT_MAX_RANK, cost: fullCost[i]!, fd: worked[i]!.fromZero, estimate: estimateOf(`stat${st.stat}`), done: s.rank >= STAT_MAX_RANK, days: daysFor(owed - input.owned, input.perDay, perWeek) };
     }
     const t = tables[st.node]!;
     owed += levelCost(t, Math.max(st.from, input.current[st.node]), st.to).frags;
-    return { node: st.node, name: names[st.node]!, icon: icons1[st.node]!, from: st.from, to: st.to, cost: levelCost(t, st.from, st.to), fd: st.fd, done: input.current[st.node] >= st.to, days: daysFor(owed - input.owned, input.perDay, perWeek) };
+    return { node: st.node, name: names[st.node]!, icon: icons1[st.node]!, from: st.from, to: st.to, cost: levelCost(t, st.from, st.to), fd: st.fd, estimate: estimateOf(st.node), done: input.current[st.node] >= st.to, days: daysFor(owed - input.owned, input.perDay, perWeek) };
   });
 
   const toDesired = sum((f) => input.current[f.key], (f) => desired[f.key]);
@@ -260,5 +277,6 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
     icons,
     figures,
     source: `MapleScouter's figures (mapledoro's copy, read ${HEXA_FIGURES.generated}); the order built from them`,
+    attNode: job.att ? names[job.att.node]! : null,
   };
 }

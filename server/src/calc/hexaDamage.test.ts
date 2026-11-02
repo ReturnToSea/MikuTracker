@@ -76,6 +76,12 @@ describe("hexaDamage on made-up figures: how levels not measured are filled in",
     expect([keptOf(m, "skillCore2", 30), keptOf(m, "skillCore2", 0)]).toEqual([expect.closeTo(1, 12), expect.closeTo(0, 12)]);
   });
 
+  it("level 30 is all of a core's value even when Ren's curve for it doesn't end exactly at 1", () => {
+    const m: HexaModel = { ...synthetic(), curves: { ...SYN_CURVES, skill1: Array.from({ length: 31 }, (_, L) => (L / 30) * 0.9) } };
+    expect(keptOf(m, "skillCore1", 30)).toBeCloseTo(1, 12);
+    expect(keptOf(m, "skillCore1", 15)).toBeCloseTo(0.45, 12);
+  });
+
   it("a Mastery core or the 3rd common node measured at 1 and 15: a straight line between (no steps); the others: Ren's curve", () => {
     // kept at 1: 0.1, at 15: 0.5 (figures 0.91 and 0.95)
     const m = synthetic({ "masteryCore2=1": 0.91, "masteryCore2=15": 0.95, "generalCore3=1": 0.91, "generalCore3=15": 0.95, "skillCore2=1": 0.91, "skillCore2=15": 0.95 });

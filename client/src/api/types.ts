@@ -21,3 +21,4 @@ export type { UpgradeStep, UpgradeSystem, UpgradesBoard } from "../../../server/
 export type { HexaBoard, HexaCharacter, HexaNodeView, HexaOrderStep, HexaStatView, HexaTabs } from "../../../server/src/services/hexa";
 
 export type ThemeArt = Record<ThemeId, string | null>;
+export type { BadgeView, FamiliarBoard } from "../../../server/src/services/familiars";
