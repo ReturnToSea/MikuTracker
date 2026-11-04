@@ -5,6 +5,7 @@ import { BADGE_FIGURES, BADGES, FAMILIAR_BOSS_CAP, familiarLines } from "../game
 import { HttpError } from "../http";
 import { ownCharacter } from "./characters";
 import { iconFiles } from "./icons";
+import { parseSaved } from "./saved";
 
 // The Familiars page (v3.2.0): one character's summoned familiars and equipped badges as typed, with what
 // their damage stats add up to (for v4.0.0's stat sheet). (Its character tabs: the character list's.)
@@ -43,18 +44,13 @@ function problem(input: FamiliarInput): string | null {
 // its own, the rest kept.
 async function savedInput(characterId: number): Promise<FamiliarInput> {
   const row = await db().familiarPlan.findUnique({ where: { characterId } });
-  let parsed: ReturnType<typeof familiarInput.safeParse> | null = null;
-  try {
-    parsed = row ? familiarInput.safeParse(JSON.parse(row.data)) : null;
-  } catch {
-    // (not JSON: the defaults)
-  }
-  if (!parsed?.success) return structuredClone(FAMILIAR_DEFAULTS);
-  const familiars = parsed.data.familiars.map((f) => {
+  const parsed = parseSaved(row?.data, familiarInput);
+  if (!parsed) return structuredClone(FAMILIAR_DEFAULTS);
+  const familiars = parsed.familiars.map((f) => {
     const choices = choicesOf(f.rank);
     return { rank: f.rank, lines: f.lines.map((l, slot) => (familiarLineFits(l, slot as 0 | 1, choices) ? l : null)) };
   }) as FamiliarInput["familiars"];
-  return { familiars, badges: parsed.data.badges.filter(known) };
+  return { familiars, badges: parsed.badges.filter(known) };
 }
 
 export async function saveFamiliars(ownerId: string, characterId: number, input: FamiliarInput): Promise<void> {

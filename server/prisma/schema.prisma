@@ -53,6 +53,7 @@ model Character {
   gear           GearSlot[]
   hexa           HexaPlan?
   familiars      FamiliarPlan?
+  stats          StatSheet?
   statValues     StatValues?
 
   @@unique([ownerId, worldId, nameKey])
@@ -269,6 +270,15 @@ model HexaPlan {
 // three summoned familiars' ranks and lines, the badges equipped), checked on saving and on reading. No
 // row: the defaults (FAMILIAR_DEFAULTS).
 model FamiliarPlan {
+  characterId Int       @id
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  data        String
+}
+
+// A character's Stats page (v4.0.0), as typed: `data` is the JSON of @miku/shared's StatsInput (its Stats
+// window, settings, buffs, event stats, links, Artifact, Inner Ability, Oz Rings), checked on saving and on
+// reading. No row: the defaults (STATS_DEFAULTS).
+model StatSheet {
   characterId Int       @id
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   data        String

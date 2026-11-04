@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SymbolInfo, SymbolsBoard, SymbolsCharacter } from "../src/api/types";
@@ -190,6 +191,18 @@ describe("the Symbols tab", () => {
     await userEvent.selectOptions(esfera.getByRole("combobox", { name: "Esfera days a week" }), "5");
     await waitFor(() => expect(s.sent("PUT", "/symbols/1/esfera")).toHaveLength(2));
     expect(s.sent("PUT", "/symbols/1/esfera")[1]).toMatchObject({ days: 5 });
+  });
+
+  it("a saved symbol marks the Stats page's boards to be worked out again (its sacred symbol buff follows the Sacred symbols)", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    qc.setQueryData(["stats", 1], { input: {} });
+    fakeServer({ ...BASE_ROUTES, "GET /symbols": board([REMY, MEOW]), "PUT /symbols/:id/esfera": undefined });
+    renderWithApp(<App />, "/symbols", qc);
+    const esfera = await card("Esfera");
+    const level = esfera.getByRole("spinbutton", { name: "Esfera level" });
+    await userEvent.clear(level);
+    await userEvent.type(level, "3{Enter}");
+    await waitFor(() => expect(qc.getQueryState(["stats", 1])!.isInvalidated).toBe(true));
   });
 
   it("Enter saves too; a value past what the symbol allows is fitted first; nonsense is put back", async () => {

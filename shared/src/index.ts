@@ -358,3 +358,104 @@ export const FAMILIAR_DEFAULTS: FamiliarInput = {
   familiars: [0, 1, 2].map(() => ({ rank: "common", lines: [null, null] })) as FamiliarInput["familiars"],
   badges: [],
 };
+
+// ── v4.0.0: Stats ──────────────────────────────────────────────────────────────────────────────
+// The buffs, GMS's (chablades/mapledoro's GMS list, its order and names; decided 2026-11-03: GMS's only, not
+// MapleScouter's KMS ones): those ticked on their own; two groups where only one counts at a time (the game's
+// potions that don't stack: A, and B, foods and potions, some only for ATT or only for Magic ATT jobs); the
+// daily event buffs, under the event stats' switch.
+export const STAT_BUFFS = ["candiedApple", "sayramElixir", "collectorElixir", "honorableElixir", "extremePotion", "sparklingRedStar", "brightMoonlight", "heroEcho", "legionMight", "masarayuGift", "caretakerSupport", "vipBuff", "mvpSuperpower", "genepass", "enlightenedOne"] as const;
+export type StatBuff = (typeof STAT_BUFFS)[number];
+export const STAT_BUFFS_A = ["sparklingBlueStar", "greatHeroBoost", "legendaryHero", "advWeaponTempering"] as const;
+export const STAT_BUFFS_B = ["tengusJudgement", "attackPotionV", "magicPotionV", "onyxApple", "energizerDrink", "energizerDrinkMagic", "fishBuff", "witchStew", "ssiwsCheese"] as const;
+// (the group B ones only for jobs that use Magic ATT, and only for those that don't)
+export const STAT_BUFFS_MAGIC: readonly string[] = ["magicPotionV", "energizerDrinkMagic", "ssiwsCheese"];
+export const STAT_BUFFS_PHYSICAL: readonly string[] = ["attackPotionV", "energizerDrink"];
+export const STAT_EVENT_BUFFS = ["believeInYourself", "gourmandPower", "peerlessMarble"] as const;
+export type StatEventBuff = (typeof STAT_EVENT_BUFFS)[number];
+// The link skills the formula counts (MapleScouter's ten: its page takes no Mihile, Kaiser or Hayato link),
+// by MapleScouter's names, each to its highest level (the game's).
+export const STAT_LINKS = { thief: 9, magician: 9, kadena: 3, illium: 3, ark: 3, kain: 3, angel: 3, kanna: 3, mukhyun: 3, hoyoung: 3 } as const;
+export type StatLink = keyof typeof STAT_LINKS;
+export const COMBAT_ORDERS = ["none", "decent", "real"] as const;
+export const INNER_ABILITY = ["none", "passive", "target"] as const;
+
+const amount = (max: number) => z.number().min(0).max(max);
+const whole = (max: number) => z.number().int().min(0).max(max);
+// A stat as the game's Stats window shows it: base, %, and not affected by %.
+const statTriple = z.strictObject({ base: amount(10_000_000), per: amount(100_000), abs: amount(10_000_000) });
+const flags = <K extends string>(keys: readonly K[]) => z.strictObject(Object.fromEntries(keys.map((k) => [k, z.boolean()])) as Record<K, z.ZodBoolean>);
+// A character's Stats page, as typed (v4.0.0): its Stats window (main, secondary and a third stat, ATT or
+// Magic ATT, each as base / % / not affected; the rest as shown), the familiars' stat % lines (the window
+// leaves them out), the settings, the buffs, the event stats (switched on or off as one), the links, the
+// Legion's Wild Hunter card, the Artifact, the Inner Ability line and the Oz Rings. Level, job, world and
+// HEXA levels aren't typed: they come from elsewhere.
+export const statsInput = z.strictObject({
+  stats: z.strictObject({
+    main: statTriple,
+    sub: statTriple,
+    third: statTriple,
+    atk: statTriple,
+    dmg: amount(100_000),
+    boss: amount(100_000),
+    ied: amount(100),
+    critRate: amount(1_000),
+    critDmg: amount(10_000),
+    cdSec: amount(100),
+    cdPct: amount(100),
+    cdSkip: amount(100),
+    buffDuration: amount(10_000),
+    statusDmg: amount(10_000),
+    elemResist: amount(100),
+    summon: amount(10_000),
+    arcane: whole(100_000),
+    sacred: whole(100_000),
+  }),
+  famPct: z.strictObject({ main: amount(1_000), sub: amount(1_000), third: amount(1_000) }),
+  liberation: z.boolean(),
+  combatOrders: z.enum(COMBAT_ORDERS),
+  ruinShield: z.boolean(),
+  oneHanded: z.boolean(),
+  buffs: flags(STAT_BUFFS),
+  buffA: z.enum(STAT_BUFFS_A).nullable(),
+  buffB: z.enum(STAT_BUFFS_B).nullable(),
+  statPotion: z.boolean(), // the Advanced Stat Potion X (MapleScouter's box: its other tiers weren't measured)
+  // the guild skills' levels (Boss Slayers, For the Guild!, Hard Hitter, Undeterred) and Champion's Renown's
+  guild: z.strictObject({ bossSlayers: whole(15), forTheGuild: whole(15), hardHitter: whole(15), undeterred: whole(15) }),
+  renown: z.strictObject({ allStat: whole(5), atk: whole(5), boss: whole(5), ied: whole(5), critDmg: whole(5) }),
+  eventOn: z.boolean(),
+  events: flags(STAT_EVENT_BUFFS),
+  eventStats: z.strictObject({ att: amount(100_000), dmg: amount(10_000), boss: amount(10_000), ied: amount(100), critDmg: amount(10_000), allStat: amount(100_000) }),
+  links: z
+    .strictObject(Object.fromEntries(Object.keys(STAT_LINKS).map((k) => [k, whole(9)])) as Record<StatLink, ReturnType<typeof whole>>)
+    .refine((l) => (Object.keys(STAT_LINKS) as StatLink[]).every((k) => l[k] <= STAT_LINKS[k]), { message: "A link skill is past its highest level" }),
+  wildHunter: whole(1_000),
+  artifact: z.strictObject({ extraTarget: z.boolean(), finalAttack: amount(1_000) }),
+  innerAbility: z.enum(INNER_ABILITY),
+  rings: z.strictObject({ restraint: whole(6), continuous: whole(6), weapon: whole(6) }),
+});
+export type StatsInput = z.infer<typeof statsInput>;
+const noTriple = () => ({ base: 0, per: 0, abs: 0 });
+// A new character's: nothing typed, Decent Combat Orders (every job's buff guides use it), the event stats on.
+export const STATS_DEFAULTS: StatsInput = {
+  stats: { main: noTriple(), sub: noTriple(), third: noTriple(), atk: noTriple(), dmg: 0, boss: 0, ied: 0, critRate: 0, critDmg: 0, cdSec: 0, cdPct: 0, cdSkip: 0, buffDuration: 0, statusDmg: 0, elemResist: 0, summon: 0, arcane: 0, sacred: 0 },
+  famPct: { main: 0, sub: 0, third: 0 },
+  liberation: false,
+  combatOrders: "decent",
+  ruinShield: false,
+  oneHanded: false,
+  buffs: Object.fromEntries(STAT_BUFFS.map((k) => [k, false])) as Record<StatBuff, boolean>,
+  buffA: null,
+  buffB: null,
+  statPotion: false,
+  guild: { bossSlayers: 0, forTheGuild: 0, hardHitter: 0, undeterred: 0 },
+  renown: { allStat: 0, atk: 0, boss: 0, ied: 0, critDmg: 0 },
+  eventOn: true,
+  events: Object.fromEntries(STAT_EVENT_BUFFS.map((k) => [k, false])) as Record<StatEventBuff, boolean>,
+  eventStats: { att: 0, dmg: 0, boss: 0, ied: 0, critDmg: 0, allStat: 0 },
+  links: Object.fromEntries(Object.keys(STAT_LINKS).map((k) => [k, 0])) as Record<StatLink, number>,
+  wildHunter: 0,
+  artifact: { extraTarget: false, finalAttack: 0 },
+  innerAbility: "none",
+  rings: { restraint: 0, continuous: 0, weapon: 0 },
+};

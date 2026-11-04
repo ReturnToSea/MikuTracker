@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router";
-import { BossIcon, ChecklistIcon, FamiliarIcon, GearIcon, HexaIcon, HomeIcon, SymbolIcon, TableIcon, ThemesIcon } from "./icons";
+import { BossIcon, ChecklistIcon, FamiliarIcon, GearIcon, HexaIcon, StatsIcon, HomeIcon, SymbolIcon, TableIcon, ThemesIcon } from "./icons";
 
 export interface Tab {
   path: string;
@@ -18,6 +18,7 @@ export const TOP_TABS: Tab[] = [
   { path: "/symbols", label: "Symbols", icon: <SymbolIcon /> },
   { path: "/hexa", label: "HEXA", icon: <HexaIcon /> },
   { path: "/familiars", label: "Familiars", icon: <FamiliarIcon /> },
+  { path: "/stats", label: "Stats", icon: <StatsIcon /> },
   {
     path: "/gear",
     label: "Gear",

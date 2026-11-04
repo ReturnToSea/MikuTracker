@@ -11,10 +11,10 @@ const tabNames = () => tabs().map((l) => l.textContent!.replace("▾", "").trim(
 const gearPages = () => within(nav().getByRole("group", { name: "Gear pages" })).getAllByRole("link");
 
 describe("the feature tabs", () => {
-  it("are Home, Bosses, Checklist, Symbols, HEXA, Familiars and Gear, then the EXP table and Themes", () => {
+  it("are Home, Bosses, Checklist, Symbols, HEXA, Familiars, Stats and Gear, then the EXP table and Themes", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
-    expect(tabNames()).toEqual(["Home", "Bosses", "Checklist", "Symbols", "HEXA", "Familiars", "Gear", "EXP table", "Themes"]);
+    expect(tabNames()).toEqual(["Home", "Bosses", "Checklist", "Symbols", "HEXA", "Familiars", "Stats", "Gear", "EXP table", "Themes"]);
   });
 
   it("each opens its page, and only its own tab is marked as current", async () => {
@@ -28,6 +28,7 @@ describe("the feature tabs", () => {
       ["Symbols", "Symbols"],
       ["HEXA", "HEXA"],
       ["Familiars", "Familiars"],
+      ["Stats", "Stats"],
       ["Home", "Home"],
     ];
     for (const [label, heading] of pages) {
@@ -68,13 +69,13 @@ describe("the feature tabs", () => {
   it("each shows an icon", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
-    expect(tabs().map((l) => l.querySelectorAll("svg").length)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+    expect(tabs().map((l) => l.querySelectorAll("svg").length)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
   });
 
   it("go to the right addresses", () => {
     fakeServer(BASE_ROUTES);
     renderWithApp(<App />);
-    expect(tabs().map((l) => l.getAttribute("href"))).toEqual(["/", "/bosses", "/checklist", "/symbols", "/hexa", "/familiars", "/gear", "/exp-table", "/themes"]);
+    expect(tabs().map((l) => l.getAttribute("href"))).toEqual(["/", "/bosses", "/checklist", "/symbols", "/hexa", "/familiars", "/stats", "/gear", "/exp-table", "/themes"]);
     expect(gearPages().map((l) => l.getAttribute("href"))).toEqual(["/gear", "/gear/flames", "/gear/starforce", "/gear/potential", "/gear/upgrades"]);
   });
 

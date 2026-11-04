@@ -1,6 +1,6 @@
 import type { HexaInput, HexaStat } from "@miku/shared";
 import { useEffect, useState } from "react";
-import { useHexa, useHexaTabs, useSaveHexa, useSettings, useUpdateSettings } from "../api/hooks";
+import { useHexa, useHexaTabs, useRefreshStatus, useSaveHexa, useSettings, useUpdateSettings } from "../api/hooks";
 import type { HexaBoard, HexaOrderStep } from "../api/types";
 import { GearTop, NoCharacters, useGearCharacter } from "../components/GearTop";
 import { approx, dateAfter, doneShare, dungeonLabels, formatCount, formatDays, HEXA_GROUPS, levelsText, lineMax, nodeTag, perWeekOf, rankOf, readyText, sameLines, shortName, STAT_LABELS, statChoices, stepLabel, unlockedOf, wantedOf, withAllDesired, withLevel, withStatLine, withStatPick, withStatUnlocked } from "../lib/hexa";
@@ -371,6 +371,7 @@ export function HexaPage() {
   const settings = useSettings();
   const world = settings.data?.worldId ?? 45;
   const saveSettings = useUpdateSettings();
+  useRefreshStatus(); // after each check of Nexon, the levels (HEXA Stat's "Needs Lv.") are worked out again
   const tabs = useHexaTabs(world);
   const [picked, setPicked] = useGearCharacter();
   const [view, setView] = useState<"tracker" | "order">("tracker");

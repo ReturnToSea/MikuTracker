@@ -823,3 +823,41 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .familiar-totals th:first-child, .familiar-totals td:first-child { text-align: left; }
 .familiar-over { display: block; color: var(--accent); font-weight: 600; }
 .familiar-side > p { margin: 8px 0 0; }
+
+/* ── The Stats page (v4.0.0): like MapleScouter's Enter Directly page: the score on top, the Stats window on the
+   left, the buffs, links and the rest on the right ── */
+.page:has(.stp-page) { max-width: 1440px; }
+.stp-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.stp-split > div > .block:last-child, .stp-split > .block { margin-bottom: 0; }
+@media (max-width: 1100px) { .stp-split { grid-template-columns: minmax(0, 1fr); } }
+.stp-scores { display: flex; gap: 32px; }
+.stp-scores b { font-size: 1.9em; font-variant-numeric: tabular-nums; }
+.stp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 8px 0; }
+.stp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 10px; }
+.stp-field { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.stp-field > span:first-child { color: var(--text-muted); }
+.stp-field > b { font-variant-numeric: tabular-nums; }
+.stp-field.muted { opacity: 0.5; }
+.stp-num.text-input { width: 96px; padding: 3px 6px; text-align: right; font-variant-numeric: tabular-nums; }
+.stp-cd { display: inline-flex; align-items: center; gap: 4px; }
+.stp-cd .stp-num.text-input { width: 52px; }
+.stp-ticks { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 4px 0 10px; }
+.stp-ticks label { display: inline-flex; align-items: center; gap: 6px; }
+.stp-triples { width: 100%; border-collapse: collapse; }
+.stp-triples th { padding: 4px 6px; font-weight: 600; text-align: left; color: var(--text-muted); }
+.stp-triples td { padding: 3px 4px; border-top: var(--border-width) solid var(--border); }
+.stp-triples td .stp-num.text-input { width: 100%; }
+.stp-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; }
+.stp-tile { display: grid; justify-items: center; align-content: start; gap: 3px; padding: 6px 4px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); text-align: center; }
+.stp-tile.on { border-color: var(--accent); background: var(--accent-soft); }
+.stp-tile.off { opacity: 0.5; }
+.stp-tile button { padding: 0; border: 0; background: none; cursor: pointer; }
+.stp-tile small { font-size: 10px; line-height: 1.15; color: var(--text-muted); }
+.stp-tile .stp-num.text-input { width: 50px; text-align: center; }
+.stp-tile select { max-width: 60px; }
+.stp-pic { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
+.stp-pic.none { display: inline-grid; place-items: center; border-radius: 6px; background: var(--bg); color: var(--text-muted); font-weight: 700; }
+.stp-sub { margin: 12px 0 6px; }
+.stp-event-head { margin-top: 16px; }
+.stp-dim { opacity: 0.5; }
+.stp-radio { display: block; margin: 2px 0; }

@@ -22,3 +22,4 @@ export type { HexaBoard, HexaCharacter, HexaNodeView, HexaOrderStep, HexaStatVie
 
 export type ThemeArt = Record<ThemeId, string | null>;
 export type { BadgeView, FamiliarBoard } from "../../../server/src/services/familiars";
+export type { StatsBoard } from "../../../server/src/services/stats";

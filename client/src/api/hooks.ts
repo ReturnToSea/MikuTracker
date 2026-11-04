@@ -1,11 +1,11 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, FamiliarInput, GearDetailsInput, GearInput, HexaInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
+import type { AddCharacterInput, BossPlanInput, CustomTaskInput, FamiliarInput, StatsInput, GearDetailsInput, GearInput, HexaInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
 import { customNumber, withTaskDone } from "../lib/checklist";
 import { detailsAfter, withGear } from "../lib/gear";
 import { api } from "./client";
-import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FamiliarBoard, FlameGraph, FlamesBoard, GearBoard, HexaBoard, HexaTabs, PotentialBoard, PotentialGraph, StarForceBoard, UpgradesBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
+import type { BossBoard, CharacterList, ChecklistBoard, DetailOptions, FamiliarBoard, StatsBoard, FlameGraph, FlamesBoard, GearBoard, HexaBoard, HexaTabs, PotentialBoard, PotentialGraph, StarForceBoard, UpgradesBoard, StarForceDetail, SymbolsBoard, CharacterView, ExpTableView, ProgressView, RefreshStatus, SearchResult, SettingsView, ThemeArt } from "./types";
 
 export const keys = {
   settings: ["settings"],
@@ -29,6 +29,7 @@ export const keys = {
   hexaTabs: (world: number) => ["hexa-tabs", world],
   hexa: (id: number) => ["hexa", id],
   familiars: (id: number) => ["familiars", id],
+  stats: (id: number) => ["stats", id],
 } as const;
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
@@ -51,6 +52,9 @@ export function useRefreshStatus() {
       void qc.invalidateQueries({ queryKey: ["checklist"] });
       void qc.invalidateQueries({ queryKey: ["symbols"] });
       void qc.invalidateQueries({ queryKey: ["gear"] });
+      // (the Stats page's score and the HEXA page's "Needs Lv." follow the level)
+      void qc.invalidateQueries({ queryKey: ["stats"] });
+      void qc.invalidateQueries({ queryKey: ["hexa"] });
     }
     seen.current = finished;
   }, [finished, qc]);
@@ -169,7 +173,8 @@ export function useSaveSymbol(world: number) {
       await qc.cancelQueries({ queryKey: keys.symbols(world) });
       qc.setQueryData<SymbolsBoard>(keys.symbols(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, symbols: { ...c.symbols, [symbol]: state } } : c)) });
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.symbols(world) }),
+    // (the Stats page's sacred symbol buff follows the Sacred symbols' levels)
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: keys.symbols(world) }), qc.invalidateQueries({ queryKey: ["stats"] })]),
   });
 }
 
@@ -273,7 +278,9 @@ export const useHexa = (id: number | undefined) => useQuery({ queryKey: keys.hex
 // being saved (else the latest input), not the page as last drawn, so quick changes in several boxes all
 // count; shown at once, saved in order, and worked out again once the last one is saved (a reload between
 // them could bring back an older input).
-function useSaveBoard<I, B extends { input: I }>(id: number | undefined, key: (id: number) => readonly unknown[], path: string) {
+// (`also`: other boards worked out from it, reloaded with it)
+// Stryker disable next-line ArrayDeclaration: reloading a board no page has asked for changes nothing
+function useSaveBoard<I, B extends { input: I }>(id: number | undefined, key: (id: number) => readonly unknown[], path: string, also: (id: number) => (readonly unknown[])[] = () => []) {
   const qc = useQueryClient();
   // the change being saved last, and whose (each save carries its character: one queued while another tab
   // is picked still goes to its own; a change on another tab is never made to it)
@@ -284,7 +291,7 @@ function useSaveBoard<I, B extends { input: I }>(id: number | undefined, key: (i
     onSettled: (_data, _error, v) => {
       if (latest.current !== v) return;
       latest.current = null;
-      return qc.invalidateQueries({ queryKey: key(v.id) });
+      return Promise.all([key(v.id), ...also(v.id)].map((k) => qc.invalidateQueries({ queryKey: k })));
     },
   });
   // (the page offers changes only once the board is shown: there's a character)
@@ -302,9 +309,15 @@ function useSaveBoard<I, B extends { input: I }>(id: number | undefined, key: (i
   };
   return { change, error: save.error };
 }
-export const useSaveHexa = (id: number | undefined) => useSaveBoard<HexaInput, HexaBoard>(id, keys.hexa, "hexa");
+// (the Stats page's score follows the HEXA levels)
+export const useSaveHexa = (id: number | undefined) => useSaveBoard<HexaInput, HexaBoard>(id, keys.hexa, "hexa", (c) => [keys.stats(c)]);
 
 // The Familiars page (v3.2.0): one character's familiars and badges with their totals (its tabs: the
 // character list's), saved the HEXA page's way.
 export const useFamiliars = (id: number | undefined) => useQuery({ queryKey: keys.familiars(id ?? 0), queryFn: () => api<FamiliarBoard>(`/familiars/${id}`), enabled: id !== undefined, refetchOnWindowFocus: false });
 export const useSaveFamiliars = (id: number | undefined) => useSaveBoard<FamiliarInput, FamiliarBoard>(id, keys.familiars, "familiars");
+
+// The Stats page (v4.0.0): one character's Stats window and the rest, with the score and the worked-out boxes
+// (its tabs: the character list's), saved the HEXA page's way.
+export const useStats = (id: number | undefined) => useQuery({ queryKey: keys.stats(id ?? 0), queryFn: () => api<StatsBoard>(`/stats/${id}`), enabled: id !== undefined, refetchOnWindowFocus: false });
+export const useSaveStats = (id: number | undefined) => useSaveBoard<StatsInput, StatsBoard>(id, keys.stats, "stats");

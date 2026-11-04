@@ -2,7 +2,7 @@ import { HEXA_DEFAULTS, type HexaInput, type HexaStat, STAT_VALUE_DEFAULTS } fro
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { focusManager, QueryClient } from "@tanstack/react-query";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
 import { useSaveStatValues } from "../src/api/hooks";
 import type { HexaBoard, HexaTabs } from "../src/api/types";
@@ -459,6 +459,36 @@ describe("the HEXA page", () => {
     // (saved in order: the second waits behind the first, which never finishes; the change is what's shown)
     expect((screen.getByRole("spinbutton", { name: "Heartbound Verse level now" }) as HTMLInputElement).value).toBe("5");
     expect((screen.getByRole("spinbutton", { name: "Sol Hecate level now" }) as HTMLInputElement).value).toBe("6");
+  });
+
+  it("a saved change marks the Stats page's board for this character to be worked out again (its score follows the HEXA levels)", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    qc.setQueryData(["stats", 1], { input: {} });
+    qc.setQueryData(["stats", 3], { input: {} });
+    fakeServer({ ...BASE_ROUTES, "GET /hexa": TABS, "GET /hexa/1": BOARD, "PUT /hexa/1": undefined });
+    renderWithApp(<App />, "/hexa", qc);
+    const levels = await region("Current progress");
+    const box = levels.getByRole("spinbutton", { name: "Wish Unending level now" });
+    await userEvent.clear(box);
+    await userEvent.type(box, "12{Enter}");
+    await waitFor(() => expect(qc.getQueryState(["stats", 1])!.isInvalidated).toBe(true));
+    // another character's: not
+    expect(qc.getQueryState(["stats", 3])!.isInvalidated).toBe(false);
+  });
+
+  it("after each check of Nexon, the board is worked out again (HEXA Stat's level needs follow the level)", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 11, 59)));
+    let finishedAt: string | null = "2026-10-20T08:00:30.000Z";
+    const run = () => ({ last: { startedAt: "2026-10-20T08:00:00.000Z", finishedAt, checked: 1, updated: 1, missing: 0, failed: 0, problem: null } });
+    const s = show(BOARD, { "GET /refresh": run });
+    const loads = () => s.calls.filter((c) => c.method === "GET" && c.path === "/hexa/1").length;
+    await vi.waitFor(() => expect(loads()).toBe(1));
+    await new Promise((r) => setTimeout(r, 50));
+    finishedAt = "2026-10-20T12:00:30.000Z";
+    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.waitFor(() => expect(loads()).toBe(2));
+    vi.useRealTimers();
   });
 
   it("coming back to the window doesn't reload the board (a reload during a save would bring back the input before it)", async () => {

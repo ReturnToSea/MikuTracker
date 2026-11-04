@@ -184,21 +184,19 @@ How it works is in DESIGN.md ("Gear details" stat values, "Potential" and "Upgra
 - **Noted for later (2026-10-29):** the Upgrades request's time is the flame and potential maths (flames ~40 ms, potential ~25–37 ms for 25 slots); keeping each item's worked-out rolls between requests (until its gear or stat values change) would cut it. Not needed yet.
 
 ### The order (the owner, 2026-10-29)
-v3 HEXA (Ren, then every job), then Familiars; v4 Stats; v5 Bosses with pitched items and history; v6 the standalone calculators (their maths is done: built after Stats, which can fill in their stat values); v7 low-priority extras; v8 the server move with export.
+v3 HEXA (Ren, then every job), then Familiars; v4 Stats; v5 Bosses with pitched items and history; v6 automatic stats (added 2026-11-03: the stat sheet worked out from what's entered instead of typed); v7 the standalone calculators (their maths is done: built after Stats, which can fill in their stat values); v8 low-priority extras; v9 the server move with export.
 
 ### v3.0.0–v3.2.0: HEXA (6th job) progress, then Familiars
 A major version (decided 2026-10-23: a lot of work; moved from v4.0.0 on 2026-10-29, before Stats and Bosses, which need it). Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v4.0.0's stats and v5.0.0's bosses (they matter for boss damage).
-- **v3.0.0 (HEXA for Ren), v3.1.0 (every job, HEXA Stat's damage) and v3.2.0 (Familiars; a node's flat ATT; estimates from the server): built.** How they work: DESIGN.md "HEXA" and "Familiars". v3.2.0's status: built and every check done (tests, typecheck, `qa:check` 332/332, the review pass with its 10 fixes, mutation testing 100%); waiting for the owner's agreement, then the commit. One plan item dropped on the way, for the owner to know: building every job's order ahead in the figures script (an ATT job's order depends on the character's 1 ATT value, so orders stay built on first use and kept).
+- **v3.0.0 (HEXA for Ren), v3.1.0 (every job, HEXA Stat's damage) and v3.2.0 (Familiars; a node's flat ATT; estimates from the server): built.** How they work: DESIGN.md "HEXA" and "Familiars". v3.2.0: released 2026-11-02. One plan item dropped on the way, for the owner to know: building every job's order ahead in the figures script (an ATT job's order depends on the character's 1 ATT value, so orders stay built on first use and kept).
 
-### v4.0.0: Stats
+### v4.0.0–v4.1.0: Stats
 A major version, in smaller steps, after HEXA (v3: its levels are needed) (the owner, 2026-10-28). Each roster character's **stats**, and what they're worth.
-- **Stats typed in, and worked out where the app can (2026-10-24, widened 2026-10-28):** Nexon publishes no GMS stats, so nothing is imported automatically. A **stat sheet** per character: its stats **worked out** from the saved gear (with set effects, once entered) and the other systems as they come (symbols already, HEXA from v3), with a **second menu in the same place to type values by hand** instead (or override the worked-out ones: Legion, Hyper Stats, Ability, links, familiars and buffs aren't in the app).
-- **Event stats (the owner, 2026-11-02):** events sometimes give stats that add damage (event buffs or rings, for a while); the stat sheet will need somewhere to **type in event stats' values**, kept apart from the rest so they can be turned off when the event ends. To plan with v4.
-- **Turned into one number and stat efficiency**, the way MapleScouter does: the sheet through a damage formula with **constants per class** (standing in for its skill rotation) gives a "power"; and what 1% STR, 1 ATT, 1% IED, … are worth to this character now, filling the stat value boxes (v2.1.0–v2.3.0) instead of copying them from MapleScouter, staying right as the gear changes (it also fixes "final damage per 100 score" only holding for small changes).
-- **The method:** MapleScouter's, per mapledoro's rebuild (PR #183; its code in `tempdata/scouter/`) and maplecompile's (below). Our own code (neither has a license).
-- **The data: copied once, by hand, into `tempdata/`, never scraped** (MapleScouter blocks scripted requests since Oct 2026; never work around it). mapledoro's public repository has every class's constants (`public/data/scouter-engine.json`); they came from hundreds of requests to MapleScouter, which can't be redone now. A snapshot goes stale after big patches (class reworks): the page says its date, refreshed by hand from the same source when needed.
-- **Checked against MapleScouter itself before it's trusted** (the owner, 2026-10-28): a handful of real sheets (several classes, MikuBeam's Kanna among them) typed **by hand** into MapleScouter's "Enter Directly" page, its power and stat efficiency compared with ours; differences reported, not hidden; again after each refresh of the data. (By hand, as a person using the site: no scripts against it.)
-- **Research found 2026-10-23** (from another open-source GMS project's notes, `iamnbutler/maple`, `docs/research/existing-tools.md`, researched 2026-09-06): MapleScouter is KMS-only and can't load GMS characters (GMS players use its "Enter Directly" page); its backend API is private. `RonaldLiu2143/maplecompile` has a full reverse-engineering of its damage and boss clear-rate maths (`src/lib/scouter/calc.ts`, `boss-cuts.ts`) and boss data (`boss-info-data.json`), but **no license**, so it's a reference to reimplement from, not code to copy. The same notes list sources for item stats, Star Force and cube rates (useful for v1.5.0 and v3.x).
+- **v4.0.0, the typed Stats page and MapleScouter's score: built** (how it works: DESIGN.md "Stats"; planned with the owner 2026-11-03, research in `tempdata/stats/`). Status: built and every check done (tests, typecheck, `qa:check` 344/344, the review pass with its 10 fixes, mutation testing 100% in a full run); waiting for the owner's agreement, then the commit.
+- **v4.1.0, stat efficiency:** what +1% Boss, +1 ATT, +1% IED, … add for this character (the formula, each stat nudged), **filling the stat value boxes** (v2.1.0–v2.3.0) instead of copying them from MapleScouter, staying right as the gear changes (it also fixes "final damage per 100 score" only holding for small changes). Crit rate past 100% into crit damage for the 7 archer-type jobs is already in the score (mapledoro's rates); v4.1 shows it in the efficiency too.
+- **Then the hand checks against MapleScouter itself** (the owner, 2026-10-28): a handful of real sheets (several classes, MikuBeam's Kanna among them) typed **by hand** into MapleScouter's Enter Directly page, its score and stat efficiency compared with ours; differences reported, not hidden; again after each refresh of the data. (By hand, as a person using the site: no scripts against it.)
+- **The data:** copied once, by hand, never scraped (MapleScouter blocks scripted requests since Oct 2026; never work around it): mapledoro's measured figures (`scripts/stats-data.mjs`). A snapshot goes stale after big patches (class reworks): the page says its date.
+- **Event stats (the owner, 2026-11-02):** built into v4.0.0 (their own On tick).
 
 ### v5.0.0: Bosses
 A major version after v4.0.0, whose stats and power it needs (the owner, 2026-10-28: a lot of testing by hand). Which bosses each roster character **can actually do**, saved. Separate from the boss tracker (v1.2.0), which records what you *do*.
@@ -223,20 +221,26 @@ Added 2026-10-27 by the owner, to be discussed before building (moved from v2.5.
 ### v5.2.0: Boss and checklist history
 past weeks' cleared bosses and meso, and past days' and weeks' checklist ticks (moved out of v1.2.0 and v1.3.0 on 2026-10-23: not core to them; the ticks are already kept).
 
-### v6.0.0–v6.2.0: Standalone upgrade calculators
+### v6.0.0–v6.1.0: Automatic stats
+Added 2026-11-03 by the owner: a big version **after the boss versions (v5)**. The stat sheet **worked out from what's entered** instead of typed, so changing items (or anything else the app knows) updates the stats, the score, stat efficiency and the boss clears by itself. The typed stat window (v4) stays as the override and fallback, and as **the check: "worked out vs your stat window"** per character, the gap pointing at what's missing.
+- **Familiars' main stat % lines** (v4 types them, decided 2026-11-03): filled in from the Familiars page.
+- **v6.0.0, the typed sheet follows what changes in the app:** when an item is swapped, starred, reflamed or cubed on the Gear pages (or a symbol, HEXA Stat or a familiar line changes), the typed numbers shift by exactly that change (the app knows the before and after). The cheap first step: "items update it" without the full calculation.
+- **v6.1.0 (or more steps), the full calculation:** gear (base stats, stars, flames, potential; **set effects** from the wiki, a script like the gear list's), symbols, HEXA Stat, familiars and badges (already in the app), level and AP; **typed as systems once**: Legion (the grid's stats and each character block's, the Artifact; the owner: the blocks' stats may be small, to check), Hyper Stats, Ability, link skills, and the small sources (title, medals, emblem, pets' gear, cash gear, guild skills, Monster Collection…); and **each job's passive skills** from the wiki's skill pages (conditional ones read with care; re-run after balance patches), **a few jobs first** (Ren, Night Walker, Kanna) checked against their real stat windows, more added later.
+
+### v7.0.0–v7.2.0: Standalone upgrade calculators
 Their own tabs, used as calculators, **not tied to the saved gear or characters** (the owner, 2026-10-24: different and still useful information; v2's saved-gear pages stay as they are, a separate step; moved from v3 on 2026-10-29: the maths is done, only pages are left, and after Stats they can fill in the stat values). They reuse v2's maths (the flame odds and score from v2.1.0, then Star Force and potential).
-- **v6.0.0, flames:** any item (level, boss or not, weapon attack) and flames, with your own stat values: the score, the odds and costs of a better flame, the graph, stop scores.
-- **v6.1.0, potential:** how many cubes it should take for the lines you want.
-- **v6.2.0, Star Force:** the expected meso, and the chance of booming, to reach a star.
+- **v7.0.0, flames:** any item (level, boss or not, weapon attack) and flames, with your own stat values: the score, the odds and costs of a better flame, the graph, stop scores.
+- **v7.1.0, potential:** how many cubes it should take for the lines you want.
+- **v7.2.0, Star Force:** the expected meso, and the chance of booming, to reach a star.
 
-### v7.0.0–v7.4.0: Low-priority extras (the owner, 2026-10-29)
-- **v7.0.0, Potential targets by lines:** see v2.3.0's notes above (which line combinations reach a target, with their shares; a target picked as "33% ATT or better").
-- **v7.1.0, Potential extras:** event and boss cubes, Kanna's HP, Zero's second weapon (v2.3.0's notes above).
-- **v7.2.0, Star transfer:** starring a fodder copy and moving its stars, on the Star Force page.
-- **v7.3.0, More totems and rental equipment** (noted 2026-10-23, from the gear tab's planning): add the other totems (e.g. the weekly farmable temporary ones and rental ones) and rental gear to the gear lists.
-- **v7.4.0, Avatar history** (moved here 2026-10-23, not important for now): Every avatar a character has had, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
+### v8.0.0–v8.4.0: Low-priority extras (the owner, 2026-10-29)
+- **v8.0.0, Potential targets by lines:** see v2.3.0's notes above (which line combinations reach a target, with their shares; a target picked as "33% ATT or better").
+- **v8.1.0, Potential extras:** event and boss cubes, Kanna's HP, Zero's second weapon (v2.3.0's notes above).
+- **v8.2.0, Star transfer:** starring a fodder copy and moving its stars, on the Star Force page.
+- **v8.3.0, More totems and rental equipment** (noted 2026-10-23, from the gear tab's planning): add the other totems (e.g. the weekly farmable temporary ones and rental ones) and rental gear to the gear lists.
+- **v8.4.0, Avatar history** (moved here 2026-10-23, not important for now): Every avatar a character has had, with the date each one first appeared. (The image files are already kept from v0.5.0; this adds showing them.)
 
-### v8.0.0: Moving to a server, and export (for now; likely later still)
+### v9.0.0: Moving to a server, and export (for now; likely later still)
 Everything needed only when the app moves off this Mac (decided 2026-10-23). Nothing here is needed while it runs on the Mac.
 - **Docker:** a Dockerfile and compose file, plus a check that the app runs in a container. Data lives on a volume (`MIKU_DATA_DIR=/data`), with `HOST=0.0.0.0` and `MIKU_IN_CONTAINER=1`, the port published only to `127.0.0.1`, and `restart: unless-stopped` doing the launch agent's job. This proves the move off the Mac works before it's needed. (Moving to Postgres is separate: it needs a fresh starting migration, and `pg_dump` for backups.)
 - **Login:** needed before the app answers anywhere but the machine it runs on. Until then it refuses any other address (`config.ts`). "Whose data is this" already lives in one place (`owner.ts`), ready for it.

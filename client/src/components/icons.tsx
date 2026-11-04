@@ -60,6 +60,16 @@ export const FamiliarIcon = () => (
   </svg>
 );
 
+// Bars: the Stats page.
+export const StatsIcon = () => (
+  <svg {...common}>
+    <path d="M5 20V11" />
+    <path d="M10 20V5" />
+    <path d="M15 20v-6" />
+    <path d="M20 20V8" />
+  </svg>
+);
+
 // A helmet: the gear tab.
 export const GearIcon = () => (
   <svg {...common}>

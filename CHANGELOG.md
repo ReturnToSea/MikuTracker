@@ -2,6 +2,19 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v4.0.0: Stats, and MapleScouter's score (2026-11-04)
+
+- **A new Stats page** (its own tab, after Familiars), laid out like MapleScouter's Enter Directly page (layout A of five mockups): each character's **Stats window, typed** (each stat as Base / % / % Not Applied, Damage, Boss, IED, crit, cooldown and the rest), and its **score at 380% and 300% boss defense**: MapleScouter's, as chablades/mapledoro rebuilt its formula, in our own code. **The same as mapledoro's engine on 318 random sheets across all 53 jobs.**
+- **Worked out, not typed:** the level, the world, the **HEXA levels (from the HEXA page)**, the **Final Damage** (the class's own, Combat Orders, Liberation, the Ruin Force Shield and the Heroic bonus by level), the **General Range** (the top of the game's damage range: if it matches yours, the stats were typed right) and the ATT total. Both match the owner's MapleScouter screenshot exactly (139.35%, 272,801,300).
+- **Buffs, GMS's:** mapledoro's GMS list with the wiki's pictures (`node scripts/stats-icons.mjs`, by hand, never in git), the two "one of these" potion groups, the guild skills, Champion's Renown, the Advanced Stat Potion; **the sacred symbol buff on by itself once every Sacred symbol is maxed** on the Symbols page. **Event stats** with their own On tick (the daily event buffs and typed values).
+- **Links** (MapleScouter's ten), the Wild Hunter Legion card, the Legion Artifact, the Special Inner Ability line, the Oz Rings (with their pictures).
+- **`node scripts/stats-data.mjs`** rebuilds every job's figures from mapledoro's data by hand.
+- Stat efficiency (filling the stat value boxes) is v4.1.0; working the stats out from what's entered instead of typing them is v6.
+- **From the review pass** (10 findings, all handled): a saved sheet keeps what still fits when the input changes later (it would have been wiped); the 300% score worked out without a division, and no score ("—") where too little IED leaves no damage (it showed 0 or could fail); the server ignores what a job can't have (a Ruin Force Shield on a Mercedes, an ATT-only food on a magician); the Advanced Stat Potion is one tick (only tier X was ever counted); the boxes MapleScouter's damage ignores say so on hover; one helper reads every page's saved input; three ring pictures checked directly, not by listing the icon folder; the test runs' clean-up refuses anything but a throwaway test folder.
+- **The Stats and HEXA pages notice the 4-hour Nexon check** (found by mutation testing): with either open, a level-up now updates the score and HEXA Stat's "Needs Lv." (it waited until the page was opened again).
+- **Mutation testing: 100%** (a full run: a major version, and the test setup changed): about 100 planted bugs not caught at first, all in the new Stats code, each answered by a test worked out by hand (the score's curve, the cooldown tables, each job's range, saves reloading the Stats page, every name) or marked where it can't change the result.
+- **Test runs start clean:** each empties its own temporary folder first (the folder's number is reused by the system, and an interrupted run's leftovers made a database test fail once).
+
 ## v3.2.0: Familiars, and a node's flat ATT (2026-11-02)
 
 - **A new Familiars page** (its own tab, after HEXA): each character's **3 summoned familiars** and **equipped badges**, and what their damage stats add up to, for the stat sheet later (v4). Layout A of five mockups, the familiars in one box.

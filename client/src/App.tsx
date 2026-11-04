@@ -6,6 +6,7 @@ import { ChecklistPage } from "./pages/ChecklistPage";
 import { ExpTablePage } from "./pages/ExpTablePage";
 import { FamiliarsPage } from "./pages/FamiliarsPage";
 import { HexaPage } from "./pages/HexaPage";
+import { StatsPage } from "./pages/StatsPage";
 import { SymbolsPage } from "./pages/SymbolsPage";
 import { HomePage } from "./pages/HomePage";
 import { FlamesPage } from "./pages/FlamesPage";
@@ -30,6 +31,7 @@ export function App() {
             <Route path="/symbols" element={<SymbolsPage />} />
             <Route path="/hexa" element={<HexaPage />} />
             <Route path="/familiars" element={<FamiliarsPage />} />
+            <Route path="/stats" element={<StatsPage />} />
             <Route path="/gear" element={<GearPage />} />
             <Route path="/gear/flames" element={<FlamesPage />} />
             <Route path="/gear/starforce" element={<StarForcePage />} />

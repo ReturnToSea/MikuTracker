@@ -52,7 +52,7 @@ try {
     const url = new URL(page.url()).pathname;
     check("Rail", `"${label}" opens ${where} and is highlighted`, url === where && (await text(".rail a.active"))?.includes(label) && (!heading || (await text("h1.page-title")) === heading), url);
   }
-  check("Rail", "no TBD tab left: after Bosses, Checklist and Symbols come HEXA (v3.0.0), Familiars (v3.2.0) and Gear", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("HEXA") && (await page.locator(".rail a").nth(5).innerText()).includes("Familiars") && (await page.locator(".rail a").nth(6).innerText()).includes("Gear"));
+  check("Rail", "no TBD tab left: after Bosses, Checklist and Symbols come HEXA (v3.0.0), Familiars (v3.2.0), Stats (v4.0.0) and Gear", (await page.locator(".rail a", { hasText: "TBD" }).count()) === 0 && (await page.locator(".rail a").nth(3).innerText()).includes("Symbols") && (await page.locator(".rail a").nth(4).innerText()).includes("HEXA") && (await page.locator(".rail a").nth(5).innerText()).includes("Familiars") && (await page.locator(".rail a").nth(6).innerText()).includes("Stats") && (await page.locator(".rail a").nth(7).innerText()).includes("Gear"));
   for (let n = 1; n <= 4; n++) {
     await go(`/tbd/${n}`);
     check("TBD", `/tbd/${n} shows the placeholder`, (await text(".notice")) === "A feature still to be decided.");
@@ -1056,6 +1056,59 @@ try {
   check("API", "familiars: a character that doesn't exist: 404", (await api("GET", "/familiars/999999")).status === 404);
   // (back to nothing, for the checks after)
   check("Familiars", "cleared again", (await api("PUT", `/familiars/${mikuId}`, { familiars: [0, 1, 2].map(() => ({ rank: "common", lines: [null, null] })), badges: [] })).status === 204);
+
+  // ---------- Stats (v4.0.0) ----------
+  await go("/stats");
+  const statsWin = page.getByRole("region", { name: "Character Stats" });
+  await statsWin.waitFor({ timeout: 10000 });
+  check("Stats", "in the rail after Familiars; MikuBeam (a Kanna): INT, LUK and Magic ATT rows, a Heroic world", (await page.getByRole("tab", { name: /MikuBeam/ }).getAttribute("aria-selected")) === "true" && (await statsWin.getByRole("textbox", { name: "INT base" }).count()) === 1 && (await statsWin.getByRole("textbox", { name: "LUK base" }).count()) === 1 && (await statsWin.getByRole("textbox", { name: "Magic ATT base" }).count()) === 1 && /Heroic/.test(await statsWin.getByRole("group", { name: "World" }).innerText()));
+  const typeStat = async (name, value) => {
+    const box = statsWin.getByRole("textbox", { name, exact: true });
+    await box.fill(String(value));
+    await box.press("Enter");
+    await settle(250);
+  };
+  await typeStat("INT base", 10000);
+  await typeStat("INT %", 100);
+  await typeStat("LUK base", 2000);
+  await typeStat("Magic ATT base", 2000);
+  await typeStat("Magic ATT %", 100);
+  await typeStat("Damage", 100);
+  await settle(800);
+  const statShown = async (name) => (await statsWin.getByRole("group", { name, exact: true }).innerText()).replace(/\s+/g, " ");
+  // by hand (Kanna: weapon multiplier 1.35, no always-on Final Damage; Heroic at Lv. 250+: +45%): INT 20,000, LUK 2,000, Magic ATT 4,000;
+  // round(1.35 × (4 × 20,000 + 2,000) × 4,000 / 100) = 4,428,000 × (1 + 100%) × 1.45 = 12,841,200
+  check("Stats", "worked out, by hand: Final Damage 45.00 (Heroic), Magic ATT 4,000, General Range 12,841,200", (await statShown("Final Damage")).endsWith("45.00") && (await statShown("Attack")).endsWith("4,000") && (await statShown("General Range")).endsWith("12,841,200"), `${await statShown("Final Damage")} | ${await statShown("General Range")}`);
+  const statScore = async () => Number((await page.getByRole("region", { name: "Score" }).locator("b").first().innerText()).replace(/,/g, ""));
+  const scoreBefore = await statScore();
+  check("Stats", "a score at 380% and 300%", scoreBefore > 0 && !/—/.test(await page.getByRole("region", { name: "Score" }).innerText()), String(scoreBefore));
+  const buffsBox = page.getByRole("region", { name: "Buffs" });
+  await buffsBox.getByRole("button", { name: "Sayram's Elixir" }).click();
+  await settle(1000);
+  check("Stats", "ticking Sayram's Elixir (ATT, damage, crit damage, ATT %) raises the score", (await statScore()) > scoreBefore, `${scoreBefore} → ${await statScore()}`);
+  check("Stats", "a Kanna (Magic ATT) gets the Magic ATT foods, not the ATT ones", (await buffsBox.getByRole("button", { name: "Advanced Magic Potion V" }).count()) === 1 && (await buffsBox.getByRole("button", { name: "Advanced Attack Potion V" }).count()) === 0);
+  await buffsBox.getByRole("checkbox", { name: "On" }).click();
+  await settle(500);
+  check("Stats", "the event stats switched off: their buffs can't be ticked", await buffsBox.getByRole("button", { name: "Gourmand Power" }).isDisabled());
+  await buffsBox.getByRole("checkbox", { name: "On" }).click();
+  const statsRest = page.getByRole("region", { name: "HEXA, Artifact, Inner Ability and Oz Rings" });
+  check("Stats", "HEXA levels shown from the HEXA page, not typed here (Origin 1)", (await statsRest.locator(".stp-tile").first().innerText()).includes("1") && (await statsRest.getByRole("textbox").count()) === 4);
+  await shot("23d-stats");
+  const statsId = (await api("GET", "/characters?world=45")).json.characters.find((c) => c.name === "MikuBeam").id;
+  const sb = (await api("GET", `/stats/${statsId}`)).json;
+  check("Stats", "what's typed was saved (the API agrees)", sb.input.stats.main.base === 10000 && sb.input.stats.atk.per === 100 && sb.input.buffs.sayramElixir === true && sb.input.eventOn === true && sb.out.generalRange === 12_841_200, JSON.stringify(sb.out));
+  await page.setViewportSize({ width: 900, height: 900 });
+  await settle(400);
+  check("Layout", "the Stats page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  for (const [what, body, status] of [
+    ["stats: a link past its level", { ...sb.input, links: { ...sb.input.links, kain: 4 } }, 400],
+    ["stats: IED over 100%", { ...sb.input, stats: { ...sb.input.stats, ied: 101 } }, 400],
+  ]) {
+    const r = await api("PUT", `/stats/${statsId}`, body);
+    check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);
+  }
+  check("API", "stats: a character that doesn't exist: 404", (await api("GET", "/stats/999999")).status === 404);
 
   // ---------- EXP table ----------
   await go("/exp-table");

@@ -6,6 +6,7 @@ import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, HEXA_FIGURES, HEXA_ICONS, f
 import { listCharacters, ownCharacter } from "./characters";
 import { statValuesOf } from "./gear";
 import { iconFiles } from "./icons";
+import { parseSaved } from "./saved";
 
 // The HEXA page (v3.0.0, every job from v3.1.0): a world's characters (tabs), and one character's HEXA as
 // typed, with what it has cost, what's left, the upgrade priority (the job's order, built from
@@ -101,16 +102,11 @@ export async function hexaTabs(ownerId: string, worldId: number): Promise<HexaTa
   return { characters: characters.map((c) => ({ id: c.id, name: c.name, job: c.job, level: c.level, avatar: c.avatar, known: hexaJob(c.job) !== null, shine: isShine(c.job) })) };
 }
 
-// The saved input, or the defaults (none saved, or one that no longer passes the rules or isn't JSON).
-async function savedInput(characterId: number): Promise<HexaInput> {
+// The saved input, or the defaults (none saved, or one that no longer passes the rules or isn't JSON;
+// the Stats page reads the levels now from it too).
+export async function savedInput(characterId: number): Promise<HexaInput> {
   const row = await db().hexaPlan.findUnique({ where: { characterId } });
-  let parsed: ReturnType<typeof hexaInput.safeParse> | null = null;
-  try {
-    parsed = row ? hexaInput.safeParse(JSON.parse(row.data)) : null;
-  } catch {
-    // (not JSON: the defaults)
-  }
-  return parsed?.success ? parsed.data : structuredClone(HEXA_DEFAULTS);
+  return parseSaved(row?.data, hexaInput) ?? structuredClone(HEXA_DEFAULTS);
 }
 
 // A job's order (calc/hexa.ts buildOrder) from its figures; a job with a node that also gives flat ATT
