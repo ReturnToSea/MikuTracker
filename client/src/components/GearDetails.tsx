@@ -1,4 +1,4 @@
-import { COOLDOWN_SECONDS, type GearDetailsInput, POTENTIAL_RANKS, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
+import { COOLDOWN_SECONDS, type GearDetailsInput, POTENTIAL_RANKS, STAT_VALUE_DEFAULTS, STAT_VALUES_UNTYPED, type StatValuesTyped } from "@miku/shared";
 import { useEffect, useState } from "react";
 import { useGearOptions } from "../api/hooks";
 import type { DetailOptions, FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
@@ -6,6 +6,7 @@ import { formatScore, liveScore, scoreBand } from "../lib/flames";
 import { SLOT_ORDER } from "../lib/gear";
 import { clickStar, draftOf, fitDraft, isDirty, lineChoices, summary, toggleFlame, withRank, rankName } from "../lib/gearDetails";
 import { cooldownBelow } from "../lib/potential";
+import { boxesOn, shortNumber, type ValuePage } from "../lib/statValues";
 
 const Icon = ({ item }: { item: GearItemView | undefined }) => (item?.icon ? <img className="item-icon" src={item.icon} alt="" loading="lazy" /> : <span className="no-icon">no icon</span>);
 
@@ -343,9 +344,9 @@ export function FlameTable({ rows, flames, onChange }: { rows: DetailOptions["fl
   );
 }
 
-// What each stat is worth to the character, typed in; saved when you leave a box. One set for every
-// page (Flames, Star Force, Potential): the potential lines' values from v2.3.0. Only the boxes the
-// character needs, in its own stats' names (the server lists them: statBoxes).
+// What each stat is worth to the character: worked out from its Stats page (v4.1.0), a typed one overriding
+// it on every page; saved when you leave a box, cleared to go back. Only the boxes the character needs, in
+// its own stats' names (the server lists them: statBoxes), and only those the page uses.
 type NumberField = "att" | "allStat" | "secRatio" | "bossDmg" | "fdPer100" | "attPct" | "mainFlat" | "critDmg" | "ied300" | "ied380";
 function fieldsFor(c: GearCharacter): [NumberField, string, string][] {
   const b = c.statBoxes;
@@ -367,7 +368,7 @@ function fieldsFor(c: GearCharacter): [NumberField, string, string][] {
 }
 // A typed number (an empty box only where `empty` allows it: then null).
 // (`hint`: what an empty box means, shown greyed in it)
-function ValueBox({ value, label, onCommit, empty = false, hint }: { value: number | null; label: string; onCommit: (n: number | null) => void; empty?: boolean; hint?: string }) {
+function ValueBox({ value, label, onCommit, empty = false, hint, title }: { value: number | null; label: string; onCommit: (n: number | null) => void; empty?: boolean; hint?: string; title?: string }) {
   const shown = value === null ? "" : String(value);
   const [text, setText] = useState(shown);
   useEffect(() => setText(shown), [shown]);
@@ -377,84 +378,92 @@ function ValueBox({ value, label, onCommit, empty = false, hint }: { value: numb
     else if (text.trim() !== "" && Number.isFinite(n) && n >= 0 && n !== value) onCommit(n);
     else setText(shown);
   };
-  return <input className="text-input count" type="number" step="any" min={0} aria-label={label} value={text} placeholder={empty ? (hint ?? "—") : undefined} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
+  return <input className={`text-input count${title ? " typed" : ""}`} type="number" step="any" min={0} aria-label={label} title={title} value={text} placeholder={empty ? (hint ?? "—") : undefined} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
 }
 
-export function StatValuesBox({ c, onSave }: { c: GearCharacter; onSave: (v: StatValuesInput) => void }) {
-  const v = c.statValues;
-  const changed = (Object.keys(STAT_VALUE_DEFAULTS) as (keyof StatValuesInput)[]).some((k) => v[k] !== STAT_VALUE_DEFAULTS[k]);
+export function StatValuesBox({ c, page, onSave }: { c: GearCharacter; page: ValuePage; onSave: (v: StatValuesTyped) => void }) {
+  const { typed, worked, values } = c.statValues;
+  const on = boxesOn(page);
+  const anyTyped = (Object.keys(STAT_VALUES_UNTYPED) as (keyof StatValuesTyped)[]).some((k) => k !== "bossDef" && k !== "cdMin" && typed[k] !== null);
+  // what an empty box counts: worked out, else the default (a stat's 1%: the job's)
+  const under = (k: keyof NonNullable<typeof worked>, fallback: number | null) => {
+    const w = worked?.[k] ?? fallback;
+    return w === null ? undefined : shortNumber(w);
+  };
+  const typedTitle = (k: keyof NonNullable<typeof worked>, fallback: number | null) => (typed[k] === null ? undefined : `Typed. Clear it to use ${under(k, fallback) ?? "nothing"}`);
   return (
     <div className="stat-values" role="group" aria-label="Stat values">
       <div className="row between">
         <div className="gear-group">Stat values · {c.name}</div>
-        <button type="button" className="btn ghost tight" disabled={!changed} onClick={() => onSave({ ...STAT_VALUE_DEFAULTS })}>
-          Reset to defaults
+        <button type="button" className="btn ghost tight" disabled={!anyTyped} onClick={() => onSave({ ...STAT_VALUES_UNTYPED, bossDef: typed.bossDef, cdMin: typed.cdMin })}>
+          {worked ? "Use worked out" : "Reset to defaults"}
         </button>
       </div>
-      <p className="tiny muted">What each stat is worth to this character, in main stat: one set for the Flames, Star Force and Potential pages. Get yours from MapleScouter's "Enter Directly" page.</p>
+      <p className="tiny muted">{worked ? "Worked out from the Stats page; type to override (on every page), clear to go back." : "No Stats page yet: the defaults, or what's typed."}</p>
       <div className="value-grid">
-        {c.statBoxes?.pct.map(({ stat, field, main, default: d }) => {
-          const label = `1% ${stat} =`;
-          // empty: the job's default (greyed in the box; emptying a typed value goes back to it)
-          const shown = String(Math.round(d * 100) / 100);
-          return (
-            <label key={field} className="small">
+        {on.pct &&
+          c.statBoxes?.pct.map(({ stat, field, main, default: d }) => {
+            const label = `1% ${stat} =`;
+            return (
+              <label key={field} className="small">
+                <span>{label}</span>
+                <ValueBox value={typed[field]} label={label} empty hint={under(field, d)} title={typedTitle(field, d)} onCommit={(n) => onSave({ ...typed, [field]: n })} />
+                <span className="tiny muted">main stat · {main ? "main" : "secondary"}</span>
+              </label>
+            );
+          })}
+        {fieldsFor(c)
+          .filter(([k]) => on.fields.has(k))
+          .map(([k, label, unit]) => (
+            <label key={k} className="small">
               <span>{label}</span>
-              <ValueBox value={v[field]} label={label} empty hint={shown} onCommit={(n) => onSave({ ...v, [field]: n })} />
-              <span className="tiny muted">
-                main stat · {main ? "main" : "secondary"}
-                {v[field] !== null && <span className="gold"> (default {shown})</span>}
-              </span>
+              <ValueBox value={typed[k]} label={label} empty hint={under(k, STAT_VALUE_DEFAULTS[k])} title={typedTitle(k, STAT_VALUE_DEFAULTS[k])} onCommit={(n) => onSave({ ...typed, [k]: n })} />
+              <span className="tiny muted">{unit}</span>
             </label>
-          );
-        })}
-        {fieldsFor(c).map(([k, label, unit]) => (
-          <label key={k} className="small">
-            <span>{label}</span>
-            <ValueBox value={v[k]} label={label} onCommit={(n) => onSave({ ...v, [k]: n! })} />
-            <span className="tiny muted">
-              {unit}
-              {v[k] !== STAT_VALUE_DEFAULTS[k] && <span className="gold"> (default {STAT_VALUE_DEFAULTS[k]})</span>}
-            </span>
-          </label>
-        ))}
+          ))}
         {/* (cooldown isn't worth the same each second: the final damage at each total; 1 s counts as nothing) */}
-        {COOLDOWN_SECONDS.map((sec) => {
-          const field = `cd${sec}` as const;
-          const label = `${sec} s skill cooldown =`;
-          const below = cooldownBelow(v, sec);
-          return (
-            <label key={field} className="small">
-              <span>{label}</span>
-              <ValueBox value={v[field]} label={label} empty hint={below === null ? undefined : String(below.value)} onCommit={(n) => onSave({ ...v, [field]: n })} />
-              <span className="tiny muted">
-                % final damage in all
-                {v[field] === null && (below === null ? " (empty: counts as nothing)" : ` (empty: ${below.sec} s's)`)}
-              </span>
-            </label>
-          );
-        })}
-        <div className="small value-switch wide">
-          <span>Hat must keep at least (seconds)</span>
-          <div className="segmented" role="group" aria-label="Hat's minimum cooldown">
-            {([0, ...COOLDOWN_SECONDS] as const).map((s) => (
-              // (just the number shown, so the six fit at phone width)
-              <button key={s} type="button" aria-label={s === 0 ? "none" : `${s} s`} aria-pressed={v.cdMin === s} onClick={() => v.cdMin !== s && onSave({ ...v, cdMin: s })}>
-                {s === 0 ? "none" : s}
-              </button>
-            ))}
+        {on.cooldown &&
+          COOLDOWN_SECONDS.map((sec) => {
+            const field = `cd${sec}` as const;
+            const label = `${sec} s skill cooldown =`;
+            // (nothing typed or worked out: the nearest box below counts)
+            const below = cooldownBelow(values, sec);
+            return (
+              <label key={field} className="small">
+                <span>{label}</span>
+                <ValueBox value={typed[field]} label={label} empty hint={under(field, below?.value ?? null)} title={typedTitle(field, below?.value ?? null)} onCommit={(n) => onSave({ ...typed, [field]: n })} />
+                <span className="tiny muted">
+                  % final damage in all
+                  {values[field] === null && (below === null ? " (empty: counts as nothing)" : ` (empty: ${below.sec} s's)`)}
+                </span>
+              </label>
+            );
+          })}
+        {on.cooldown && (
+          <div className="small value-switch wide">
+            <span>Hat must keep at least (seconds)</span>
+            <div className="segmented" role="group" aria-label="Hat's minimum cooldown">
+              {([0, ...COOLDOWN_SECONDS] as const).map((s) => (
+                // (just the number shown, so the six fit at phone width)
+                <button key={s} type="button" aria-label={s === 0 ? "none" : `${s} s`} aria-pressed={typed.cdMin === s} onClick={() => typed.cdMin !== s && onSave({ ...typed, cdMin: s })}>
+                  {s === 0 ? "none" : s}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="small value-switch">
-          <span>Bosses' defense (for IED)</span>
-          <div className="segmented" role="group" aria-label="Bosses' defense">
-            {([300, 380] as const).map((d) => (
-              <button key={d} type="button" aria-pressed={v.bossDef === d} onClick={() => v.bossDef !== d && onSave({ ...v, bossDef: d })}>
-                {d}%
-              </button>
-            ))}
+        )}
+        {on.defense && (
+          <div className="small value-switch">
+            <span>Bosses' defense (for IED)</span>
+            <div className="segmented" role="group" aria-label="Bosses' defense">
+              {([300, 380] as const).map((d) => (
+                <button key={d} type="button" aria-pressed={typed.bossDef === d} onClick={() => typed.bossDef !== d && onSave({ ...typed, bossDef: d })}>
+                  {d}%
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

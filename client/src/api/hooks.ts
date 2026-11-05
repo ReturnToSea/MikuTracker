@@ -1,4 +1,4 @@
-import type { AddCharacterInput, BossPlanInput, CustomTaskInput, FamiliarInput, StatsInput, GearDetailsInput, GearInput, HexaInput, SettingsInput, StatValuesInput, SymbolInput } from "@miku/shared";
+import { type AddCharacterInput, type BossPlanInput, countedValues, type CustomTaskInput, type FamiliarInput, type StatsInput, type GearDetailsInput, type GearInput, type HexaInput, type SettingsInput, type StatsTryInput, type StatValuesTyped, type SymbolInput } from "@miku/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { withTick } from "../lib/bosses";
@@ -30,7 +30,14 @@ export const keys = {
   hexa: (id: number) => ["hexa", id],
   familiars: (id: number) => ["familiars", id],
   stats: (id: number) => ["stats", id],
+  statsTry: (id: number, sheet: string) => ["stats-try", id, sheet],
 } as const;
+// What a character's stat values are worked out from (v4.1.0): its Stats page and HEXA levels; a change
+// there changes the gear pages' numbers.
+const GEAR_PAGES: (readonly unknown[])[] = [["gear"], ["flames"], ["starforce"], ["potential"], ["upgrades"]];
+// What its gear and Sacred symbols change: those, HEXA's (HEXA Stat's damage, v3.1.0), and the Stats page
+// and a test of it (the equipped hat's cooldown, the sacred symbol buff and each boss's own symbol: v4.1.0).
+const reloadAll = (qc: ReturnType<typeof useQueryClient>) => Promise.all([...GEAR_PAGES, ["hexa"], ["stats"], ["stats-try"]].map((k) => qc.invalidateQueries({ queryKey: k })));
 
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api<SettingsView>("/settings") });
 export const useThemeArt = () => useQuery({ queryKey: keys.themeArt, queryFn: () => api<ThemeArt>("/theme-art") });
@@ -173,15 +180,9 @@ export function useSaveSymbol(world: number) {
       await qc.cancelQueries({ queryKey: keys.symbols(world) });
       qc.setQueryData<SymbolsBoard>(keys.symbols(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, symbols: { ...c.symbols, [symbol]: state } } : c)) });
     },
-    // (the Stats page's sacred symbol buff follows the Sacred symbols' levels)
-    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: keys.symbols(world) }), qc.invalidateQueries({ queryKey: ["stats"] })]),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: keys.symbols(world) }), reloadAll(qc)]),
   });
 }
-
-// After a gear save: the board, and the Flames, Star Force, Potential, Upgrades and HEXA pages' numbers (which
-// follow the items, their details and the stat values: HEXA Stat's damage, v3.1.0).
-const reloadGear = (qc: ReturnType<typeof useQueryClient>, world: number) =>
-  Promise.all([qc.invalidateQueries({ queryKey: keys.gear(world) }), qc.invalidateQueries({ queryKey: ["flames"] }), qc.invalidateQueries({ queryKey: ["starforce"] }), qc.invalidateQueries({ queryKey: ["potential"] }), qc.invalidateQueries({ queryKey: ["upgrades"] }), qc.invalidateQueries({ queryKey: ["hexa"] })]);
 
 // The gear tab of a world.
 export const useGear = (world: number) => useQuery({ queryKey: keys.gear(world), queryFn: () => api<GearBoard>(`/gear?world=${world}`) });
@@ -198,7 +199,7 @@ export function useSaveGear(world: number) {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
       qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, equipped: withGear(c.equipped, slot, input), details: detailsAfter(c, slot, input) } : c)) });
     },
-    onSettled: () => reloadGear(qc, world),
+    onSettled: () => reloadAll(qc),
   });
 }
 
@@ -219,22 +220,22 @@ export function useSaveGearDetails(world: number) {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
       qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, details: { ...c.details, [slot]: details } } : c)) });
     },
-    onSettled: () => reloadGear(qc, world),
+    onSettled: () => reloadAll(qc),
   });
 }
 
-// Saving a character's stat values, the same way.
+// Saving a character's stat values, the same way: what's typed (v4.1.0: what isn't is worked out).
 export function useSaveStatValues(world: number) {
   const qc = useQueryClient();
   return useMutation({
     // Stryker disable next-line StringLiteral: any fixed name makes one queue
     scope: { id: "gear" },
-    mutationFn: ({ id, values }: { id: number; values: StatValuesInput }) => api<void>(`/gear/${id}/stat-values`, { method: "PUT", body: values }),
+    mutationFn: ({ id, values }: { id: number; values: StatValuesTyped }) => api<void>(`/gear/${id}/stat-values`, { method: "PUT", body: values }),
     onMutate: async ({ id, values }) => {
       await qc.cancelQueries({ queryKey: keys.gear(world) });
-      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, statValues: values } : c)) });
+      qc.setQueryData<GearBoard>(keys.gear(world), (b) => b && { ...b, characters: b.characters.map((c) => (c.id === id ? { ...c, statValues: { ...c.statValues, typed: values, values: countedValues(values, c.statValues.worked) } } : c)) });
     },
-    onSettled: () => reloadGear(qc, world),
+    onSettled: () => reloadAll(qc),
   });
 }
 
@@ -309,8 +310,8 @@ function useSaveBoard<I, B extends { input: I }>(id: number | undefined, key: (i
   };
   return { change, error: save.error };
 }
-// (the Stats page's score follows the HEXA levels)
-export const useSaveHexa = (id: number | undefined) => useSaveBoard<HexaInput, HexaBoard>(id, keys.hexa, "hexa", (c) => [keys.stats(c)]);
+// (the Stats page's score follows the HEXA levels, and so the gear pages' worked-out stat values)
+export const useSaveHexa = (id: number | undefined) => useSaveBoard<HexaInput, HexaBoard>(id, keys.hexa, "hexa", (c) => [keys.stats(c), ...GEAR_PAGES]);
 
 // The Familiars page (v3.2.0): one character's familiars and badges with their totals (its tabs: the
 // character list's), saved the HEXA page's way.
@@ -320,4 +321,17 @@ export const useSaveFamiliars = (id: number | undefined) => useSaveBoard<Familia
 // The Stats page (v4.0.0): one character's Stats window and the rest, with the score and the worked-out boxes
 // (its tabs: the character list's), saved the HEXA page's way.
 export const useStats = (id: number | undefined) => useQuery({ queryKey: keys.stats(id ?? 0), queryFn: () => api<StatsBoard>(`/stats/${id}`), enabled: id !== undefined, refetchOnWindowFocus: false });
-export const useSaveStats = (id: number | undefined) => useSaveBoard<StatsInput, StatsBoard>(id, keys.stats, "stats");
+// (the gear pages' worked-out stat values follow the sheet: v4.1.0)
+export const useSaveStats = (id: number | undefined) => useSaveBoard<StatsInput, StatsBoard>(id, keys.stats, "stats", () => [...GEAR_PAGES, ["hexa"]]);
+// Test mode (v4.1.0): the page worked out for a sheet, level and HEXA levels that aren't saved. A change
+// keeps showing the last numbers until the new ones come.
+export const useStatsTry = (id: number | undefined, t: StatsTryInput | null) =>
+  useQuery({
+    // Stryker disable next-line LogicalOperator: a test only exists once a character is picked (id set), so the key's fallback is never used
+    queryKey: keys.statsTry(id ?? 0, JSON.stringify(t)),
+    queryFn: () => api<StatsBoard>(`/stats/${id}/try`, { method: "POST", body: t }),
+    // Stryker disable next-line ConditionalExpression: as above, t is null whenever id is unset
+    enabled: id !== undefined && t !== null,
+    placeholderData: (previous, query) => (query?.queryKey[1] === id ? previous : undefined),
+    refetchOnWindowFocus: false,
+  });

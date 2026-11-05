@@ -1,4 +1,4 @@
-import { COOLDOWN_SECONDS, type GearDetailsInput, type GearInput, STAT_VALUE_DEFAULTS, type StatValuesInput } from "@miku/shared";
+import type { GearDetailsInput, GearInput } from "@miku/shared";
 import { classStatsOf, type DetailItem, type FlameRow, flameGrid, type Gains, otherStarLimit, type StarNote, starGains, starNotes, starRange } from "../calc/gearDetails";
 import { db } from "../db";
 import { FLAME_KINDS, fits, GEAR_SLOTS, type GearItem, type GearJob, gearFile, itemKey, POTENTIAL_KINDS, RING_SLOTS } from "../gameFigures/gear";
@@ -9,6 +9,7 @@ import { HttpError } from "../http";
 import { listCharacters, ownCharacter } from "./characters";
 import { iconFiles } from "./icons";
 import { getSettings, type SettingsView } from "./settings";
+import { type StatValuesView, statValuesView } from "./statValues";
 
 // An item as the gear tab shows it: what the list file says, its key, and its icon's address (null
 // when the data folder has no icon for it).
@@ -24,7 +25,7 @@ export interface GearCharacter {
   fits: string[]; // the keys of the items it can wear
   equipped: Record<string, { item: string } | { other: string }>; // by slot
   details: Record<string, GearDetailsInput>; // each slot's stars, flames, potential and hammers (none: blank)
-  statValues: StatValuesInput; // what each stat is worth to it (the defaults until changed)
+  statValues: StatValuesView; // what each stat is worth to it: what counts, what's typed, what's worked out (v4.1.0)
   statBoxes: StatBoxes | null; // the stat value boxes it needs (null: a job the list doesn't know yet)
 }
 
@@ -46,15 +47,14 @@ export async function gearBoard(ownerId: string, worldId: number): Promise<GearB
   const { characters } = await listCharacters(ownerId, worldId);
   // Stryker disable next-line ObjectLiteral: only narrows what's read; each row is matched to its character by id below
   const rows = await db().gearSlot.findMany({ where: { characterId: { in: characters.map((c) => c.id) } } });
-  // Stryker disable next-line ObjectLiteral: only narrows what's read; each row is matched to its character by id below
-  const values = await db().statValues.findMany({ where: { characterId: { in: characters.map((c) => c.id) } } });
+  const values = await Promise.all(characters.map((c) => statValuesView(c)));
   const icons = iconFiles();
   return {
     generated,
     slots: GEAR_SLOTS,
     items: items.map((i) => view(i, icons)),
     jobs,
-    characters: characters.map((c) => ({
+    characters: characters.map((c, i) => ({
       id: c.id,
       name: c.name,
       job: c.job,
@@ -64,7 +64,7 @@ export async function gearBoard(ownerId: string, worldId: number): Promise<GearB
       fits: items.filter((i) => fits(i, c.job)).map(itemKey),
       equipped: Object.fromEntries(rows.filter((r) => r.characterId === c.id).map((r) => [r.slot, r.item ? { item: r.item } : { other: r.other! }])),
       details: Object.fromEntries(rows.filter((r) => r.characterId === c.id && r.details).map((r) => [r.slot, readDetails(JSON.parse(r.details!) as GearDetailsInput, r.item)])),
-      statValues: statValuesOf(values.find((v) => v.characterId === c.id)),
+      statValues: values[i]!,
       statBoxes: boxesFor(c.job),
     })),
   };
@@ -165,7 +165,7 @@ export async function characterValues(ownerId: string, characterId: number) {
   const c = await ownCharacter(ownerId, characterId);
   const { jobs } = gearFile();
   const job = jobStats(c.job, Object.hasOwn(jobs, c.job) ? jobs[c.job]!.branches : undefined);
-  const values = statValuesOf((await db().statValues.findUnique({ where: { characterId } })) ?? undefined);
+  const { values } = await statValuesView(c);
   return { job, values };
 }
 
@@ -209,20 +209,6 @@ function readDetails(details: GearDetailsInput, item: string | null): GearDetail
   const options = p && of ? potentialOptions(of.part, of.level)[p.rank] : undefined;
   if (!p || !options) return details;
   return { ...details, potential: { ...p, lines: p.lines.map((l, i) => (l === null ? null : (nearestLine(l, options[i]!.map((o) => o.line)) ?? l))) } };
-}
-
-// A saved row's values (the database keeps the bosses' defense as a plain number: 300 or 380).
-// (the database keeps any whole number: one it can't be is read as none)
-const cdMinOf = (n: number): StatValuesInput["cdMin"] => (COOLDOWN_SECONDS.some((s) => s === n) ? (n as StatValuesInput["cdMin"]) : 0);
-export const statValuesOf = (row: (Omit<StatValuesInput, "bossDef" | "cdMin"> & { bossDef: number; cdMin: number }) | undefined): StatValuesInput => {
-  if (!row) return { ...STAT_VALUE_DEFAULTS };
-  const { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, mainFlat, critDmg, ied300, ied380, bossDef, cd2, cd3, cd4, cd5, cd6, cdMin } = row;
-  return { att, allStat, secRatio, bossDmg, fdPer100, strPct, dexPct, intPct, lukPct, hpPct, attPct, mainFlat, critDmg, ied300, ied380, bossDef: bossDef === 300 ? 300 : 380, cd2, cd3, cd4, cd5, cd6, cdMin: cdMinOf(cdMin) };
-};
-
-export async function saveStatValues(ownerId: string, characterId: number, input: StatValuesInput) {
-  await ownCharacter(ownerId, characterId);
-  await db().statValues.upsert({ where: { characterId }, create: { characterId, ...input }, update: input });
 }
 
 // What can be set on an item: its star range and what each star count adds, its flame grid, the

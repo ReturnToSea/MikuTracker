@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { shortNumber } from "../lib/statValues";
 import { useSearchParams } from "react-router";
 import { MVP_TIERS } from "@miku/shared";
 import { useGear, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useStarForce, useStarForceDetail, useUpdateSettings } from "../api/hooks";
@@ -370,7 +371,7 @@ export function StarForcePage() {
               </div>
             </div>
             <p className="tiny muted">
-              {c.name} · {c.job} · Shining Star Force is 30% off and 30% fewer booms together · final damage per 100 score: {c.statValues.fdPer100}%
+              {c.name} · {c.job} · Shining Star Force is 30% off and 30% fewer booms together · final damage per 100 score: {shortNumber(c.statValues.values.fdPer100)}%
             </p>
             {!board.known ? (
               <p className="notice">{c.job} isn't in the item list yet, so its main stat isn't known and its stars' final damage can't be worked out.</p>
@@ -406,7 +407,7 @@ export function StarForcePage() {
           )}
           {board.known && board.items.length > 0 && view === "targets" && <Targets board={board} budget={budget} onBudget={setBudget} />}
           <section className="block" aria-label="Stat values">
-            <StatValuesBox c={c} onSave={(values) => saveValues.mutate({ id: c.id, values })} />
+            <StatValuesBox c={c} page="starforce" onSave={(values) => saveValues.mutate({ id: c.id, values })} />
           </section>
         </>
       )}

@@ -184,45 +184,46 @@ How it works is in DESIGN.md ("Gear details" stat values, "Potential" and "Upgra
 - **Noted for later (2026-10-29):** the Upgrades request's time is the flame and potential maths (flames ~40 ms, potential ~25–37 ms for 25 slots); keeping each item's worked-out rolls between requests (until its gear or stat values change) would cut it. Not needed yet.
 
 ### The order (the owner, 2026-10-29)
-v3 HEXA (Ren, then every job), then Familiars; v4 Stats; v5 Bosses with pitched items and history; v6 automatic stats (added 2026-11-03: the stat sheet worked out from what's entered instead of typed); v7 the standalone calculators (their maths is done: built after Stats, which can fill in their stat values); v8 low-priority extras; v9 the server move with export.
+v3 HEXA (Ren, then every job), then Familiars; v4 Stats and the bosses each character can clear (decided 2026-11-04: bosses are a Stats feature, v4.1.0); v5 pitched items, boss drops and history; v6 automatic stats (added 2026-11-03: the stat sheet worked out from what's entered instead of typed); v7 the standalone calculators (their maths is done: built after Stats, which can fill in their stat values); v8 low-priority extras; v9 the server move with export.
 
 ### v3.0.0–v3.2.0: HEXA (6th job) progress, then Familiars
 A major version (decided 2026-10-23: a lot of work; moved from v4.0.0 on 2026-10-29, before Stats and Bosses, which need it). Each roster character's HEXA skill levels, entered by hand, and the Sol Erda and Sol Erda Fragments still needed to finish them. The levels also feed v4.0.0's stats and v5.0.0's bosses (they matter for boss damage).
 - **v3.0.0 (HEXA for Ren), v3.1.0 (every job, HEXA Stat's damage) and v3.2.0 (Familiars; a node's flat ATT; estimates from the server): built.** How they work: DESIGN.md "HEXA" and "Familiars". v3.2.0: released 2026-11-02. One plan item dropped on the way, for the owner to know: building every job's order ahead in the figures script (an ATT job's order depends on the character's 1 ATT value, so orders stay built on first use and kept).
 
-### v4.0.0–v4.1.0: Stats
+### v4.0.0–v4.1.0: Stats, and the bosses each character can clear
 A major version, in smaller steps, after HEXA (v3: its levels are needed) (the owner, 2026-10-28). Each roster character's **stats**, and what they're worth.
 - **v4.0.0, the typed Stats page and MapleScouter's score: built** (how it works: DESIGN.md "Stats"; planned with the owner 2026-11-03, research in `tempdata/stats/`). Status: built and every check done (tests, typecheck, `qa:check` 344/344, the review pass with its 10 fixes, mutation testing 100% in a full run); waiting for the owner's agreement, then the commit.
-- **v4.1.0, stat efficiency:** what +1% Boss, +1 ATT, +1% IED, … add for this character (the formula, each stat nudged), **filling the stat value boxes** (v2.1.0–v2.3.0) instead of copying them from MapleScouter, staying right as the gear changes (it also fixes "final damage per 100 score" only holding for small changes). Crit rate past 100% into crit damage for the 7 archer-type jobs is already in the score (mapledoro's rates); v4.1 shows it in the efficiency too.
-- **Then the hand checks against MapleScouter itself** (the owner, 2026-10-28): a handful of real sheets (several classes, MikuBeam's Kanna among them) typed **by hand** into MapleScouter's Enter Directly page, its score and stat efficiency compared with ours; differences reported, not hidden; again after each refresh of the data. (By hand, as a person using the site: no scripts against it.)
-- **The data:** copied once, by hand, never scraped (MapleScouter blocks scripted requests since Oct 2026; never work around it): mapledoro's measured figures (`scripts/stats-data.mjs`). A snapshot goes stale after big patches (class reworks): the page says its date.
-- **Event stats (the owner, 2026-11-02):** built into v4.0.0 (their own On tick).
+- **v4.1.0, the boss clears, stat efficiency, test mode and MapleScouter's order: built** (how it works: DESIGN.md "Stats", "Boss clears", "Stat efficiency"; planned with the owner 2026-11-04 with the picker and mockups, research in `tempdata/v41/`). Status: building checked so far (tests, typecheck, `qa:check` 358/358); the review pass and mutation testing (a full run: the test setup changed) still to come, then the owner's agreement and the commit.
+- **Left for later, from v4.1.0's planning (the owner, 2026-11-04):**
+  - **Arctic Friends and Baby Dragon Food** count nothing until their effect is known (a capture of MapleScouter with each ticked would show it).
+  - **The Weapon Jump Ring:** how it counts for the classes that use it (MapleScouter's damage doesn't).
+  - **The coming GMS patch** changes many buffs (the Genesis Pass's among them) and bosses: revisit the buff values and rebuild the boss figures (`node scripts/boss-clear-data.mjs` with a fresh capture) then.
+  - **A party calculator:** needs its own way to save party members' stats (not your own characters: one plays at a time): to talk about.
+  - **Hand checks against MapleScouter** (the owner, 2026-10-28): real sheets typed by hand into its Enter Directly page, the score, stat efficiency and boss clears compared with ours; differences reported, not hidden. The first (the owner's Ren): ours 0.25% low (44,705 / 45,194 against 44,820 / 45,311), from MapleScouter's hidden fields; its boss clears match within 0.4% (54 of 55; Champion Black Mage: the fix).
+- **The data:** copied once, by hand, never scraped (MapleScouter blocks scripted requests since Oct 2026; never work around it): mapledoro's figures and boss cuts, the phase HP and pictures from the owner's own captures. A snapshot goes stale after big patches: the page says its date.
 
-### v5.0.0: Bosses
-A major version after v4.0.0, whose stats and power it needs (the owner, 2026-10-28: a lot of testing by hand). Which bosses each roster character **can actually do**, saved. Separate from the boss tracker (v1.2.0), which records what you *do*.
-- **The method:** MapleScouter's: the power (v4.0.0) compared with each boss's **crowdsourced cut** (300% / 380% defense curves, level and Arcane / Sacred force penalties): a clear % and a tag (Easy, Possible, Solo Min, Party-able, Party Min, Impossible, Can't Enter).
-- **The data:** the boss cuts copied once by hand from mapledoro's repository (`bosscut-data.generated.ts`) into `tempdata/`, never scraped, dated on the page; bosses MapleScouter never covered estimated from the wiki's HP, defense and time limit (as mapledoro does).
-- **Checked against MapleScouter by hand, a lot** (the owner): the same hand-typed sheets, each boss's clear % against ours, several classes and bosses at 300% and 380% defense; again after each refresh of the data.
-- **An estimate, shown as one:** mapledoro measured real clears against MapleScouter's predictions; Kanna (MikuBeam's class) clears about 30% better, Mo Xuan about 10%. Show tags or ranges, not exact percentages.
+### For later (after v4.1.0): the Upgrades page's Star Force steps
+Noted 2026-11-05 by the owner, to talk about before building. The Upgrades page lists an item's Star Force only as its next single star; once that's taken, the item doesn't come back for stars, so the list never shows the path past one star. Idea: keep each item in the list, one entry per further step, grouped at breakpoints (for example up to 18★ as one step, then 21★, then 1★ at a time after that). To settle then: which breakpoints (the same for every item, or by its level and boss tag), how a group's cost and final damage are worked out (expected meso to reach it, booms included), and how the steps of one item sit among the others' in the cheapest-first order.
 
-### For later (after v5.0.0): the SHINE classes
-Decided 2026-11-01 (the owner): not in v3.1.0; probably after v5.0.0 (which bosses a character can clear).
+### For later (after v4.1.0): the SHINE classes
+Decided 2026-11-01 (the owner): not in v3.1.0; probably after the boss clears (v4.1.0 since 2026-11-04).
 - **The SHINE classes' Erda Link:** Erel Light and Sia Astelle have **Erda Link instead of the HEXA Matrix** (the wiki); the HEXA page says so for now. mapledoro's figures do have both classes' cores, so their damage could work the same way. To research first: Erda Link's nodes and costs per level (the wiki lists "SHINE" nodes, two of their four Mastery nodes still "TBA"), whether it has anything like HEXA Stat, and whether MapleScouter's figures for them are Erda Link's.
 
-### v5.1.0: Pitched items and boss drops
-Added 2026-10-27 by the owner, to be discussed before building (moved from v2.5.0 to here on 2026-10-29: lower priority; next to Bosses):
+### v5.0.0: Pitched items and boss drops
+Added 2026-10-27 by the owner, to be discussed before building (moved from v2.5.0 on 2026-10-29: lower priority; v5.1.0 until 2026-11-04, when the bosses moved into v4.1.0: a new area, records of what you own and what dropped):
 - **A pitched items page:** a grid with the characters down the left and every Pitched Boss item across the top; tick which ones each character has.
 - **Sharing that page (a tab or second view): a weekly boss and drop log:** record the bosses each character did that week, and whether each boss dropped something for them that week.
 - **To talk about first:**
   - whether "has it" can come from the Equipment page for equipped pitched items, while still letting you tick items you own but don't wear;
   - whether the weekly bosses can come from the boss tracker (v1.2.0), which already records the week's clears, instead of being entered twice;
   - which drops to record (only the pitched items, or every notable drop), and whether past weeks are kept as history.
+- **Each boss's drops** in the Boss clear view's details (decided 2026-11-04): MapleScouter's lists for 64 difficulties are saved (`tempdata/v41/bossdata/rewards.json`, in Korean: to put into GMS's English; 25 pictures in the owner's capture).
 
-### v5.2.0: Boss and checklist history
+### v5.1.0: Boss and checklist history
 past weeks' cleared bosses and meso, and past days' and weeks' checklist ticks (moved out of v1.2.0 and v1.3.0 on 2026-10-23: not core to them; the ticks are already kept).
 
 ### v6.0.0–v6.1.0: Automatic stats
-Added 2026-11-03 by the owner: a big version **after the boss versions (v5)**. The stat sheet **worked out from what's entered** instead of typed, so changing items (or anything else the app knows) updates the stats, the score, stat efficiency and the boss clears by itself. The typed stat window (v4) stays as the override and fallback, and as **the check: "worked out vs your stat window"** per character, the gap pointing at what's missing.
+Added 2026-11-03 by the owner: a big version **after the boss clears (v4.1.0) and the boss records (v5)**. The stat sheet **worked out from what's entered** instead of typed, so changing items (or anything else the app knows) updates the stats, the score, stat efficiency and the boss clears by itself. The typed stat window (v4) stays as the override and fallback, and as **the check: "worked out vs your stat window"** per character, the gap pointing at what's missing.
 - **Familiars' main stat % lines** (v4 types them, decided 2026-11-03): filled in from the Familiars page.
 - **v6.0.0, the typed sheet follows what changes in the app:** when an item is swapped, starred, reflamed or cubed on the Gear pages (or a symbol, HEXA Stat or a familiar line changes), the typed numbers shift by exactly that change (the app knows the before and after). The cheap first step: "items update it" without the full calculation.
 - **v6.1.0 (or more steps), the full calculation:** gear (base stats, stars, flames, potential; **set effects** from the wiki, a script like the gear list's), symbols, HEXA Stat, familiars and badges (already in the app), level and AP; **typed as systems once**: Legion (the grid's stats and each character block's, the Artifact; the owner: the blocks' stats may be small, to check), Hyper Stats, Ability, link skills, and the small sources (title, medals, emblem, pets' gear, cash gear, guild skills, Monster Collection…); and **each job's passive skills** from the wiki's skill pages (conditional ones read with care; re-run after balance patches), **a few jobs first** (Ren, Night Walker, Kanna) checked against their real stat windows, more added later.

@@ -226,35 +226,38 @@ model GearSlot {
 
 // What each stat is worth to a character, in main stat, typed in (the gear tab; the defaults are the
 // owner's: shared/src/index.ts STAT_VALUE_DEFAULTS). Used for flame scores and final damage from
-// v2.1.0, potential lines from v2.3.0 (the new columns start at the defaults on saved rows). No row:
-// the defaults.
+// v2.1.0, potential lines from v2.3.0. From v4.1.0 every value is worked out from the Stats page and a
+// typed one overrides it: null, not typed (the migration emptied the typed values of characters with a
+// Stats page). No row: nothing typed.
 model StatValues {
   characterId Int       @id
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  att         Float // 1 ATT = this much main stat
-  allStat     Float // 1% all stat
-  secRatio    Float // secondary stat ratio
-  bossDmg     Float // 1% boss or damage
-  fdPer100    Float // % final damage per 100 flame score
-  strPct      Float? // 1% STR (null: the job's default, shared/src/index.ts STAT_PCT_DEFAULTS)
+  att         Float? // 1 ATT = this much main stat
+  allStat     Float? // 1% all stat
+  secRatio    Float? // secondary stat ratio
+  bossDmg     Float? // 1% boss or damage
+  fdPer100    Float? // % final damage per 100 flame score
+  strPct      Float? // 1% STR
   dexPct      Float? // 1% DEX
   intPct      Float? // 1% INT
   lukPct      Float? // 1% LUK
   hpPct       Float? // 1% HP (Demon Avenger)
-  attPct      Float   @default(53.82) // 1% ATT (mages: Magic ATT)
-  critDmg     Float   @default(42.38) // 1% critical damage
-  ied300      Float   @default(15.6) // 1% ignore defense against 300% boss defense
-  ied380      Float   @default(20.52) // 1% ignore defense against 380% boss defense
+  attPct      Float? // 1% ATT (mages: Magic ATT)
+  critDmg     Float? // 1% critical damage
+  ied300      Float? // 1% ignore defense against 300% boss defense
+  ied380      Float? // 1% ignore defense against 380% boss defense
   bossDef     Int     @default(380) // which of the two applies: 300 or 380
-  // % final damage at 2 to 6 s of skill cooldown in all (v2.4.1; null: not typed, the nearest typed one
-  // below counts; none: cooldown counts as nothing), and the seconds a hat must keep (0: none)
+  // % final damage at 2 to 6 s of skill cooldown in all (v2.4.1), and the seconds a hat must keep (0: none)
   cd2         Float?
   cd3         Float?
   cd4         Float?
   cd5         Float?
   cd6         Float?
   cdMin       Int     @default(0)
-  mainFlat    Float   @default(0.29) // 1 main stat that % doesn't multiply (v3.1.0: HEXA Stat)
+  mainFlat    Float? // 1 main stat that % doesn't multiply (v3.1.0: HEXA Stat)
+  // v4.1.0: typed before the values were worked out (a character with a Stats page then): they give way to
+  // the worked-out ones wherever the Stats page works them out, and count otherwise. Saving clears it.
+  typedBefore Boolean @default(false)
 }
 
 // A character's HEXA page (v3.0.0), as typed: `data` is the JSON of @miku/shared's HexaInput (each

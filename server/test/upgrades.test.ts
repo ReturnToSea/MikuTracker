@@ -71,7 +71,7 @@ describe("GET /api/gear/:id/upgrades", () => {
   it("a hat under its minimum cooldown: its cube is listed, last, with no meso per 1% when a roll that keeps it adds nothing", async () => {
     const id = await geared();
     // the hat: Unique, no cooldown; 4 s needed (Legendary only rolls cooldown), worth little (blank table: nothing)
-    const defaults = (await get("/api/gear?world=45")).characters[0].statValues;
+    const defaults = (await get("/api/gear?world=45")).characters[0].statValues.values;
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cdMin: 4 }));
     const steps: Step[] = (await get(`/api/gear/${id}/upgrades`)).steps;
     const potential = await get(`/api/gear/${id}/potential?events=&budget=0`);

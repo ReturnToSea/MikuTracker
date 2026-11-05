@@ -586,7 +586,8 @@ try {
   await values.getByRole("spinbutton", { name: "1 Magic ATT =" }).press("Enter");
   await settle();
   await go("/gear");
-  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 Magic ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "14.65");
+  // (v4.1.0: no Stats page yet, nothing typed: each box empty, the default greyed in it)
+  check("Gear details", "stat values: the defaults, a change saved", (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1 Magic ATT =" }).inputValue()) === "2.6" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).inputValue()) === "" && (await page.getByRole("group", { name: "Stat values" }).getByRole("spinbutton", { name: "1% All Stat =" }).getAttribute("placeholder")) === "14.65");
   await pickIcon("AbsoLab Mage Crown");
   await details().getByRole("button", { name: "22 stars" }).waitFor();
   await shot("11-gear-details");
@@ -1092,11 +1093,67 @@ try {
   check("Stats", "the event stats switched off: their buffs can't be ticked", await buffsBox.getByRole("button", { name: "Gourmand Power" }).isDisabled());
   await buffsBox.getByRole("checkbox", { name: "On" }).click();
   const statsRest = page.getByRole("region", { name: "HEXA, Artifact, Inner Ability and Oz Rings" });
-  check("Stats", "HEXA levels shown from the HEXA page, not typed here (Origin 1)", (await statsRest.locator(".stp-tile").first().innerText()).includes("1") && (await statsRest.getByRole("textbox").count()) === 4);
+  // (in MapleScouter's order from v4.1.0: Mastery 1–4, then Origin)
+  check("Stats", "HEXA levels shown from the HEXA page, not typed here (Origin 1)", (await statsRest.locator(".stp-tile").nth(4).innerText()).includes("1") && (await statsRest.getByRole("textbox").count()) === 4);
   await shot("23d-stats");
   const statsId = (await api("GET", "/characters?world=45")).json.characters.find((c) => c.name === "MikuBeam").id;
   const sb = (await api("GET", `/stats/${statsId}`)).json;
   check("Stats", "what's typed was saved (the API agrees)", sb.input.stats.main.base === 10000 && sb.input.stats.atk.per === 100 && sb.input.buffs.sayramElixir === true && sb.input.eventOn === true && sb.out.generalRange === 12_841_200, JSON.stringify(sb.out));
+  // v4.1.0: MapleScouter's order, the event Force boxes, the views, test mode, worked-out stat values
+  check("Stats", "MapleScouter's order: the stat potion first, the guild skills Boss Slayers, Undeterred, For the Guild!, Hard Hitter, the Oz rings Restraint, Weapon Jump, Continuous", (await buffsBox.getByRole("button").first().getAttribute("aria-label")) === "Advanced Stat Potion X" && JSON.stringify(await buffsBox.getByRole("textbox").evaluateAll((xs) => xs.map((x) => x.getAttribute("aria-label")).filter((n) => ["Boss Slayers", "Undeterred", "For the Guild!", "Hard Hitter"].includes(n)))) === JSON.stringify(["Boss Slayers", "Undeterred", "For the Guild!", "Hard Hitter"]) && JSON.stringify(await statsRest.getByRole("textbox").evaluateAll((xs) => xs.map((x) => x.getAttribute("aria-label")).filter((n) => /Ring/.test(n)))) === JSON.stringify(["Ring of Restraint", "Weapon Jump Ring", "Continuous Ring"]));
+  check("Stats", "Arctic Friends and Baby Dragon Food shown (counting nothing yet); the Event Arcane and Sacred Power boxes", (await buffsBox.getByRole("button", { name: "Arctic Friends" }).count()) === 1 && (await buffsBox.getByRole("button", { name: "Baby Dragon Food" }).count()) === 1 && (await buffsBox.getByRole("textbox", { name: "Event Arcane Power" }).count()) === 1 && (await buffsBox.getByRole("textbox", { name: "Event Sacred Power" }).count()) === 1);
+  check("Stats", "the score with every HEXA core at 30 beside it, higher", /every core at 30: [\d,]+/.test(await page.getByRole("region", { name: "Score" }).innerText()) && sb.out.normal380 > sb.out.score380, `${sb.out.normal380} / ${sb.out.score380}`);
+  const viewBtn = (name) => page.getByRole("group", { name: "View" }).getByRole("button", { name, exact: true });
+  await viewBtn("Boss clear").click();
+  const bossBox = page.getByRole("region", { name: "Boss clear" });
+  await bossBox.waitFor();
+  const allBosses = bossBox.getByRole("checkbox", { name: /Show all/ });
+  await allBosses.check();
+  await settle(300);
+  check("Boss clear", "every boss MapleScouter covers: 55 tiles with Show all, in its order (Hard Jupiter first)", (await bossBox.locator(".bc-tile").count()) === 55 && (await bossBox.locator(".bc-tile").first().getAttribute("aria-label")) === "Hard Jupiter" && sb.bosses.length === 55);
+  // MikuBeam (the fake Nexon) is below Hard Jupiter's Lv. 295: its tile has "Lvl"
+  check("Boss clear", "below a boss's level: the Lvl badge, saying the level for full damage", (await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).count()) === 1 && /For full damage: Level \d+ \/ 300/.test((await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).getAttribute("title")) ?? ""));
+  const shownApi = sb.bosses.filter((x) => (x.partyOnly ? x.rate / x.partyLimit <= 10 && x.rate >= 0.85 / x.partyLimit : x.rate <= 10 && x.rate >= 0.15)).length;
+  await allBosses.uncheck();
+  await settle(300);
+  check("Boss clear", "Show all off: only MapleScouter's 15–1,000% (as the API's rates say)", (await bossBox.locator(".bc-tile").count()) === shownApi, `${await bossBox.locator(".bc-tile").count()} / ${shownApi}`);
+  await allBosses.check();
+  await bossBox.getByRole("button", { name: "Normal Kalos" }).click();
+  const bossPanel = page.getByRole("region", { name: "Boss details" });
+  check("Boss clear", "a tile picked: its details, its HP by phase (Normal Kalos: 224.4T, then four 120.2T bars) and the damage lost", (await bossPanel.getByRole("heading", { name: "Normal Kalos" }).count()) === 1 && /224\.4T/.test(await bossPanel.innerText()) && (await bossPanel.locator(".bc-bar").nth(1).locator("i").count()) === 4 && /Combined/.test(await bossPanel.innerText()));
+  await shot("23e-boss-clear");
+  await viewBtn("Efficiency").click();
+  const effBox = page.getByRole("region", { name: "Stat efficiency" });
+  await effBox.waitFor();
+  await effBox.getByRole("textbox", { name: "Amount of Boss Damage / Damage %" }).fill("30");
+  check("Efficiency", "each stat in INT; an amount worked out (30% boss = 30 × its value)", (await effBox.getByRole("row", { name: /Boss Damage/ }).innerText()).includes((30 * sb.efficiency.bossDmg).toFixed(2)), await effBox.getByRole("row", { name: /Boss Damage/ }).innerText());
+  await shot("23f-efficiency");
+  await viewBtn("Stats sheet").click();
+  // test mode: nothing saved
+  await page.getByRole("region", { name: "Score" }).getByRole("checkbox", { name: "Testing" }).check();
+  await settle(800);
+  check("Test mode", "Testing: the bar says nothing is saved; Level and the HEXA levels become boxes", /nothing is saved/.test(await page.getByRole("status").innerText()) && (await statsWin.getByRole("textbox", { name: "Level" }).count()) === 1 && (await statsRest.getByRole("textbox").count()) > 4);
+  await typeStat("INT base", 20000);
+  await settle(1200);
+  check("Test mode", "a changed box: outlined, the score's change from the saved one shown", (await statsWin.getByRole("textbox", { name: "INT base", exact: true }).getAttribute("class")).includes("stp-changed") && /→ [\d,]+ \(\+\d+\.\d+%\)/.test(await page.getByLabel("Change from saved").innerText()), await page.getByRole("region", { name: "Score" }).innerText());
+  await shot("23g-test-mode");
+  check("Test mode", "nothing saved (the API agrees)", (await api("GET", `/stats/${statsId}`)).json.input.stats.main.base === 10000);
+  await page.reload();
+  await statsWin.waitFor();
+  await settle(800);
+  check("Test mode", "kept in this browser: after a reload, still testing what was typed", (await statsWin.getByRole("textbox", { name: "INT base", exact: true }).inputValue()) === "20000" && (await page.getByRole("status").count()) === 1);
+  await page.getByRole("region", { name: "Score" }).getByRole("checkbox", { name: "Testing" }).uncheck();
+  await settle(500);
+  check("Test mode", "unticked: the saved sheet again", (await statsWin.getByRole("textbox", { name: "INT base", exact: true }).inputValue()) === "10000" && (await page.getByRole("status").count()) === 0);
+  // the gear pages' stat values, worked out from this sheet now
+  await go("/gear/flames");
+  const flameValues = page.getByRole("group", { name: "Stat values" });
+  await flameValues.waitFor({ timeout: 10000 });
+  const gearChar = (await api("GET", "/gear?world=45")).json.characters.find((c) => c.name === "MikuBeam");
+  check("Stat values", "worked out from the Stats page (v4.1.0): the Flames page's 5 boxes, the worked-out 1 Magic ATT greyed in its box", (await flameValues.getByRole("spinbutton").count()) === 5 && (await flameValues.getByRole("spinbutton", { name: "1 Magic ATT =" }).getAttribute("placeholder")) === String(Math.round(gearChar.statValues.worked.att * 100) / 100) && (await flameValues.getByRole("button", { name: "Use worked out" }).count()) === 1, JSON.stringify(gearChar.statValues.worked));
+  await shot("23h-flames-worked-out");
+  await go("/stats");
+  await statsWin.waitFor();
   await page.setViewportSize({ width: 900, height: 900 });
   await settle(400);
   check("Layout", "the Stats page at 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);

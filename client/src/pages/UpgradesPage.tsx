@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { shortNumber } from "../lib/statValues";
 import { Link, useNavigate } from "react-router";
 import { useGear, useRefreshStatus, useSaveStatValues, useSettings, useUpdateSettings, useUpgrades } from "../api/hooks";
 import type { UpgradeStep } from "../api/types";
@@ -225,7 +226,7 @@ export function UpgradesPage() {
             </div>
             <p className="tiny muted">
               {c.name} · {c.job} · each item's next step on Flames, Star Force and Potential, as those pages work it out · Black Flame {formatMeso(board.blackFlamePrice)} · MVP: {board.mvp} · Glowing {cubePrice(board.prices.glowing)} · Bright{" "}
-              {cubePrice(board.prices.bright)} a cube · rank-up chances are community estimates · final damage per 100 score: {c.statValues.fdPer100}%
+              {cubePrice(board.prices.bright)} a cube · rank-up chances are community estimates · final damage per 100 score: {shortNumber(c.statValues.values.fdPer100)}%
             </p>
             {!board.known ? (
               <p className="notice">{c.job} isn't in the item list yet, so its main stat isn't known and its upgrades can't be worked out.</p>
@@ -241,7 +242,7 @@ export function UpgradesPage() {
               <Chart key={c.id} steps={board.steps.filter((s) => s.perFd !== null)} needed={board.steps.filter((s) => s.perFd === null)} sf={eventsParam(sf)} cubes={cubeEventsParam(cubes)} />
             ))}
           <section className="block" aria-label="Stat values">
-            <StatValuesBox c={c} onSave={(values) => saveValues.mutate({ id: c.id, values })} />
+            <StatValuesBox c={c} page="all" onSave={(values) => saveValues.mutate({ id: c.id, values })} />
           </section>
         </>
       )}

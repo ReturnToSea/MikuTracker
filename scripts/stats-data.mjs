@@ -7,7 +7,7 @@
 // maths is our own, calc/stats.ts):
 //   - public/data/scouter-engine.json: each class's constants for MapleScouter's damage formula (its hidden
 //     stats, ATT, damage, crit, defense, toggles, the curve turning damage into the score, the cooldown
-//     scale), each link skill's damage by level, and the cooldown reference tables. The HEXA cores are left
+//     scale, Kaling's Ascent figure), each link skill's damage by level, and the cooldown reference tables. The HEXA cores are left
 //     out (hexa-jobs.json has them).
 //   - src/features/characters/setup/data/finalDamageData.generated.ts: each class's always-on Final Damage
 //     (the game's v.271 skill data), without, with Decent, and with a Paladin's Combat Orders.
@@ -53,7 +53,7 @@ const magicStart = rangeCode.indexOf("export const MAGIC_ATT_CLASSES");
 const magic = [...rangeCode.slice(magicStart, rangeCode.indexOf("];", magicStart)).matchAll(/"(\w+)"/g)].map((m) => m[1]);
 
 const hexa = JSON.parse(readFileSync(HEXA, "utf8")).jobs;
-const KEEP = ["stat", "flatAtk", "atkPct", "restraint", "dmg", "dmgPerBuffDuration", "crit", "defenseK", "toggles", "perCooldownPercent", "perResetChance", "perSummonDuration", "spline300", "spline380", "splineScale", "scale", "cooldownScale"];
+const KEEP = ["stat", "flatAtk", "atkPct", "restraint", "dmg", "dmgPerBuffDuration", "crit", "defenseK", "toggles", "perCooldownPercent", "perResetChance", "perSummonDuration", "spline300", "spline380", "splineScale", "scale", "cooldownScale", "kalingAscent"];
 const problems = [];
 const jobs = {};
 for (const [job, h] of Object.entries(hexa)) {

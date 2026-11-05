@@ -33,6 +33,7 @@ export interface StatsJob {
   finalDamage: [number, number, number]; // without, with Decent, with a Paladin's Combat Orders (%)
   weapon: number | { oneHanded: number; twoHanded: number }; // the damage range's weapon multiplier
   magic: boolean; // its range counts Magic ATT
+  kalingAscent?: number; // the Ascent core's share Kaling's figure is measured at (mapledoro's fit; v4.1.0)
 }
 export type CooldownRefs = Record<string, { rows: { h0: number; bonus: Record<string, number> }[]; norm2: number }>;
 
@@ -54,6 +55,8 @@ export const BUFF_KEY: Readonly<Record<string, string>> = {
   sparklingBlueStar: "shiningBlue", greatHeroBoost: "bigHero", legendaryHero: "legendHero", advWeaponTempering: "jangBi",
   tengusJudgement: "tengu", attackPotionV: "attackPotionV", magicPotionV: "magicPotionV", onyxApple: "apple", energizerDrink: "energizerDrink", energizerDrinkMagic: "energizerDrinkMagic", fishBuff: "fish", witchStew: "witchStew", ssiwsCheese: "ssiwsCheese",
   believeInYourself: "believeInYourself", gourmandPower: "gourmandPower", peerlessMarble: "peerlessMarble",
+  // (MapleScouter's GMS tiles we don't know the effect of yet: no table has them, so they count nothing)
+  arcticFriends: "whiteBear", babyDragonFood: "dragonsMeal",
 };
 // What each box adds, by group, in the group's own units (MapleScouter's measured values; a box missing
 // here had no effect when measured): flat ATT, damage % points, crit damage % points, ATT % points, the

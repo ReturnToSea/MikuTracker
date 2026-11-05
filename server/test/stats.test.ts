@@ -6,6 +6,7 @@ import { coreAttAt } from "../src/calc/hexa";
 import { type CoreKey, hexaDamage } from "../src/calc/hexaDamage";
 import { statsScore } from "../src/calc/stats";
 import { db } from "../src/db";
+import { bossFigures } from "../src/gameFigures/bossClear";
 import { CORE_OF, hexaJob } from "../src/gameFigures/hexa";
 import { SYMBOLS } from "../src/gameFigures/symbols";
 import { cooldownRefs, statLinks, statsJob } from "../src/gameFigures/stats";
@@ -48,7 +49,9 @@ describe("GET /api/stats/:id", () => {
     expect([b.level, b.heroic]).toEqual([286, true]);
     // every node but Sol Janus, Origin at 1 (the 6th job's)
     expect(b.hexa).toHaveLength(12);
-    expect(b.hexa[0]).toMatchObject({ node: "origin", level: 1 });
+    // in MapleScouter's order (v4.1.0)
+    expect(b.hexa.map((n: { node: string }) => n.node)).toEqual(["mastery1", "mastery2", "mastery3", "mastery4", "origin", "ascent", "boost1", "boost2", "boost3", "boost4", "hecate", "common3"]);
+    expect(b.hexa[4]).toMatchObject({ node: "origin", level: 1 });
     expect(b.hexa.some((n: { node: string }) => n.node === "janus")).toBe(false);
     expect(b.out).toMatchObject({ generalRange: 0, atkTotal: 0 });
     expect(b.source).toMatch(/MapleScouter/);
@@ -132,7 +135,9 @@ describe("GET /api/stats/:id", () => {
       sacred: false,
       hexa: [],
       icons: {},
-      out: { finalDamage: 0, generalRange: 0, atkTotal: 0, score380: null, score300: null },
+      out: { finalDamage: 0, generalRange: 0, atkTotal: 0, score380: null, score300: null, normal380: null, normal300: null },
+      efficiency: null,
+      bosses: [],
     });
     expect(jett.input).toEqual(STATS_DEFAULTS);
   });
@@ -147,8 +152,9 @@ describe("GET /api/stats/:id", () => {
     writeFileSync(path.join(iconDir, "stats", "notes.txt"), "not a picture");
     const b = await get(`/api/stats/${id}`);
     expect(b.rings).toEqual({ restraint: "/item-icons/1113098.png", continuous: null, weapon: null });
-    expect(b.hexa[0].icon).toBe("/item-icons/hexa/Mercedes_1.png");
-    expect(b.hexa[1].icon).toBeNull();
+    const icon = (node: string) => b.hexa.find((n: { node: string }) => n.node === node).icon;
+    expect(icon("origin")).toBe("/item-icons/hexa/Mercedes_1.png");
+    expect(icon("ascent")).toBeNull();
     expect(b.icons).toEqual({ sayramElixir: "/item-icons/stats/sayramElixir.png" });
   });
 
@@ -270,5 +276,263 @@ describe("PUT /api/stats/:id", () => {
     expect((await put({ ...STATS_DEFAULTS, buffs: { ...STATS_DEFAULTS.buffs, nope: true } })).status).toBe(400);
     expect((await put({ ...STATS_DEFAULTS, combatOrders: "maybe" })).status).toBe(400);
     expect((await get(`/api/stats/${id}`)).input.links.kain).toBe(3);
+  });
+});
+
+// ── v4.1.0 ─────────────────────────────────────────────────────────────────────────────────────
+type Boss = { key: string; boss: string; difficulty: string; rate: number; shown: number; tag: string; icon: string | null; phases: { name: string; hp: number[] }[] | null; gaps: { kind: string; you: number; boss: number; full: number; loss: number }[]; need: number; bossStat: number; loss: number };
+const bossOf = (b: { bosses: Boss[] }, difficulty: string, boss: string) => b.bosses.find((x) => x.difficulty === difficulty && x.boss === boss)!;
+
+describe("GET /api/stats/:id: the boss clears (v4.1.0)", () => {
+  it("every boss of the figures, in their order (MapleScouter's), with its gaps from the character's level and the sheet's Force", async () => {
+    const id = await character("Mercedes", 278);
+    await save(id, SCREENSHOT);
+    const b = await get(`/api/stats/${id}`);
+    expect(b.bosses.map((x: Boss) => `${x.difficulty} ${x.boss}`)).toEqual(bossFigures().map((x) => `${x.difficulty} ${x.name}`));
+    // Normal Kalos: level 280, Sacred 300 (the figures); the screenshot's Sacred Force 660
+    const kalos = bossOf(b, "Normal", "kalos");
+    expect(kalos.key).toBe("normal_kalos");
+    expect(kalos.gaps).toEqual([
+      { kind: "level", you: 278, boss: 280, full: 285, loss: expect.closeTo(1 - 1.007 / 1.2, 9) },
+      { kind: "sacred", you: 660, boss: 300, full: 350, loss: 0 },
+    ]);
+    // Hard Black Mage: Arcane 1320, its best at 110% (1,452); 1,380 is 104%: 100% damage
+    expect(bossOf(b, "Hard", "blackMage").gaps.find((g) => g.kind === "arcane")).toEqual({ kind: "arcane", you: 1380, boss: 1320, full: 1452, loss: expect.closeTo(1 - 1 / 1.1, 9) });
+  });
+
+  it("the event Arcane and Sacred Power count while the event stats are on, and only for the boss clears", async () => {
+    const id = await character();
+    const withEvent = { ...SCREENSHOT, eventStats: { ...SCREENSHOT.eventStats, arcane: 50, sacred: 30 } };
+    await save(id, withEvent);
+    const on = await get(`/api/stats/${id}`);
+    expect(bossOf(on, "Hard", "blackMage").gaps.find((g) => g.kind === "arcane")!.you).toBe(1430);
+    expect(bossOf(on, "Normal", "kalos").gaps.find((g) => g.kind === "sacred")!.you).toBe(690);
+    await save(id, { ...withEvent, eventOn: false });
+    const off = await get(`/api/stats/${id}`);
+    expect(bossOf(off, "Hard", "blackMage").gaps.find((g) => g.kind === "arcane")!.you).toBe(1380);
+    expect(off.out.score380).toBe(on.out.score380);
+  });
+
+  it("a boss's own Sacred symbol: maxed, its +20% counts against that boss only", async () => {
+    const id = await character();
+    await save(id, SCREENSHOT);
+    const before = await get(`/api/stats/${id}`);
+    await db().symbolState.create({ data: { characterId: id, symbol: "cernium", level: 11, held: 0, days: 0, weekly: 0 } });
+    const after = await get(`/api/stats/${id}`);
+    // (Seren's damage up by the symbol's +20% damage: 2.3% with this sheet's 664% damage; Kalos's untouched)
+    expect(bossOf(after, "Hard", "seren").rate).toBeGreaterThan(bossOf(before, "Hard", "seren").rate * 1.02);
+    expect(bossOf(after, "Hard", "seren").bossStat).toBeGreaterThan(bossOf(before, "Hard", "seren").bossStat);
+    expect(bossOf(after, "Normal", "kalos").rate).toBe(bossOf(before, "Normal", "kalos").rate);
+  });
+
+  it("the Genesis Pass's buff: +150 Arcane Power and more damage against its bosses (Lucid), none against the others (Seren)", async () => {
+    const id = await character();
+    await save(id, SCREENSHOT);
+    const before = await get(`/api/stats/${id}`);
+    await save(id, { ...SCREENSHOT, buffs: { ...SCREENSHOT.buffs, genepass: true } });
+    const after = await get(`/api/stats/${id}`);
+    expect(bossOf(after, "Hard", "lucid").gaps.find((g) => g.kind === "arcane")!.you).toBe(1530);
+    expect(bossOf(after, "Hard", "lucid").rate).toBeGreaterThan(bossOf(before, "Hard", "lucid").rate);
+    expect(bossOf(after, "Hard", "seren").rate).toBe(bossOf(before, "Hard", "seren").rate);
+  });
+
+  it("each boss's picture once downloaded; its phases (a Champion: the difficulty it's built on)", async () => {
+    const id = await character();
+    await save(id, SCREENSHOT);
+    mkdirSync(path.join(iconDir, "bosses"), { recursive: true });
+    writeFileSync(path.join(iconDir, "bosses", "hard_seren.png"), "png");
+    const b = await get(`/api/stats/${id}`);
+    expect(bossOf(b, "Hard", "seren").icon).toBe("/item-icons/bosses/hard_seren.png");
+    expect(bossOf(b, "Normal", "seren").icon).toBeNull();
+    expect(bossOf(b, "Champion", "seren").phases).toEqual(bossOf(b, "Hard", "seren").phases);
+    expect(bossOf(b, "Hard", "verusHilla").phases).toEqual([{ name: "Phase 1", hp: [30184e9, 30184e9, 30184e9, 30184e9] }]);
+  });
+
+  it("MapleScouter's \"Normal\": with every HEXA core at 30, the same as the score once every core is at 30 (and Lv. 260+)", async () => {
+    const id = await character();
+    await save(id, SCREENSHOT);
+    const b = await get(`/api/stats/${id}`);
+    expect(b.out.normal380).toBeGreaterThan(b.out.score380);
+    const all30 = Object.fromEntries(Object.keys(HEXA_DEFAULTS.current).map((n) => [n, 30]));
+    await ok(api().put(`/api/hexa/${id}`).send({ ...structuredClone(HEXA_DEFAULTS), current: all30, desired: all30 }));
+    const maxed = await get(`/api/stats/${id}`);
+    expect([maxed.out.score380, maxed.out.score300]).toEqual([maxed.out.normal380, maxed.out.normal300]);
+    expect(maxed.out.normal380).toBe(b.out.normal380);
+  });
+
+  it("stat efficiency, worked out from the sheet (calc/statEfficiency.ts)", async () => {
+    const id = await character();
+    await save(id, SCREENSHOT);
+    const { efficiency } = await get(`/api/stats/${id}`);
+    expect(efficiency.third).toBeNull();
+    expect(efficiency.att).toBeGreaterThan(0);
+    expect(efficiency.allStatPct).toBeCloseTo(efficiency.mainPct + efficiency.subPct, 9);
+  });
+
+  it("stat efficiency's rows by job: a Shadower's third stat (STR) counts; a Demon Avenger's all stats % leaves out its HP", async () => {
+    const shadower = await character("Shadower");
+    await save(shadower, SCREENSHOT);
+    const s = (await get(`/api/stats/${shadower}`)).efficiency;
+    expect(s.third).toBeGreaterThan(0);
+    expect(s.allStatPct).toBeCloseTo(s.mainPct + s.subPct + s.thirdPct, 9);
+    const da = await character("Demon Avenger");
+    await save(da, SCREENSHOT);
+    const d = (await get(`/api/stats/${da}`)).efficiency;
+    expect(d.third).toBeNull();
+    expect(d.allStatPct).toBeCloseTo(d.subPct, 9);
+  });
+
+  it("a sheet whose defense leaves nothing at 380% (no IED): no score, no stat efficiency, no boss clears", async () => {
+    const id = await character();
+    await save(id, { ...SCREENSHOT, stats: { ...SCREENSHOT.stats, ied: 0 } });
+    const b = await get(`/api/stats/${id}`);
+    expect([b.out.score380, b.efficiency, b.bosses]).toEqual([null, null, []]);
+  });
+});
+
+describe("POST /api/stats/:id/try (test mode, v4.1.0)", () => {
+  const all = (n: number) => Object.fromEntries(Object.keys(HEXA_DEFAULTS.current).map((k) => [k, n]));
+  it("the page for a sheet, level and HEXA levels as typed; nothing saved", async () => {
+    const id = await character("Mercedes", 286);
+    await save(id, SCREENSHOT);
+    const saved = await get(`/api/stats/${id}`);
+    const tried = (await ok(api().post(`/api/stats/${id}/try`).send({ input: SCREENSHOT, level: 286, hexa: HEXA_DEFAULTS.current }))).body;
+    expect(tried.out).toEqual(saved.out);
+    expect(tried.bosses).toEqual(saved.bosses);
+    // a higher level: the level gaps; maxed HEXA: a higher score; another sheet
+    const t = (await ok(api().post(`/api/stats/${id}/try`).send({ input: { ...SCREENSHOT, stats: { ...SCREENSHOT.stats, boss: 600 } }, level: 290, hexa: all(30) }))).body;
+    expect(t.level).toBe(290);
+    expect(bossOf(t, "Normal", "kalos").gaps[0]!.you).toBe(290);
+    expect(t.out.score380).toBeGreaterThan(saved.out.score380);
+    expect(t.hexa.every((n: { level: number }) => n.level === 30)).toBe(true);
+    // nothing saved
+    expect((await get(`/api/stats/${id}`)).input).toEqual(SCREENSHOT);
+    expect(await db().hexaPlan.count()).toBe(0);
+    expect((await db().character.findUniqueOrThrow({ where: { id } })).level).toBe(286);
+  });
+
+  it("under Lv. 260 everything does 3% less, but MapleScouter's \"Normal\" leaves that out", async () => {
+    const id = await character("Mercedes", 255);
+    // (every core at 30: the score and Normal differ only by the cut)
+    const t = (await ok(api().post(`/api/stats/${id}/try`).send({ input: SCREENSHOT, level: 255, hexa: all(30) }))).body;
+    expect(t.out.normal380).toBeGreaterThan(t.out.score380);
+    const at260 = (await ok(api().post(`/api/stats/${id}/try`).send({ input: SCREENSHOT, level: 260, hexa: all(30) }))).body;
+    expect(at260.out.normal380).toBe(at260.out.score380);
+  });
+
+  it("the Ascent core at 0: no timer bonus, so a boss with no gaps sees the score itself (Hard Lucid, whatever the other cores)", async () => {
+    const id = await character("Mercedes", 290);
+    const t = (await ok(api().post(`/api/stats/${id}/try`).send({ input: SCREENSHOT, level: 290, hexa: { ...all(30), ascent: 0 } }))).body;
+    const lucid = bossOf(t, "Hard", "lucid");
+    expect(lucid.loss).toBeCloseTo(0, 12);
+    expect(lucid.bossStat).toBe(t.out.score300);
+    // (with Ascent, Hard Lucid's fight is timed short enough for a bonus)
+    const a = (await ok(api().post(`/api/stats/${id}/try`).send({ input: SCREENSHOT, level: 290, hexa: all(30) }))).body;
+    expect(bossOf(a, "Hard", "lucid").bossStat).toBeGreaterThan(a.out.score300);
+  });
+
+  it("refuses a level outside 1–300, a HEXA level past 30 or missing, a sheet that doesn't pass; someone else's character: not found", async () => {
+    const id = await character();
+    const tryIt = (body: object) => api().post(`/api/stats/${id}/try`).send(body);
+    const good = { input: STATS_DEFAULTS, level: 280, hexa: HEXA_DEFAULTS.current };
+    expect((await tryIt(good)).status).toBe(200);
+    for (const bad of [{ ...good, level: 0 }, { ...good, level: 301 }, { ...good, level: 280.5 }, { ...good, hexa: { ...good.hexa, origin: 31 } }, { input: STATS_DEFAULTS, level: 280 }, { ...good, input: { ...STATS_DEFAULTS, extra: 1 } }]) expect((await tryIt(bad)).status).toBe(400);
+    const theirs = await character("Mercedes", 286, "someone-else");
+    expect((await api().post(`/api/stats/${theirs}/try`).send(good)).status).toBe(404);
+  });
+});
+
+describe("the gear pages' stat values, worked out from the Stats page (v4.1.0)", () => {
+  const values = async () => (await get("/api/gear?world=45")).characters[0].statValues;
+  it("no Stats page: nothing worked out (the defaults); once one is saved: its stat efficiency, what's typed still winning", async () => {
+    const id = await character("Mercedes", 286);
+    expect((await values()).worked).toBeNull();
+    await save(id, SCREENSHOT);
+    const { efficiency } = await get(`/api/stats/${id}`);
+    const v = await values();
+    // a Mercedes: DEX main, STR secondary
+    expect(v.worked).toMatchObject({ att: efficiency.att, allStat: efficiency.allStatPct, secRatio: efficiency.sub, bossDmg: efficiency.bossDmg, fdPer100: efficiency.fdPer100, attPct: efficiency.attPct, mainFlat: efficiency.mainFlat, critDmg: efficiency.critDmg, ied300: efficiency.ied300, ied380: efficiency.ied380, dexPct: efficiency.mainPct, strPct: efficiency.subPct, lukPct: null, intPct: null, hpPct: null, cd2: efficiency.cooldown[2], cd6: efficiency.cooldown[6] });
+    expect(v.values.att).toBe(efficiency.att);
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...v.typed, att: 9 }));
+    const typed = await values();
+    expect([typed.values.att, typed.values.bossDmg]).toEqual([9, efficiency.bossDmg]);
+  });
+
+  it("by job: a Shadower's STR % is its third stat's; a Demon Avenger's HP % its main's and all stats % without it", async () => {
+    const shadower = await character("Shadower", 286);
+    await save(shadower, SCREENSHOT);
+    const s = (await get(`/api/stats/${shadower}`)).efficiency;
+    let v = (await get("/api/gear?world=45")).characters.find((c: { id: number }) => c.id === shadower).statValues.worked;
+    expect(v).toMatchObject({ lukPct: s.mainPct, dexPct: s.subPct, strPct: s.thirdPct, allStat: s.allStatPct, intPct: null, hpPct: null });
+    const da = await character("Demon Avenger", 286);
+    await save(da, SCREENSHOT);
+    const d = (await get(`/api/stats/${da}`)).efficiency;
+    v = (await get("/api/gear?world=45")).characters.find((c: { id: number }) => c.id === da).statValues.worked;
+    expect(v).toMatchObject({ hpPct: d.mainPct, strPct: d.subPct, allStat: d.allStatPct, lukPct: null });
+    expect(v.allStat).toBeCloseTo(d.subPct, 9);
+  });
+
+  it("typed before v4.1.0 (the migration's mark): gives way where the sheet works values out, counts where it doesn't; saving a box clears the mark", async () => {
+    const id = await character("Mercedes", 286);
+    await db().statValues.create({ data: { characterId: id, att: 9, critDmg: 50, bossDef: 300, typedBefore: true } });
+    // (a sheet with no IED works nothing out: what was typed counts)
+    await save(id, { ...SCREENSHOT, stats: { ...SCREENSHOT.stats, ied: 0 } });
+    let v = await values();
+    expect([v.worked, v.typed.att, v.values.att, v.values.critDmg]).toEqual([null, 9, 9, 50]);
+    await save(id, SCREENSHOT);
+    v = await values();
+    expect([v.typed.att, v.typed.critDmg, v.typed.bossDef]).toEqual([null, null, 300]);
+    expect(v.values.att).toBe(v.worked.att);
+    // a box typed now: saved as typed (the mark gone, so it stays)
+    await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...v.typed, att: 7 }));
+    v = await values();
+    expect([v.typed.att, v.values.att]).toEqual([7, 7]);
+    expect((await db().statValues.findUniqueOrThrow({ where: { characterId: id } })).typedBefore).toBe(false);
+  });
+
+  it("a SHINE class with a sheet saved: nothing worked out", async () => {
+    const id = await character("Sia Astelle", 286);
+    await save(id, SCREENSHOT);
+    expect((await values()).worked).toBeNull();
+  });
+
+  it("follow the HEXA levels (the cores change what each stat is worth)", async () => {
+    const id = await character("Mercedes", 286);
+    await save(id, SCREENSHOT);
+    const before = (await values()).worked.att;
+    await ok(api().put(`/api/hexa/${id}`).send({ ...structuredClone(HEXA_DEFAULTS), current: { ...HEXA_DEFAULTS.current, common3: 30 } }));
+    expect((await values()).worked.att).not.toBe(before);
+  });
+});
+
+describe("the cooldown values: what a hat's seconds add, from the sheet's cooldown without the equipped hat's (review, v4.1.0)", () => {
+  it("a −2 s hat equipped: the values are worked out from 2 s less than the sheet's (as if no hat)", async () => {
+    const id = await character("Mercedes", 286);
+    // the screenshot's sheet: 5 s of Cooldown Reduction in all
+    await save(id, SCREENSHOT);
+    const without = (await get(`/api/stats/${id}`)).efficiency.cooldown;
+    // the same sheet with 3 s: what the values would be with nothing on the hat
+    await save(id, { ...SCREENSHOT, stats: { ...SCREENSHOT.stats, cdSec: 3 } });
+    const from3 = (await get(`/api/stats/${id}`)).efficiency.cooldown;
+    await save(id, SCREENSHOT);
+    await ok(api().put(`/api/gear/${id}/hat`).send({ item: "1004810" })); // (Arcane Umbra Archer Hat)
+    await ok(api().put(`/api/gear/${id}/hat/details`).send({ stars: 0, flames: {}, potential: { rank: "legendary", lines: ["DEX +13%", "DEX +10%", "Skill Cooldown -2 sec"] }, hammers: 0 }));
+    const withHat = (await get(`/api/stats/${id}`)).efficiency.cooldown;
+    expect(withHat).toEqual(from3);
+    expect(withHat).not.toEqual(without);
+  });
+
+  it("only the hat's: another slot's cooldown lines, a hat without details or without potential count nothing", async () => {
+    const id = await character("Mercedes", 286);
+    await save(id, SCREENSHOT);
+    const without = (await get(`/api/stats/${id}`)).efficiency.cooldown;
+    // (a hat's lines on the top: its potential kind still allows them)
+    const details = { stars: 0, flames: {}, potential: { rank: "legendary", lines: ["Skill Cooldown -2 sec", null, null] }, hammers: 0 };
+    await db().gearSlot.create({ data: { characterId: id, slot: "top", item: "1004810", details: JSON.stringify(details) } });
+    expect((await get(`/api/stats/${id}`)).efficiency.cooldown).toEqual(without);
+    await ok(api().put(`/api/gear/${id}/hat`).send({ item: "1004810" }));
+    expect((await get(`/api/stats/${id}`)).efficiency.cooldown).toEqual(without);
+    await ok(api().put(`/api/gear/${id}/hat/details`).send({ ...details, potential: null }));
+    expect((await get(`/api/stats/${id}`)).efficiency.cooldown).toEqual(without);
   });
 });

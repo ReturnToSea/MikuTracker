@@ -445,12 +445,14 @@ describe("PUT /api/gear/:id/stat-values", () => {
     // the owner's defaults: v2.1.0's (all stat % 14.65 from v2.3.0) and v2.3.0's from MapleScouter
     // each stat's 1% empty until typed (the job's default then); 1 flat main stat 0.29 (v3.1.0, the owner's sheet)
     const defaults = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 };
-    expect((await board()).characters.map((c: { statValues: object }) => c.statValues)).toEqual([defaults, defaults]);
+    // (nothing typed, no Stats page: every value the default; v4.1.0)
+    const untyped = { ...Object.fromEntries(Object.keys(defaults).map((k) => [k, null])), bossDef: 380, cdMin: 0 };
+    expect((await board()).characters.map((c: { statValues: object }) => c.statValues)).toEqual([0, 1].map(() => ({ values: defaults, typed: untyped, worked: null })));
     const mine = { ...defaults, att: 2.6, fdPer100: 0.9 };
     await ok(api().put(`/api/gear/${a}/stat-values`).send(mine));
     await ok(api().put(`/api/gear/${a}/stat-values`).send({ ...mine, att: 2.7 }));
-    const values = (await board()).characters.map((c: { statValues: object }) => c.statValues);
-    expect(values).toEqual([{ ...mine, att: 2.7 }, defaults]);
+    const values = (await board()).characters.map((c: { statValues: { values: object; typed: object } }) => [c.statValues.values, c.statValues.typed]);
+    expect(values).toEqual([[{ ...mine, att: 2.7 }, { ...mine, att: 2.7 }], [defaults, untyped]]);
     expect(b).toBeGreaterThan(a);
   });
 
@@ -465,19 +467,19 @@ describe("PUT /api/gear/:id/stat-values", () => {
     const id = await character();
     const full = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: 13, dexPct: 1.5, intPct: null, lukPct: 2, hpPct: null, attPct: 50, mainFlat: 0.31, critDmg: 40, ied300: 15, ied380: 20, bossDef: 300, cd2: 1.37, cd3: 2.76, cd4: 3.34, cd5: 4.26, cd6: 5, cdMin: 4 };
     await ok(api().put(`/api/gear/${id}/stat-values`).send(full));
-    expect((await board()).characters[0].statValues).toEqual(full);
+    expect((await board()).characters[0].statValues.typed).toEqual(full);
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...full, bossDef: 380, cd3: null, cd6: null, cdMin: 0 }));
-    expect((await board()).characters[0].statValues).toEqual({ ...full, bossDef: 380, cd3: null, cd6: null, cdMin: 0 });
+    expect((await board()).characters[0].statValues.typed).toEqual({ ...full, bossDef: 380, cd3: null, cd6: null, cdMin: 0 });
     // a minimum the database holds but can't be (only 0 and 2 to 6) reads as none
     await db().statValues.update({ where: { characterId: id }, data: { cdMin: 9 } });
-    expect((await board()).characters[0].statValues.cdMin).toBe(0);
+    expect((await board()).characters[0].statValues.typed.cdMin).toBe(0);
     for (const n of [2, 6]) {
       await db().statValues.update({ where: { characterId: id }, data: { cdMin: n } });
-      expect((await board()).characters[0].statValues.cdMin).toBe(n);
+      expect((await board()).characters[0].statValues.typed.cdMin).toBe(n);
     }
   });
 
-  it.each([[{ att: -1 }], [{ att: "2" }], [{ mainFlat: -0.1 }], [{ mainFlat: undefined }], [{ extra: 1 }], [{ bossDef: 350 }], [{ cd4: -1 }], [{ cooldown: 1 }], [{ cdMin: 1 }], [{ cdMin: 7 }], [{ cdMin: "4" }], [{ cd2: undefined }], [{ strPct: undefined }], [{ lukPct: -2 }], [{}]])("refuses %j", async (change) => {
+  it.each([[{ att: -1 }], [{ att: "2" }], [{ att: undefined }], [{ mainFlat: -0.1 }], [{ mainFlat: undefined }], [{ extra: 1 }], [{ bossDef: 350 }], [{ cd4: -1 }], [{ cooldown: 1 }], [{ cdMin: 1 }], [{ cdMin: 7 }], [{ cdMin: "4" }], [{ cd2: undefined }], [{ strPct: undefined }], [{ lukPct: -2 }], [{}]])("refuses %j", async (change) => {
     const id = await character();
     const body = Object.keys(change).length ? { att: 4, allStat: 10, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0, ...change } : {};
     expect((await api().put(`/api/gear/${id}/stat-values`).send(body)).status).toBe(400);

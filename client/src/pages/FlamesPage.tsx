@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { shortNumber } from "../lib/statValues";
 import { useSearchParams } from "react-router";
 import type { GearDetailsInput } from "@miku/shared";
 import { useFlameGraph, useFlames, useGear, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
@@ -288,7 +289,7 @@ export function FlamesPage() {
               {settings.data && <PriceBox price={settings.data.blackFlamePrice} onSave={(meso) => saveSettings.mutate({ blackFlamePrice: meso })} />}
             </div>
             <p className="tiny muted">
-              {c.name} · {c.job} · Black Flames (the old flames are kept when a roll is worse) · final damage per 100 score: {c.statValues.fdPer100}%
+              {c.name} · {c.job} · Black Flames (the old flames are kept when a roll is worse) · final damage per 100 score: {shortNumber(c.statValues.values.fdPer100)}%
             </p>
             {!board.known ? (
               <p className="notice">{c.job} isn't in the item list yet, so its main stat isn't known and its flames can't be scored.</p>
@@ -306,7 +307,7 @@ export function FlamesPage() {
           )}
           {board.known && board.items.length > 0 && view === "targets" && <Targets board={board} budget={budget} onBudget={setBudget} />}
           <section className="block" aria-label="Stat values">
-            <StatValuesBox c={c} onSave={(values) => saveValues.mutate({ id: c.id, values })} />
+            <StatValuesBox c={c} page="flames" onSave={(values) => saveValues.mutate({ id: c.id, values })} />
           </section>
         </>
       )}

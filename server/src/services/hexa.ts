@@ -4,7 +4,7 @@ import { type CoreKey, hexaDamage } from "../calc/hexaDamage";
 import { db } from "../db";
 import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, HEXA_FIGURES, HEXA_ICONS, forgetHexaJobs, HEXA_MAX, type HexaGroup, type HexaJob, hexaJob, isShine, STAT_AMOUNTS, STAT_LEVEL, STAT_MAIN_NOT_WORKED_OUT, STAT_MAX_RANK, STAT_PRIMARY_CHANCE, STAT_RANK_COST, STAT_UNLOCK } from "../gameFigures/hexa";
 import { listCharacters, ownCharacter } from "./characters";
-import { statValuesOf } from "./gear";
+import { statValuesView } from "./statValues";
 import { iconFiles } from "./icons";
 import { parseSaved } from "./saved";
 
@@ -150,7 +150,7 @@ export async function saveHexa(ownerId: string, characterId: number, input: Hexa
 export async function hexaBoard(ownerId: string, characterId: number): Promise<HexaBoard> {
   const c = await ownCharacter(ownerId, characterId);
   // (the saved input and the stat values, read together)
-  const [input, valuesRow] = await Promise.all([savedInput(characterId), db().statValues.findUnique({ where: { characterId } })]);
+  const [input, { values }] = await Promise.all([savedInput(characterId), statValuesView(c)]);
   const job = hexaJob(c.job);
   const perWeek = (input.erdaRequest ? ERDA_REQUEST_FRAGS : 0) + DUNGEON_FRAGS[input.dungeon];
   const icon = iconUrl();
@@ -158,7 +158,6 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   const none = { ...NO_COST, exact: true };
   const figures = { erdaRequest: ERDA_REQUEST_FRAGS, dungeons: DUNGEON_FRAGS };
   if (!job) return { known: false, input, nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek, needed: 0, days: 0 }, order: [], icons, figures, source: "", attNode: null };
-  const values = statValuesOf(valuesRow ?? undefined);
   // (a level wanted below the level now is the level now: nothing to do)
   const desired = Object.fromEntries(HEXA_NODES.map((n) => [n, Math.max(input.current[n], input.desired[n])])) as Record<HexaNode, number>;
   const nodes: HexaNodeView[] = job.nodes.map((f) => ({ key: f.key, name: f.name, group: f.group, icon: icon(f.icon), min: f.free, max: HEXA_MAX }));

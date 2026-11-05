@@ -170,7 +170,7 @@ describe("GET /api/gear/:id/potential", () => {
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
     await wear(id, "weapon", { item: GENESIS_SWORD });
     await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 6, bossDef: 300 }));
     const b = await board(id);
     // + 2 s at 6% ÷ 0.785 × 100 = 764.33
@@ -186,7 +186,7 @@ describe("GET /api/gear/:id/potential", () => {
     await potential(id, "hat", "legendary", ["STR +13%", "Skill Cooldown -2 sec", "Skill Cooldown -2 sec"]);
     await wear(id, "weapon", { item: GENESIS_SWORD });
     await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     // the Ren Discord's 2 and 4 s (3, 5 and 6 s left blank)
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34 }));
     const b = await board(id);
@@ -202,7 +202,7 @@ describe("GET /api/gear/:id/potential", () => {
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
     await wear(id, "weapon", { item: GENESIS_SWORD });
     await potential(id, "weapon", "legendary", ["ATT +13%", "Boss Damage +40%", "Ignore Enemy DEF +35%"], 22);
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     const before = await board(id);
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34, cdMin: 4 }));
     const b = await board(id);
@@ -239,7 +239,7 @@ describe("GET /api/gear/:id/potential", () => {
     const id = await character();
     await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", null]);
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cdMin: 2 }));
     const hat = item(await board(id), "hat");
     // a roll that keeps 2 s has one stat line fewer: less than its lines, so neither cube is priced per 1%
@@ -253,7 +253,7 @@ describe("GET /api/gear/:id/potential", () => {
     await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", null]);
     await wear(id, "belt", { item: GOLLUX_BELT });
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, fdPer100: 0 }));
     const b = await board(id);
     expect(b.items.map((i: Item) => i.cheaper)).toEqual([null, null]);
@@ -264,7 +264,7 @@ describe("GET /api/gear/:id/potential", () => {
     const id = await character();
     await wear(id, "hat", { item: ARCANE_KNIGHT_HAT });
     await potential(id, "hat", "legendary", ["STR +13%", "STR +10%", "Skill Cooldown -2 sec"]);
-    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues;
+    const defaults = (await ok(api().get("/api/gear?world=45"))).body.characters[0].statValues.values;
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34 }));
     const free = item(await board(id), "hat");
     await ok(api().put(`/api/gear/${id}/stat-values`).send({ ...defaults, cd2: 1.37, cd4: 3.34, cdMin: 2 }));

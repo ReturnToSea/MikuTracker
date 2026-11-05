@@ -196,6 +196,9 @@ describe("the Symbols tab", () => {
   it("a saved symbol marks the Stats page's boards to be worked out again (its sacred symbol buff follows the Sacred symbols)", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     qc.setQueryData(["stats", 1], { input: {} });
+    // (and the gear pages' and HEXA's, whose stat values are worked out from the Stats page: v4.1.0)
+    const others = [["gear", 45], ["flames", 1, 0], ["starforce", 1, "", 0], ["potential", 1, "", 0], ["upgrades", 1, "", ""], ["hexa", 1]];
+    for (const k of others) qc.setQueryData(k, {});
     fakeServer({ ...BASE_ROUTES, "GET /symbols": board([REMY, MEOW]), "PUT /symbols/:id/esfera": undefined });
     renderWithApp(<App />, "/symbols", qc);
     const esfera = await card("Esfera");
@@ -203,6 +206,7 @@ describe("the Symbols tab", () => {
     await userEvent.clear(level);
     await userEvent.type(level, "3{Enter}");
     await waitFor(() => expect(qc.getQueryState(["stats", 1])!.isInvalidated).toBe(true));
+    for (const k of others) expect(qc.getQueryState(k)!.isInvalidated, JSON.stringify(k)).toBe(true);
   });
 
   it("Enter saves too; a value past what the symbol allows is fitted first; nonsense is put back", async () => {

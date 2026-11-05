@@ -211,22 +211,25 @@ export const upgradesQuery = z.strictObject({ sf: sfEvents, cubes: cubeEvents })
 // main stat lines; MapleScouter's "Not Affected by % STR", the owner's sheet: 0.29).
 export const COOLDOWN_SECONDS = [2, 3, 4, 5, 6] as const;
 const statValue = z.number().min(0).max(10000);
+// From v4.1.0 each value is worked out from the character's Stats page, when it has one; what's typed
+// overrides it (null: not typed, so the worked-out value, else the default). Which bosses' defense counts
+// and the seconds a hat must keep are settings, always saved.
 export const statValuesInput = z.strictObject({
-  att: statValue,
-  allStat: statValue,
-  secRatio: statValue,
-  bossDmg: statValue,
-  fdPer100: statValue,
+  att: statValue.nullable(),
+  allStat: statValue.nullable(),
+  secRatio: statValue.nullable(),
+  bossDmg: statValue.nullable(),
+  fdPer100: statValue.nullable(),
   strPct: statValue.nullable(),
   dexPct: statValue.nullable(),
   intPct: statValue.nullable(),
   lukPct: statValue.nullable(),
   hpPct: statValue.nullable(),
-  attPct: statValue,
-  mainFlat: statValue,
-  critDmg: statValue,
-  ied300: statValue,
-  ied380: statValue,
+  attPct: statValue.nullable(),
+  mainFlat: statValue.nullable(),
+  critDmg: statValue.nullable(),
+  ied300: statValue.nullable(),
+  ied380: statValue.nullable(),
   bossDef: z.union([z.literal(300), z.literal(380)]),
   cd2: statValue.nullable(),
   cd3: statValue.nullable(),
@@ -235,11 +238,29 @@ export const statValuesInput = z.strictObject({
   cd6: statValue.nullable(),
   cdMin: z.union([z.literal(0), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
 });
-export type StatValuesInput = z.infer<typeof statValuesInput>;
+// What's typed (and saved).
+export type StatValuesTyped = z.infer<typeof statValuesInput>;
+// The values the pages count: typed, else worked out, else the default. 1% of a stat and the cooldown
+// seconds can still be empty (the job's default; the nearest one below).
+export const STAT_VALUE_NUMBERS = ["att", "allStat", "secRatio", "bossDmg", "fdPer100", "attPct", "mainFlat", "critDmg", "ied300", "ied380"] as const;
+export type StatValuesInput = Omit<StatValuesTyped, (typeof STAT_VALUE_NUMBERS)[number]> & Record<(typeof STAT_VALUE_NUMBERS)[number], number>;
 // 1% of a stat until typed: a main stat 12.97, a secondary stat 1.68 (the owner's sheet); Xenon's three
 // main stats a third of a main stat each.
 export const STAT_PCT_DEFAULTS = { main: 12.97, secondary: 1.68 } as const;
+// Each value's default, when nothing's typed or worked out (a character without a Stats page).
 export const STAT_VALUE_DEFAULTS: Readonly<StatValuesInput> = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 };
+// Nothing typed: every value worked out ("Use worked out"), the settings as they start.
+export const STAT_VALUES_UNTYPED: Readonly<StatValuesTyped> = { att: null, allStat: null, secRatio: null, bossDmg: null, fdPer100: null, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: null, mainFlat: null, critDmg: null, ied300: null, ied380: null, bossDef: 380, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 };
+
+// What counts: typed, else worked out, else the default (1% of a stat and the cooldowns can stay empty:
+// the job's default, the nearest second below). (v4.1.0)
+export type StatValuesWorked = Omit<StatValuesTyped, "bossDef" | "cdMin">;
+export function countedValues(typed: StatValuesTyped, worked: StatValuesWorked | null): StatValuesInput {
+  const out: Record<string, unknown> = { ...typed };
+  for (const k of Object.keys(worked ?? {}) as (keyof StatValuesWorked)[]) out[k] = typed[k] ?? worked![k];
+  for (const k of STAT_VALUE_NUMBERS) out[k] ??= STAT_VALUE_DEFAULTS[k];
+  return out as StatValuesInput;
+}
 
 // A new order for a world's character tabs: every one of its characters, once, first to last.
 export const reorderInput = z.strictObject({
@@ -360,22 +381,25 @@ export const FAMILIAR_DEFAULTS: FamiliarInput = {
 };
 
 // ── v4.0.0: Stats ──────────────────────────────────────────────────────────────────────────────
-// The buffs, GMS's (chablades/mapledoro's GMS list, its order and names; decided 2026-11-03: GMS's only, not
+// The buffs, GMS's (chablades/mapledoro's GMS list and names; decided 2026-11-03: GMS's only, not
 // MapleScouter's KMS ones): those ticked on their own; two groups where only one counts at a time (the game's
 // potions that don't stack: A, and B, foods and potions, some only for ATT or only for Magic ATT jobs); the
-// daily event buffs, under the event stats' switch.
-export const STAT_BUFFS = ["candiedApple", "sayramElixir", "collectorElixir", "honorableElixir", "extremePotion", "sparklingRedStar", "brightMoonlight", "heroEcho", "legionMight", "masarayuGift", "caretakerSupport", "vipBuff", "mvpSuperpower", "genepass", "enlightenedOne"] as const;
+// daily event buffs, under the event stats' switch. Each list in MapleScouter's order (v4.1.0, its page
+// script for GMS), the ones it doesn't have after.
+export const STAT_BUFFS = ["sayramElixir", "collectorElixir", "honorableElixir", "heroEcho", "legionMight", "masarayuGift", "extremePotion", "mvpSuperpower", "brightMoonlight", "vipBuff", "candiedApple", "caretakerSupport", "sparklingRedStar", "genepass", "enlightenedOne"] as const;
 export type StatBuff = (typeof STAT_BUFFS)[number];
-export const STAT_BUFFS_A = ["sparklingBlueStar", "greatHeroBoost", "legendaryHero", "advWeaponTempering"] as const;
-export const STAT_BUFFS_B = ["tengusJudgement", "attackPotionV", "magicPotionV", "onyxApple", "energizerDrink", "energizerDrinkMagic", "fishBuff", "witchStew", "ssiwsCheese"] as const;
+export const STAT_BUFFS_A = ["greatHeroBoost", "legendaryHero", "advWeaponTempering", "sparklingBlueStar"] as const;
+// (Arctic Friends and Baby Dragon Food: MapleScouter's GMS tiles, v4.1.0; what they give isn't known yet, so
+// they count nothing)
+export const STAT_BUFFS_B = ["fishBuff", "arcticFriends", "babyDragonFood", "onyxApple", "tengusJudgement", "attackPotionV", "magicPotionV", "energizerDrink", "energizerDrinkMagic", "witchStew", "ssiwsCheese"] as const;
 // (the group B ones only for jobs that use Magic ATT, and only for those that don't)
 export const STAT_BUFFS_MAGIC: readonly string[] = ["magicPotionV", "energizerDrinkMagic", "ssiwsCheese"];
 export const STAT_BUFFS_PHYSICAL: readonly string[] = ["attackPotionV", "energizerDrink"];
 export const STAT_EVENT_BUFFS = ["believeInYourself", "gourmandPower", "peerlessMarble"] as const;
 export type StatEventBuff = (typeof STAT_EVENT_BUFFS)[number];
 // The link skills the formula counts (MapleScouter's ten: its page takes no Mihile, Kaiser or Hayato link),
-// by MapleScouter's names, each to its highest level (the game's).
-export const STAT_LINKS = { thief: 9, magician: 9, kadena: 3, illium: 3, ark: 3, kain: 3, angel: 3, kanna: 3, mukhyun: 3, hoyoung: 3 } as const;
+// by MapleScouter's names, each to its highest level (the game's), in MapleScouter's order (v4.1.0).
+export const STAT_LINKS = { kadena: 3, illium: 3, ark: 3, kain: 3, magician: 9, thief: 9, angel: 3, kanna: 3, mukhyun: 3, hoyoung: 3 } as const;
 export type StatLink = keyof typeof STAT_LINKS;
 export const COMBAT_ORDERS = ["none", "decent", "real"] as const;
 export const INNER_ABILITY = ["none", "passive", "target"] as const;
@@ -389,7 +413,8 @@ const flags = <K extends string>(keys: readonly K[]) => z.strictObject(Object.fr
 // Magic ATT, each as base / % / not affected; the rest as shown), the familiars' stat % lines (the window
 // leaves them out), the settings, the buffs, the event stats (switched on or off as one), the links, the
 // Legion's Wild Hunter card, the Artifact, the Inner Ability line and the Oz Rings. Level, job, world and
-// HEXA levels aren't typed: they come from elsewhere.
+// HEXA levels aren't typed: they come from elsewhere (but in test mode). The event Arcane and Sacred Power
+// (v4.1.0) count only for the boss clears.
 export const statsInput = z.strictObject({
   stats: z.strictObject({
     main: statTriple,
@@ -425,7 +450,7 @@ export const statsInput = z.strictObject({
   renown: z.strictObject({ allStat: whole(5), atk: whole(5), boss: whole(5), ied: whole(5), critDmg: whole(5) }),
   eventOn: z.boolean(),
   events: flags(STAT_EVENT_BUFFS),
-  eventStats: z.strictObject({ att: amount(100_000), dmg: amount(10_000), boss: amount(10_000), ied: amount(100), critDmg: amount(10_000), allStat: amount(100_000) }),
+  eventStats: z.strictObject({ att: amount(100_000), dmg: amount(10_000), boss: amount(10_000), ied: amount(100), critDmg: amount(10_000), allStat: amount(100_000), arcane: whole(100_000), sacred: whole(100_000) }),
   links: z
     .strictObject(Object.fromEntries(Object.keys(STAT_LINKS).map((k) => [k, whole(9)])) as Record<StatLink, ReturnType<typeof whole>>)
     .refine((l) => (Object.keys(STAT_LINKS) as StatLink[]).every((k) => l[k] <= STAT_LINKS[k]), { message: "A link skill is past its highest level" }),
@@ -452,10 +477,21 @@ export const STATS_DEFAULTS: StatsInput = {
   renown: { allStat: 0, atk: 0, boss: 0, ied: 0, critDmg: 0 },
   eventOn: true,
   events: Object.fromEntries(STAT_EVENT_BUFFS.map((k) => [k, false])) as Record<StatEventBuff, boolean>,
-  eventStats: { att: 0, dmg: 0, boss: 0, ied: 0, critDmg: 0, allStat: 0 },
+  eventStats: { att: 0, dmg: 0, boss: 0, ied: 0, critDmg: 0, allStat: 0, arcane: 0, sacred: 0 },
   links: Object.fromEntries(Object.keys(STAT_LINKS).map((k) => [k, 0])) as Record<StatLink, number>,
   wildHunter: 0,
   artifact: { extraTarget: false, finalAttack: 0 },
   innerAbility: "none",
   rings: { restraint: 0, continuous: 0, weapon: 0 },
 };
+
+// ── v4.1.0: test mode ──────────────────────────────────────────────────────────────────────────
+// The Stats page worked out for a sheet that isn't saved: the sheet as changed, and the level and HEXA
+// levels typed (they normally come from the refresh and the HEXA page). Nothing is saved.
+export const LEVEL_MAX = 300;
+export const statsTryInput = z.strictObject({
+  input: statsInput,
+  level: z.number().int().min(1).max(LEVEL_MAX),
+  hexa: z.strictObject(Object.fromEntries(HEXA_NODES.map((n) => [n, z.number().int().min(0).max(HEXA_LEVEL_MAX)])) as Record<HexaNode, z.ZodNumber>),
+});
+export type StatsTryInput = z.infer<typeof statsTryInput>;

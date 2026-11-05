@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { shortNumber } from "../lib/statValues";
 import { useSearchParams } from "react-router";
 import { CUBE_EVENTS, POTENTIAL_RANKS } from "@miku/shared";
 import { useGear, usePotential, usePotentialGraph, useRefreshStatus, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
@@ -391,7 +392,7 @@ export function PotentialPage() {
               </div>
             </div>
             <p className="tiny muted">
-              {c.name} · {c.job} · Glowing {cubePrice(board.prices.glowing)} · Bright {cubePrice(board.prices.bright)} a cube (the Heroic Cube Shop) · rank-up chances are community estimates (Nexon publishes none for GMS) · final damage per 100 score: {c.statValues.fdPer100}%
+              {c.name} · {c.job} · Glowing {cubePrice(board.prices.glowing)} · Bright {cubePrice(board.prices.bright)} a cube (the Heroic Cube Shop) · rank-up chances are community estimates (Nexon publishes none for GMS) · final damage per 100 score: {shortNumber(c.statValues.values.fdPer100)}%
             </p>
             {!board.known ? (
               <p className="notice">{c.job} isn't in the item list yet, so its main stat isn't known and its potential can't be scored.</p>
@@ -409,7 +410,7 @@ export function PotentialPage() {
                 board={board}
                 cube={shownCube}
                 onCube={setCube}
-                fdPer100={c.statValues.fdPer100}
+                fdPer100={c.statValues.values.fdPer100}
                 saving={saveDetails.isPending}
                 onSave={(p) => save(item, p)}
                 target={target !== null && graph.data?.target?.score === target ? graph.data.target : null}
@@ -420,7 +421,7 @@ export function PotentialPage() {
           )}
           {board.known && board.items.length > 0 && view === "targets" && <Targets board={board} budget={budget} onBudget={setBudget} />}
           <section className="block" aria-label="Stat values">
-            <StatValuesBox c={c} onSave={(values) => saveValues.mutate({ id: c.id, values })} />
+            <StatValuesBox c={c} page="potential" onSave={(values) => saveValues.mutate({ id: c.id, values })} />
           </section>
         </>
       )}

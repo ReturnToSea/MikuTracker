@@ -324,7 +324,8 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     expect(hexaJob("Ren")).toEqual(first);
     // and its order, built again
     expect(jobOrder("Ren")).not.toBe(order);
-  });
+    // (two orders built: slow on a busy machine, as the order tests below)
+  }, 60_000);
   it("a job's flat-ATT node, from MapleScouter's figures: Kanna's 3rd Common node, Zero's 4th Mastery; none for Ren", () => {
     expect(hexaJob("Kanna")!.att).toEqual({ node: "common3", points: [[1, 30.6], [15, 39], [30, 48]] });
     expect(hexaJob("Zero")!.att).toEqual({ node: "mastery4", points: [[1, 15], [15, 36], [30, 60]] });

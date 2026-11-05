@@ -11,7 +11,7 @@ import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 // A made-up character with three flameable items. The numbers are the server's to work out (tested
 // there); here, what the page shows and sends.
 const VALUES = { att: 4, allStat: 14.65, secRatio: 0.125, bossDmg: 12, fdPer100: 0.785, strPct: null, dexPct: null, intPct: null, lukPct: null, hpPct: null, attPct: 53.82, mainFlat: 0.29, critDmg: 42.38, ied300: 15.6, ied380: 20.52, bossDef: 380 as const, cd2: null, cd3: null, cd4: null, cd5: null, cd6: null, cdMin: 0 as const };
-const char = (id: number, name: string, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: { pct: [{ stat: "STR" as const, field: "strPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: VALUES, ...extra });
+const char = (id: number, name: string, extra: Partial<GearCharacter> = {}): GearCharacter => ({ id, name, job: "Ren", level: 279, avatar: null, knownJob: true, fits: [], equipped: {}, details: {}, statBoxes: { pct: [{ stat: "STR" as const, field: "strPct" as const, main: true, default: 12.97 }, { stat: "DEX" as const, field: "dexPct" as const, main: false, default: 1.68 }], magic: false, secondary: true, allStat: true }, statValues: { values: VALUES, typed: VALUES, worked: null }, ...extra });
 // The window's slots, as the server sends them (the Equipment page needs them).
 const SLOTS = ["ring1", "hat", "emblem", "ring2", "pendant1", "face", "badge", "ring3", "pendant2", "eye", "earrings", "medal", "ring4", "weapon", "top", "shoulder", "secondary", "pocket", "belt", "bottom", "gloves", "android", "shoes", "cape", "heart", "ringP", "totem1", "totem2", "totem3"].map((key) => ({ key, label: key, kind: key.replace(/\d$|P$/, "") }));
 const GEAR: GearBoard = { generated: "2026-10-24", slots: SLOTS, items: [], jobs: {}, characters: [char(1, "RemyRabbit", { details: { hat: { stars: 17, flames: { STR: 6 }, potential: null, hammers: 1 } } }), char(2, "Second")] };
@@ -306,5 +306,13 @@ describe("saving settings", () => {
     expect(upOutOfDate()).toBe(true);
     // only the Flames numbers: the gear board is still current
     expect(qc.getQueryState(["gear", 45])!.isInvalidated).toBe(false);
+  });
+});
+
+describe("a worked-out final damage per 100 score (v4.1.0, review)", () => {
+  it("rounded in the page's line, not every decimal the formula gives", async () => {
+    const worked = { ...VALUES, fdPer100: 0.97812345678 };
+    show(BOARD, { "GET /gear": { ...GEAR, characters: GEAR.characters.map((c) => ({ ...c, statValues: { values: worked, typed: { ...VALUES, fdPer100: null }, worked: { ...VALUES, fdPer100: 0.97812345678 } } })) } });
+    expect(await screen.findByText(/final damage per 100 score: 0\.978%/)).toBeTruthy();
   });
 });

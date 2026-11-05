@@ -23,6 +23,7 @@ export interface StatsContext {
   cores: number; // the HEXA cores' share of the damage with every core at 30 (calc/hexaDamage.ts)
   coreAtt: number; // flat ATT a HEXA node gives (calc/hexa.ts coreAttAt)
   sacred: boolean; // every Sacred symbol maxed: the sacred symbol buff (+20% damage against 380% bosses)
+  full?: boolean; // MapleScouter's "Normal" figures (every HEXA core at 30): without the under-260 cut
 }
 
 const sum = (values: Iterable<number>) => [...values].reduce((a, v) => a + v, 0);
@@ -139,7 +140,7 @@ export function groups(job: StatsJob, input: StatsInput, ctx: StatsContext, link
       (1 + job.perResetChance * s.cdSkip) *
       (1 + job.perSummonDuration * Math.min(SUMMON_CAP, s.summon)) *
       (FINAL_ATTACK_CLASSES.has(job.class) ? 1 + (FINAL_ATTACK_PER_30 * input.artifact.finalAttack) / 30 : 1) *
-      (ctx.level < 260 ? UNDER_260 : 1),
+      (ctx.level < 260 && !ctx.full ? UNDER_260 : 1),
   };
   return { g, keep };
 }
@@ -211,6 +212,15 @@ export function cooldownBonus(job: StatsJob, refs: CooldownRefs, s: number, h0: 
   return over * k * shared;
 }
 
+// What the score's curve takes for a damage: × the class's scale, raised for skill cooldown (whole seconds)
+// (null: the class has no curve, or there's no damage). The boss clears work from it unrounded.
+export function curveDamage(job: StatsJob, refs: CooldownRefs, damage: number, cdSec: number, spline: Spline | undefined): number | null {
+  if (!spline || job.splineScale === null || !(damage > 0)) return null;
+  const s = Math.round(cdSec);
+  const x = damage * job.splineScale;
+  return s <= 0 ? x : x * (1 + cooldownBonus(job, refs, s, splineReach(spline, x)));
+}
+
 // The score at 380% and 300% boss defense (null: the class has no curve), and the damage behind them.
 export interface Score {
   damage: number;
@@ -227,10 +237,8 @@ export function statsScore(job: StatsJob, input: StatsInput, ctx: StatsContext, 
   const damage300 = rest * (1 - (keep * 3) / 3.8) * (ctx.sacred ? 1 - AUTHENTIC_DMG_PCT / 100 / g.dmg : 1);
   // (no score where the defense left nothing: too little IED typed for the class)
   const score = (d: number, spline: Spline | undefined) => {
-    if (!spline || job.splineScale === null || !(d > 0)) return null;
-    const s = Math.round(input.stats.cdSec);
-    const h0 = splineReach(spline, d * job.splineScale);
-    return Math.round(s <= 0 ? h0 : splineReach(spline, d * job.splineScale * (1 + cooldownBonus(job, refs, s, h0))));
+    const x = curveDamage(job, refs, d, input.stats.cdSec, spline);
+    return x === null ? null : Math.round(splineReach(spline!, x));
   };
   return { damage, damage300, score380: score(damage, job.spline380), score300: score(damage300, job.spline300) };
 }

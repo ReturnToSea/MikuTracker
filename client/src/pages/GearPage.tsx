@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { GearDetailsInput, StatValuesInput } from "@miku/shared";
+import type { GearDetailsInput, StatValuesTyped } from "@miku/shared";
 import { useFlames, useGear, useRefreshStatus, useSaveGear, useSaveGearDetails, useSaveStatValues, useSettings, useUpdateSettings } from "../api/hooks";
 import type { FlameItem, GearBoard, GearCharacter, GearItemView } from "../api/types";
 import { DetailsEditor, IconRow, StatValuesBox } from "../components/GearDetails";
@@ -31,7 +31,7 @@ interface WindowProps {
   items: Items;
   onSave: (slot: string, input: { item: string } | { other: string } | { clear: true }) => void;
   onSaveDetails: (slot: string, details: GearDetailsInput) => void;
-  onSaveValues: (values: StatValuesInput) => void;
+  onSaveValues: (values: StatValuesTyped) => void;
   savingDetails: boolean;
   flames: FlameItem[] | undefined; // each flameable item's score (none for a job the list doesn't know)
 }
@@ -129,7 +129,7 @@ function GearWindow({ board, c, items, onSave, onSaveDetails, onSaveValues, savi
             ))
           )}
         </div>
-        <StatValuesBox c={c} onSave={onSaveValues} />
+        <StatValuesBox c={c} page="all" onSave={onSaveValues} />
       </section>
       <section className="block gear-panel" aria-label={`${label(slot)} slot`}>
         <h2>{label(slot)}</h2>
