@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { HEXA_LEVEL_MAX, HEXA_NODES, type HexaNode, STAT_BUFFS_MAGIC, STAT_BUFFS_PHYSICAL, STATS_DEFAULTS, type StatsInput, statsInput, type StatsTryInput, type StatValuesWorked } from "@miku/shared";
+import { CHALLENGER, HEXA_LEVEL_MAX, heroicWorld, HEXA_NODES, type HexaNode, STAT_BUFFS_MAGIC, STAT_BUFFS_PHYSICAL, STATS_DEFAULTS, type StatsInput, statsInput, type StatsTryInput, type StatValuesWorked } from "@miku/shared";
 import { getConfig } from "../config";
 import { type BossClear, bossClear, clearInputs, scoreNeeded } from "../calc/bossClear";
 import { coreAttAt } from "../calc/hexa";
@@ -9,12 +9,12 @@ import { type CoreKey, hexaDamage } from "../calc/hexaDamage";
 import { type Efficiency, statEfficiency } from "../calc/statEfficiency";
 import { finalDamage, generalRange, type StatsContext, type StatShape, statsScore, statTotal } from "../calc/stats";
 import { db } from "../db";
-import { BOSS_FIGURES, BOSS_SYMBOL, bossFigures, type Phase, phasesOf } from "../gameFigures/bossClear";
+import { BOSS_FIGURES, BOSS_SYMBOL, bossesFor, type Phase, phasesOf } from "../gameFigures/bossClear";
 import { gearFile } from "../gameFigures/gear";
-import { CORE_OF, HEXA_FIGURES, type HexaJob, hexaJob, isShine } from "../gameFigures/hexa";
+import { CORE_OF, type FiguredHexaJob, HEXA_FIGURES, hasFigures, hexaJob, isShine } from "../gameFigures/hexa";
 import { jobStats } from "../gameFigures/jobStats";
 import { SYMBOLS } from "../gameFigures/symbols";
-import { cooldownRefs, HEROIC_WORLDS, STATS_FIGURES, statLinks, statsJob } from "../gameFigures/stats";
+import { cooldownRefs, STATS_FIGURES, statLinks, statsJob } from "../gameFigures/stats";
 import { ownCharacter } from "./characters";
 import { savedInput as hexaInputOf } from "./hexa";
 import { equippedItems } from "./gear";
@@ -99,7 +99,7 @@ function rowsOf(job: string): { labels: StatsBoard["labels"]; shape: StatShape }
 
 // The figures the formula needs besides the sheet, for some HEXA levels: the cores' share of the damage
 // (every core at 30: MapleScouter's "Normal"), and the flat ATT a node gives.
-function contextOf(hexa: HexaJob, levels: Record<HexaNode, number>, base: Omit<StatsContext, "cores" | "coreAtt">): StatsContext {
+function contextOf(hexa: FiguredHexaJob, levels: Record<HexaNode, number>, base: Omit<StatsContext, "cores" | "coreAtt">): StatsContext {
   const cores = Object.fromEntries(Object.entries(CORE_OF).map(([node, core]) => [core, levels[node as HexaNode]])) as Record<CoreKey, number>;
   return { ...base, cores: hexaDamage(hexa.model, cores), coreAtt: hexa.att ? coreAttAt(hexa.att.points, levels[hexa.att.node]) : 0 };
 }
@@ -113,10 +113,11 @@ export type StatsCharacter = Pick<Awaited<ReturnType<typeof ownCharacter>>, "id"
 // Force Shield but on the Demon jobs, a one-handed weapon but on Hero, Paladin and Dawn Warrior, a food for
 // the other kind of ATT), each boss's own symbol, and the equipped hat's cooldown seconds (the gear pages
 // value a hat's).
-const heroicOf = (c: StatsCharacter) => HEROIC_WORLDS.includes(c.worldId);
+const heroicOf = (c: StatsCharacter) => heroicWorld(c.worldId);
 async function figuresFor(c: StatsCharacter, input: StatsInput, level: number, levels: Record<HexaNode, number>) {
   const [job, hexa, rows] = [statsJob(c.job), hexaJob(c.job), rowsOf(c.job)];
-  if (!job || !hexa || !rows) return null;
+  // (a job without HEXA figures, Lethe, has no Stats page yet)
+  if (!job || !hexa || !hasFigures(hexa) || !rows) return null;
   const [symbols, equipped] = await Promise.all([db().symbolState.findMany({ where: { characterId: c.id } }), equippedItems(c.id)]);
   const heroic = heroicOf(c);
   const isMaxed = (id: string) => (symbols.find((r) => r.symbol === id)?.level ?? 0) >= SYMBOLS.find((y) => y.id === id)!.maxLevel;
@@ -152,11 +153,13 @@ async function worked(c: StatsCharacter, input: StatsInput, level: number, level
   const level30 = Object.fromEntries(HEXA_NODES.map((n) => [n, HEXA_LEVEL_MAX])) as Record<HexaNode, number>;
   const [links, refs] = [statLinks(), cooldownRefs()];
   const score = statsScore(job, counted, ctx, links, refs);
-  const normal = statsScore(job, counted, contextOf(hexa, level30, { level, heroic, sacred, full: true }), links, refs);
+  const normalCtx = contextOf(hexa, level30, { level, heroic, sacred, full: true });
+  const challenger = c.worldId === CHALLENGER; // (its own boss, Mayrin)
+  const normal = statsScore(job, counted, normalCtx, links, refs);
   // the boss clears: the Force typed, and the event's while the event stats are on
   const ev = input.eventOn ? input.eventStats : STATS_DEFAULTS.eventStats;
-  const x = clearInputs(job, counted, ctx, contextOf(hexa, { ...levels, ascent: 0 }, { level, heroic, sacred }), f.maxed, hpMain, links, refs);
-  const all = bossFigures();
+  const x = clearInputs(job, counted, ctx, contextOf(hexa, { ...levels, ascent: 0 }, { level, heroic, sacred }), challenger ? normalCtx : null, f.maxed, hpMain, links, refs);
+  const all = bossesFor(challenger);
   const bossFiles = iconFiles("bosses");
   const bosses: BossRow[] = x
     ? all.map((b) => {

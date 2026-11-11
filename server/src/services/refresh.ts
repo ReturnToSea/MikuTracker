@@ -1,3 +1,4 @@
+import { nexonWorlds } from "@miku/shared";
 import { totalExp } from "../calc/exp";
 import { utcDay } from "../calc/utcDays";
 import { db } from "../db";
@@ -89,7 +90,8 @@ export async function refreshAll(nexon: NexonClient): Promise<RefreshRun | null>
     const run = await db().refreshRun.create({ data: { startedAt: new Date() } });
     const counts = { checked: 0, updated: 0, missing: 0, failed: 0 };
     let problem: string | null = null;
-    const characters = await db().character.findMany({ orderBy: [{ worldId: "asc" }, { sortOrder: "asc" }] });
+    // Characters added by hand (Challenger) aren't in Nexon's rankings: never looked up.
+    const characters = await db().character.findMany({ where: { worldId: { in: nexonWorlds() } }, orderBy: [{ worldId: "asc" }, { sortOrder: "asc" }] });
     for (const c of characters) {
       counts.checked++;
       try {

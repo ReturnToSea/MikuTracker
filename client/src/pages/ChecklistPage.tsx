@@ -183,6 +183,7 @@ export function ChecklistPage() {
       {form && (
         <TaskForm
           task={form.task}
+          world={world}
           saving={saveTask.isPending || deleteTask.isPending}
           error={(saveTask.error ?? deleteTask.error)?.message ?? null}
           onSave={(task) => saveTask.mutate({ id: form.task?.id ?? null, task }, { onSuccess: () => setForm(null) })}

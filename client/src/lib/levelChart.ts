@@ -20,13 +20,28 @@ export function levelScale(levels: number[]): LevelScale | null {
   const hi = Math.min(MAX_LEVEL, Math.ceil(Math.max(...levels) * 4) / 4);
   const lo = Math.min(hi - 0.25, Math.floor(Math.min(...levels) * 4) / 4);
   const span = hi - lo;
-  const step = span <= 1 ? 0.25 : Math.ceil(span / 6);
-  // In whole steps (quarters are exact in binary, so nothing drifts): from the first at or above
-  // lo to the last at or below hi.
+  return withTicks(lo, hi, span <= 1 ? 0.25 : Math.ceil(span / 6));
+}
+// A scale's lines, every `step`, in whole steps (quarters are exact in binary, so nothing drifts): from the
+// first at or above lo to the last at or below hi.
+function withTicks(lo: number, hi: number, step: number): LevelScale {
   const first = Math.ceil(lo / step);
   const last = Math.floor(hi / step);
   return { lo, hi, ticks: Array.from({ length: last - first + 1 }, (_, k) => (first + k) * step) };
 }
+
+// The scale for levels typed by hand (whole levels, Challenger): one level of room above and below (within
+// 1–300), lines every level, or every few levels so there are at most 6 steps. Null with none.
+export function typedScale(levels: number[]): LevelScale | null {
+  if (levels.length === 0) return null;
+  const hi = Math.min(MAX_LEVEL, Math.max(...levels) + 1);
+  const lo = Math.max(1, Math.min(...levels) - 1);
+  return withTicks(lo, hi, Math.ceil((hi - lo) / 6));
+}
+
+// What a day's tooltip says for a level typed by hand: "Wed, Nov 11: level 200 (typed)", or "(no change)".
+export const typedDetail = (day: string, level: number, typed: boolean, today: string) =>
+  `${fullDate(day)}${day === today ? " (today)" : ""}: level ${level} (${typed ? "typed" : "no change"})`;
 
 // How high a level sits in the scale, from 0 to 1.
 export const levelHeight = (level: number, scale: LevelScale) => (level - scale.lo) / (scale.hi - scale.lo);

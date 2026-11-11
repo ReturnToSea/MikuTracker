@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-24",
+ "generated": "2026-11-10",
  "sources": "MapleStory Wiki (the GMS wiki): set, item and job pages; an item is kept only if it has its own page there",
  "jobs": {
   "Adele": {
@@ -439,6 +439,14 @@
    ],
    "weapons": [
     "Gram"
+   ]
+  },
+  "Lethe": {
+   "branches": [
+    "Magician"
+   ],
+   "weapons": [
+    "Dominium"
    ]
   }
  },
@@ -934,6 +942,31 @@
    "file": "Eqp Fafnir Mana Cradle.png",
    "weaponType": "Shining Rod",
    "type": "Shining Rod",
+   "stats": {
+    "int": 40,
+    "luk": 40,
+    "att": 119,
+    "matt": 201,
+    "boss": 30,
+    "ied": 10
+   },
+   "starMax": 30,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
+   "id": 1216019,
+   "name": "Fafnir Edict",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 150,
+   "set": "Root Abyss",
+   "group": "Root Abyss",
+   "file": "Eqp Fafnir Edict.png",
+   "weaponType": "Dominium",
+   "type": "Dominium",
    "stats": {
     "int": 40,
     "luk": 40,
@@ -2374,6 +2407,31 @@
    "file": "Eqp AbsoLab Shining Rod.png",
    "weaponType": "Shining Rod",
    "type": "Shining Rod",
+   "stats": {
+    "int": 60,
+    "luk": 60,
+    "att": 143,
+    "matt": 241,
+    "boss": 30,
+    "ied": 10
+   },
+   "starMax": 30,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
+   "id": 1216021,
+   "name": "AbsoLab Treatise",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 160,
+   "set": "AbsoLab",
+   "group": "AbsoLab",
+   "file": "Eqp AbsoLab Treatise.png",
+   "weaponType": "Dominium",
+   "type": "Dominium",
    "stats": {
     "int": 60,
     "luk": 60,
@@ -4033,6 +4091,31 @@
    "file": "Eqp Arcane Umbra Shining Rod.png",
    "weaponType": "Shining Rod",
    "type": "Shining Rod",
+   "stats": {
+    "int": 100,
+    "luk": 100,
+    "att": 206,
+    "matt": 347,
+    "boss": 30,
+    "ied": 20
+   },
+   "starMax": 30,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
+   "id": 1216022,
+   "name": "Arcane Umbra Dictio",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 200,
+   "set": "Arcane Umbra",
+   "group": "Arcane Umbra",
+   "file": "Eqp Arcane Umbra Dictio.png",
+   "weaponType": "Dominium",
+   "type": "Dominium",
    "stats": {
     "int": 100,
     "luk": 100,
@@ -6657,6 +6740,33 @@
    "potential": "weapon"
   },
   {
+   "id": 1216024,
+   "name": "Genesis Dominium",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 200,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Genesis Dominium.png",
+   "weaponType": "Dominium",
+   "lucky": true,
+   "type": "Dominium",
+   "stats": {
+    "int": 150,
+    "luk": 150,
+    "att": 237,
+    "matt": 400,
+    "boss": 30,
+    "ied": 20
+   },
+   "starMax": 22,
+   "starMin": 22,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
    "id": 1252106,
    "name": "Genesis Memorial Staff",
    "slot": "weapon",
@@ -6873,6 +6983,33 @@
    "potential": "weapon"
   },
   {
+   "id": 1216025,
+   "name": "Destiny Dominium (Stage 1)",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dominium.png",
+   "weaponType": "Dominium",
+   "lucky": true,
+   "type": "Dominium",
+   "stats": {
+    "int": 190,
+    "luk": 190,
+    "att": 260,
+    "matt": 439,
+    "boss": 30,
+    "ied": 20
+   },
+   "starMax": 22,
+   "starMin": 22,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
    "id": 1252129,
    "name": "Destiny Memorial Staff (Stage 1)",
    "slot": "weapon",
@@ -7075,6 +7212,33 @@
    "weaponType": "Shining Rod",
    "lucky": true,
    "type": "Shining Rod",
+   "stats": {
+    "int": 190,
+    "luk": 190,
+    "att": 260,
+    "matt": 439,
+    "boss": 30,
+    "ied": 20
+   },
+   "starMax": 25,
+   "starMin": 22,
+   "flames": "boss",
+   "potential": "weapon"
+  },
+  {
+   "id": 1216026,
+   "name": "Destiny Dominium (Stage 2)",
+   "slot": "weapon",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 250,
+   "set": null,
+   "group": "Lucky weapons",
+   "file": "Eqp Destiny Dominium (Stage 2).png",
+   "weaponType": "Dominium",
+   "lucky": true,
+   "type": "Dominium",
    "stats": {
     "int": 190,
     "luk": 190,
@@ -10125,6 +10289,29 @@
      "matt": 10
     }
    }
+  },
+  {
+   "id": 1022397,
+   "name": "Sanguinary Spirit",
+   "slot": "eye",
+   "jobs": null,
+   "level": 250,
+   "set": "Brilliant Boss",
+   "group": "Brilliant Boss",
+   "file": "Eqp Sanguinary Spirit.png",
+   "type": "Eye Accessory",
+   "stats": {
+    "str": 20,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "att": 5,
+    "matt": 5,
+    "def": 450
+   },
+   "starMax": 30,
+   "flames": "boss",
+   "potential": "eye"
   },
   {
    "id": 1113341,
@@ -13788,6 +13975,46 @@
    "potential": "secondary"
   },
   {
+   "id": 1726003,
+   "name": "Nox Quill",
+   "slot": "secondary",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Nox Quill.png",
+   "type": "Quill",
+   "stats": {
+    "int": 10,
+    "luk": 10,
+    "matt": 3
+   },
+   "starMax": 0,
+   "potential": "secondary"
+  },
+  {
+   "id": 1726004,
+   "name": "Frozen Intempestus Quill",
+   "slot": "secondary",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 100,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Frozen Intempestus Quill.png",
+   "type": "Quill",
+   "stats": {
+    "int": 8,
+    "luk": 8,
+    "matt": 5
+   },
+   "starMax": 0,
+   "potential": "secondary"
+  },
+  {
    "id": 1352009,
    "name": "Princess No's Accursed Arrow",
    "slot": "secondary",
@@ -14572,6 +14799,26 @@
     "dex": 14,
     "luk": 14,
     "att": 9
+   },
+   "starMax": 0,
+   "potential": "secondary"
+  },
+  {
+   "id": 1726012,
+   "name": "Princess No's Quill",
+   "slot": "secondary",
+   "jobs": [
+    "Lethe"
+   ],
+   "level": 140,
+   "set": null,
+   "group": "Secondary weapons",
+   "file": "Eqp Princess No's Quill.png",
+   "type": "Quill",
+   "stats": {
+    "int": 14,
+    "luk": 14,
+    "matt": 9
    },
    "starMax": 0,
    "potential": "secondary"

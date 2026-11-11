@@ -272,7 +272,37 @@ button { cursor: pointer; }
 .stat .label { font-size: 0.82em; color: var(--text-muted); }
 .stat .value { font-family: var(--font-display); font-size: 1.4em; font-weight: 700; }
 @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-.page-foot { margin-top: 16px; }
+.page-foot { margin-top: 16px; display: flex; gap: 20px; align-items: center; }
+/* A character added by hand (Challenger, v4.2.0): its level and name changed on the card, and the add box. */
+.level-edit input, .rename input, .by-hand input {
+  min-width: 0; padding: 8px 12px;
+  border: var(--border-width) solid var(--border); border-radius: calc(var(--radius) * 0.7);
+  background: var(--surface); color: var(--text); font: inherit; outline: none;
+}
+.level-edit input:focus, .rename input:focus, .by-hand input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.page-foot .link-button, .level-box .link-button { color: var(--accent); font-weight: 600; }
+.level-box .link-button { display: block; margin: 6px 0 0 auto; padding: 4px 0; }
+.level-edit { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 8px; max-width: 360px; }
+.level-edit input { width: 80px; }
+.level-edit p { flex-basis: 100%; text-align: right; }
+.rename { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 4px; }
+.rename input { width: 220px; font-size: 1.2em; }
+.rename p { flex-basis: 100%; }
+.popover.by-hand { width: min(440px, calc(100vw - 32px)); }
+.by-hand form { display: flex; flex-direction: column; gap: 10px; }
+.by-hand-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; color: var(--text-muted); }
+.by-hand-field input { font-size: 1.15em; color: var(--text); width: 100%; }
+.by-hand-level input { width: 100px; }
+.by-hand-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+.class-picker { position: relative; }
+.class-picker input { padding-right: 34px; }
+.class-caret { position: absolute; right: 6px; top: 6px; padding: 2px 6px; border: 0; background: none; color: var(--text-muted); cursor: pointer; }
+.class-list { list-style: none; margin: 4px 0 0; padding: 4px; max-height: 210px; overflow-y: auto; border: var(--border-width) solid var(--border); border-radius: calc(var(--radius) * 0.7); background: var(--surface); }
+.class-list li { padding: 6px 8px; border-radius: calc(var(--radius) * 0.5); font-size: 1.1em; color: var(--text); cursor: pointer; }
+.class-list li[aria-selected="true"], .class-list li[role="option"]:hover { background: var(--accent-soft); }
+.class-list li.muted { cursor: default; font-size: 0.95em; color: var(--text-muted); }
+.typed-note { margin: 0 0 14px; }
+.avatar-blank { flex: none; border: var(--border-width) dashed var(--border); border-radius: var(--radius); background: var(--surface-2); }
 .danger-link { padding: 6px 0; border: 0; background: none; color: var(--danger); font-weight: 600; }
 p.block.error { padding: 12px 24px; }
 

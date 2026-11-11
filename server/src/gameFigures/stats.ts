@@ -131,6 +131,3 @@ export const HEROIC_FD = [
 export const HEROIC_FD_TOP = 45;
 // Demon Avenger's pure HP (every AP in HP): 545 + 90 a level (the damage range's stat).
 export const DA_PURE_HP = { base: 545, perLevel: 90 } as const;
-
-// The worlds tracked that are Heroic (formerly Reboot): both (shared/src/worlds.ts).
-export const HEROIC_WORLDS: readonly number[] = [45, 70];

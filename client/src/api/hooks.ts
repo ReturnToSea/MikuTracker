@@ -99,7 +99,20 @@ function useCharacterChange<I, O>(world: number, send: (input: I) => Promise<O>)
   return useMutation({ mutationFn: send, onSuccess: () => qc.invalidateQueries({ queryKey: keys.characters(world) }) });
 }
 
-export const useAddCharacter = (world: number) => useCharacterChange(world, (name: string) => api<CharacterView>("/characters", { method: "POST", body: { world, name } }));
+// Adding: on a Nexon world by name; on Challenger by hand, with its class and level.
+export const useAddCharacter = (world: number) =>
+  useCharacterChange(world, (input: string | { name: string; job: string; level: number }) =>
+    api<CharacterView>("/characters", { method: "POST", body: typeof input === "string" ? { world, name: input } : { world, ...input } }));
+
+// Renaming a character added by hand, or setting its level. Its level shows on most pages (boss entry,
+// HEXA Stat, Stats, symbols…), so everything loaded is loaded again.
+export const useEditCharacter = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...edit }: { id: number; name?: string; level?: number }) => api<CharacterView>(`/characters/${id}`, { method: "PATCH", body: edit }),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+};
 export const useSelectCharacter = (world: number) => useCharacterChange(world, (id: number) => api<void>(`/characters/${id}/select`, { method: "POST" }));
 export const useDeleteCharacter = (world: number) => useCharacterChange(world, (id: number) => api<void>(`/characters/${id}`, { method: "DELETE" }));
 

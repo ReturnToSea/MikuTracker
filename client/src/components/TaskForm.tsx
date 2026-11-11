@@ -1,10 +1,11 @@
-import { type CustomTaskInput, LIMIT_SCOPES, TASK_CATEGORIES, TASK_RESETS, TASK_WORLDS, WEEKLY_RESET_DAY, worldName } from "@miku/shared";
+import { type CustomTaskInput, LIMIT_SCOPES, TASK_CATEGORIES, TASK_RESETS, WEEKLY_RESET_DAY, WORLDS } from "@miku/shared";
 import { useEffect, useRef, useState } from "react";
 import type { TaskView } from "../api/types";
-import { CATEGORY_NAMES, taskForm, WEEKDAYS, withReset } from "../lib/checklist";
+import { CATEGORY_NAMES, taskForm, toggleWorld, WEEKDAYS, withReset } from "../lib/checklist";
 
 interface Props {
   task: TaskView | null; // the custom task being changed, or null for a new one
+  world: number; // the world being looked at: a new task's to start with
   saving: boolean;
   error: string | null;
   onSave: (task: CustomTaskInput) => void;
@@ -14,7 +15,6 @@ interface Props {
 
 const RESET_NAMES = { daily: "Daily", weekly: "Weekly", none: "No reset" };
 const SCOPE_NAMES = { character: "Per character", world: "Per world", account: "Per account" };
-const worldLabel = (w: (typeof TASK_WORLDS)[number]) => (w === "both" ? "Both" : worldName(Number(w))!);
 
 // A row of buttons choosing one of `options`.
 function Choice<T extends string>({ label, options, value, names, onChange }: { label: string; options: readonly T[]; value: T; names: (o: T) => string; onChange: (o: T) => void }) {
@@ -30,8 +30,8 @@ function Choice<T extends string>({ label, options, value, names, onChange }: { 
 }
 
 // Making or changing your own task: name, category, reset, worlds and limit.
-export function TaskForm({ task, saving, error, onSave, onDelete, onClose }: Props) {
-  const [f, setF] = useState<CustomTaskInput>(() => taskForm(task ?? undefined));
+export function TaskForm({ task, world, saving, error, onSave, onDelete, onClose }: Props) {
+  const [f, setF] = useState<CustomTaskInput>(() => taskForm(task ?? undefined, world));
   // The count as typed (it may be empty while typing); a whole number of at least 1 when saved.
   // Over 50 (the server's limit), the browser itself refuses to send the form (max={50}).
   const [count, setCount] = useState(String(f.limitCount));
@@ -108,7 +108,14 @@ export function TaskForm({ task, saving, error, onSave, onDelete, onClose }: Pro
             )}
           </div>
           <span>Worlds</span>
-          <Choice label="Worlds" options={TASK_WORLDS} value={f.worlds} names={worldLabel} onChange={(worlds) => setF({ ...f, worlds })} />
+          {/* Several at once: each world clicked on or off (one stays on). */}
+          <div className="segmented" role="group" aria-label="Worlds">
+            {WORLDS.map((w) => (
+              <button key={w.id} type="button" aria-pressed={f.worlds.includes(w.id)} onClick={() => setF({ ...f, worlds: toggleWorld(f.worlds, w.id) })}>
+                {w.name}
+              </button>
+            ))}
+          </div>
           <span>Limit</span>
           <div className="tools-inline">
             <Choice label="Limit" options={LIMIT_SCOPES} value={f.limitScope} names={(o) => SCOPE_NAMES[o]} onChange={(limitScope) => setF({ ...f, limitScope })} />

@@ -69,7 +69,7 @@ describe("GET /api/stats/:id", () => {
     const job = hexaJob("Mercedes")!;
     const levels = HEXA_DEFAULTS.current;
     const cores = Object.fromEntries(Object.entries(CORE_OF).map(([n, c]) => [c, levels[n as keyof typeof levels]])) as Record<CoreKey, number>;
-    const expected = statsScore(statsJob("Mercedes")!, SCREENSHOT, { level: 286, heroic: true, cores: hexaDamage(job.model, cores), coreAtt: coreAttAt(job.att!.points, levels.common3), sacred: false }, statLinks(), cooldownRefs());
+    const expected = statsScore(statsJob("Mercedes")!, SCREENSHOT, { level: 286, heroic: true, cores: hexaDamage(job.model!, cores), coreAtt: coreAttAt(job.att!.points, levels.common3), sacred: false }, statLinks(), cooldownRefs());
     expect([out.score380, out.score300]).toEqual([expected.score380, expected.score300]);
     expect(out.score380).toBeGreaterThan(10_000);
   });

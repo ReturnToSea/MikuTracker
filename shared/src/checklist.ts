@@ -5,7 +5,6 @@ export const TASK_RESETS = ["daily", "weekly", "none"] as const; // daily at 00:
 export type TaskReset = (typeof TASK_RESETS)[number];
 export const LIMIT_SCOPES = ["character", "world", "account"] as const; // who shares a task's limit
 export type LimitScope = (typeof LIMIT_SCOPES)[number];
-export const TASK_WORLDS = ["both", "45", "70"] as const; // which worlds a custom task shows on
 
 // The game's weekly reset day (0 Sunday … 6 Saturday), at 00:00 UTC: Thursday since v.264 (Nov
 // 2025, when weekly quests and content moved there from Monday; weekly bosses were already there).

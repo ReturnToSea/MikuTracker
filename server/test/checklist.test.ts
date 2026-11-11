@@ -20,7 +20,7 @@ const plan = (id: number, tasks: string[]) => api().put(`/api/checklist/${id}/pl
 const tick = (id: number, task: string, done = true) => api().put(`/api/checklist/${id}/ticks/${task}`).send({ done });
 const board = async (world = 45) => (await ok(api().get(`/api/checklist?world=${world}`))).body;
 const at = (iso: string) => vi.setSystemTime(new Date(iso));
-const TASK = { name: "Event check-in", category: "other", reset: "daily", weekday: null, worlds: "both", limitScope: "character", limitCount: 1 };
+const TASK = { name: "Event check-in", category: "other", reset: "daily", weekday: null, worlds: [45, 70], limitScope: "character", limitCount: 1 };
 const custom = async (over: Record<string, unknown> = {}) => (await ok(api().post("/api/checklist/tasks").send({ ...TASK, ...over }))).body;
 
 describe("the presets", () => {
@@ -205,8 +205,8 @@ describe("limits", () => {
 describe("your own tasks", () => {
   it("are made, offered on their worlds, planned and ticked like presets", async () => {
     const id = await character();
-    const t = await custom({ name: "  Mondays  ", reset: "weekly", weekday: 1, worlds: "45", limitScope: "account", limitCount: 2 });
-    expect(t).toEqual({ id: expect.stringMatching(/^custom-\d+$/), name: "Mondays", category: "other", reset: "weekly", weekday: 1, level: null, limit: { scope: "account", count: 2 }, custom: { worlds: "45" }, resetsAt: "2026-10-26T00:00:00.000Z" });
+    const t = await custom({ name: "  Mondays  ", reset: "weekly", weekday: 1, worlds: [45], limitScope: "account", limitCount: 2 });
+    expect(t).toEqual({ id: expect.stringMatching(/^custom-\d+$/), name: "Mondays", category: "other", reset: "weekly", weekday: 1, level: null, limit: { scope: "account", count: 2 }, custom: { worlds: [45] }, resetsAt: "2026-10-26T00:00:00.000Z" });
     expect((await board(45)).tasks.at(-1).id).toBe(t.id);
     expect((await board(70)).tasks.some((x: { id: string }) => x.id === t.id)).toBe(false);
     await ok(plan(id, [t.id]));
@@ -241,8 +241,8 @@ describe("your own tasks", () => {
     await ok(plan(id, ["cernium", t.id]));
     await ok(tick(id, t.id));
     const n = Number(t.id.split("-")[1]);
-    const changed = (await ok(api().put(`/api/checklist/tasks/${n}`).send({ ...TASK, name: "Renamed", worlds: "70" }))).body;
-    expect([changed.name, changed.custom]).toEqual(["Renamed", { worlds: "70" }]);
+    const changed = (await ok(api().put(`/api/checklist/tasks/${n}`).send({ ...TASK, name: "Renamed", worlds: [70] }))).body;
+    expect([changed.name, changed.custom]).toEqual(["Renamed", { worlds: [70] }]);
     // now on Hyperion only: it's no longer on this Kronos character's checklist
     expect((await board()).characters[0].plan).toEqual(["cernium"]);
     await ok(tick(id, "cernium"));
@@ -256,17 +256,54 @@ describe("your own tasks", () => {
   it("moving a task to one world takes it off the other world's characters, with their ticks (which could block a per-account limit)", async () => {
     const k = await character("Kro");
     const h = await character("Hyp", { worldId: 70 });
-    const t = await custom({ worlds: "both", limitScope: "account", limitCount: 1 });
+    const t = await custom({ worlds: [45, 70], limitScope: "account", limitCount: 1 });
     await ok(plan(k, [t.id]));
     await ok(plan(h, [t.id]));
     await ok(tick(h, t.id));
     expect((await tick(k, t.id)).status).toBe(409); // Hyp used it
     await ok(plan(h, [t.id, "cernium"]));
     await ok(tick(h, "cernium")); // another task's plan and tick on Hyperion stay
-    await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: "45", limitScope: "account", limitCount: 1 }));
+    await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: [45], limitScope: "account", limitCount: 1 }));
     expect(await db().checklistPlan.findMany({ select: { characterId: true, task: true }, orderBy: { characterId: "asc" } })).toEqual([{ characterId: k, task: t.id }, { characterId: h, task: "cernium" }]);
     expect(await db().checklistTick.findMany({ select: { task: true } })).toEqual([{ task: "cernium" }]);
     await ok(tick(k, t.id)); // no longer blocked
+  });
+
+  it("shows on exactly the worlds picked (saved in order, each once): Challenger alone, or with Hyperion", async () => {
+    const t = await custom({ worlds: [900] });
+    expect(t.custom).toEqual({ worlds: [900] });
+    const has = async (world: number) => (await board(world)).tasks.some((x: { id: string }) => x.id === t.id);
+    expect([await has(45), await has(70), await has(900)]).toEqual([false, false, true]);
+    const both = (await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: [900, 70] }))).body;
+    expect(both.custom).toEqual({ worlds: [70, 900] });
+    expect((await db().checklistTask.findFirst())!.worlds).toBe("70,900");
+    expect([await has(45), await has(70), await has(900)]).toEqual([false, true, true]);
+  });
+
+  it("a per-account limit counts Challenger characters too; a per-world one doesn't cross worlds", async () => {
+    const k = await character("Kro");
+    const c = await character("Chal", { worldId: 900 });
+    const acct = await custom({ worlds: [45, 900], limitScope: "account", limitCount: 1 });
+    const world = await custom({ name: "Per world", worlds: [45, 900], limitScope: "world", limitCount: 1 });
+    for (const id of [k, c]) await ok(plan(id, [acct.id, world.id]));
+    await ok(tick(c, acct.id));
+    await ok(tick(c, world.id));
+    const blocked = await tick(k, acct.id);
+    expect([blocked.status, blocked.body.error]).toEqual([409, "Event check-in is already done by Chal (1 per account)."]);
+    await ok(tick(k, world.id)); // Kronos's own
+  });
+
+  it("taken off Challenger, it leaves Challenger's characters (plans and ticks) and keeps Kronos's", async () => {
+    const k = await character("Kro");
+    const c = await character("Chal", { worldId: 900 });
+    const t = await custom({ worlds: [45, 900] });
+    for (const id of [k, c]) {
+      await ok(plan(id, [t.id]));
+      await ok(tick(id, t.id));
+    }
+    await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: [45, 70] }));
+    expect(await db().checklistPlan.findMany({ select: { characterId: true } })).toEqual([{ characterId: k }]);
+    expect(await db().checklistTick.findMany({ select: { characterId: true } })).toEqual([{ characterId: k }]);
   });
 
   it("moving a task to one world keeps that world's ticks", async () => {
@@ -277,7 +314,7 @@ describe("your own tasks", () => {
       await ok(plan(id, [t.id]));
       await ok(tick(id, t.id));
     }
-    await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: "45" }));
+    await ok(api().put(`/api/checklist/tasks/${t.id.split("-")[1]}`).send({ ...TASK, worlds: [45] }));
     expect(await db().checklistTick.findMany({ select: { characterId: true } })).toEqual([{ characterId: k }]);
     expect((await board(45)).characters[0].done).toEqual([t.id]);
   });
@@ -293,7 +330,7 @@ describe("your own tasks", () => {
   });
 
   it("another owner's task, or one that doesn't exist, is not found", async () => {
-    const theirs = await db().checklistTask.create({ data: { ownerId: "someone-else", ...TASK } });
+    const theirs = await db().checklistTask.create({ data: { ownerId: "someone-else", ...TASK, worlds: "45,70" } });
     expect((await api().put(`/api/checklist/tasks/${theirs.id}`).send(TASK)).status).toBe(404);
     expect((await api().delete(`/api/checklist/tasks/${theirs.id}`)).status).toBe(404);
     const missing = await api().delete("/api/checklist/tasks/99999");
@@ -313,7 +350,7 @@ describe("your own tasks", () => {
   });
 
   it("refuses bad fields", async () => {
-    for (const over of [{ name: "x".repeat(41) }, { category: "boss" }, { reset: "monthly" }, { weekday: 7, reset: "weekly" }, { worlds: "1" }, { limitScope: "guild" }, { limitCount: 0 }, { limitCount: 51 }, { extra: 1 }]) {
+    for (const over of [{ name: "x".repeat(41) }, { category: "boss" }, { reset: "monthly" }, { weekday: 7, reset: "weekly" }, { worlds: "45" }, { worlds: [1] }, { worlds: [] }, { worlds: [45, 45] }, { limitScope: "guild" }, { limitCount: 0 }, { limitCount: 51 }, { extra: 1 }]) {
       expect((await api().post("/api/checklist/tasks").send({ ...TASK, ...over })).status).toBe(400);
     }
   });

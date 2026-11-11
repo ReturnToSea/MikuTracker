@@ -46,6 +46,7 @@ describe("GET /api/hexa?world=", () => {
     await character("Sia Astelle");
     await character("Erel Light");
     await character("Jett");
+    await character("Lethe");
     await character("Ren", SOLE_OWNER, 70);
     const tabs = await get("/api/hexa?world=45");
     expect(tabs.characters.map((c: { job: string; known: boolean; shine: boolean }) => [c.job, c.known, c.shine])).toEqual([
@@ -54,6 +55,7 @@ describe("GET /api/hexa?world=", () => {
       ["Sia Astelle", false, true],
       ["Erel Light", false, true],
       ["Jett", false, false],
+      ["Lethe", true, false],
     ]);
     expect((await api().get("/api/hexa?world=3")).status).toBe(400);
   });
@@ -98,6 +100,7 @@ describe("GET /api/hexa/:id", () => {
     expect(b.priority.at(-1).total.frags).toBeCloseTo(b.left.frags, 6);
     expect(b.fragments.needed).toBeCloseTo(b.left.frags, 6);
     expect(b.source).toMatch(/^MapleScouter's figures \(mapledoro's copy, read \d{4}-\d{2}-\d{2}\); the order built from them$/);
+    expect(b.fixedOrder).toBe(false);
   });
 
   it("Sol Janus counts in the totals only when ticked (6,268 fragments and 208 Sol Erda more), never in the priority", async () => {
@@ -400,10 +403,50 @@ describe("GET /api/hexa/:id", () => {
     await save(nw, withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }));
     const b = await get(`/api/hexa/${nw}`);
     const none = { erda: 0, frags: 0, exact: true };
-    expect(b).toEqual({ known: false, input: withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }), nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek: 145, needed: 0, days: 0 }, order: [], icons: { stat: null, erda: null, frags: null }, figures: { erdaRequest: 90, dungeons: { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 } }, source: "", attNode: null });
+    expect(b).toEqual({ known: false, input: withLevels({}, { erdaRequest: true, dungeon: "anglerCompany" }), nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek: 145, needed: 0, days: 0 }, order: [], icons: { stat: null, erda: null, frags: null }, figures: { erdaRequest: 90, dungeons: { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 } }, source: "", fixedOrder: false, attNode: null });
     const theirs = await character("Ren", "someone-else");
     expect((await api().get(`/api/hexa/${theirs}`)).status).toBe(404);
     expect((await api().put(`/api/hexa/${theirs}`).send(HEXA_DEFAULTS)).status).toBe(404);
+  });
+
+  it("Lethe (no figures yet): its nodes by Nexon's names and its pictures, and the Discord's order as written, without final damage", async () => {
+    forgetHexa(); // (built afresh here: kept from an earlier test, a broken build would go unnoticed)
+    const id = await character("Lethe");
+    const b = await get(`/api/hexa/${id}`);
+    expect([b.known, b.fixedOrder, b.source]).toEqual([true, true, "The Lethe Discord's order (no damage figures for Lethe yet)"]);
+    expect(b.nodes.map((n: { key: string; name: string }) => `${n.key}: ${n.name}`)).toEqual([
+      "origin: Dominus: Eye of Eternity",
+      "ascent: Sovereign Everlasting",
+      "mastery1: Assize / Edict: Fel Storm",
+      "mastery2: Beckon: Vargr / Edict: Rampage",
+      "mastery3: Beckon: Dread Knight / Edict: Dread Advance",
+      "mastery4: Majeure / Oath Incarnate",
+      "boost1: Dominus: Dread Onslaught",
+      "boost2: Dominus: Pack United",
+      "boost3: Dominus: Azrath",
+      "boost4: Chains of Command",
+      "janus: Sol Janus",
+      "hecate: Sol Hecate",
+      "common3: Demonic Wrath",
+    ]);
+    // Its order, the picture's first steps: Majeure 1, Dread Knight 4, Chains of Command 1, …; joined runs; HEXA Stat I after Majeure 2
+    const head = b.order.slice(0, 16).map((s: { node: string; to: number }) => `${s.node} ${s.to}`);
+    expect(head).toEqual(["mastery4 1", "mastery3 4", "boost4 1", "mastery3 5", "mastery1 4", "mastery2 3", "mastery3 6", "mastery2 4", "mastery1 5", "mastery3 7", "common3 1", "mastery1 6", "mastery3 8", "mastery2 5", "mastery4 2", "stat1 20"]);
+    // every node to 30 (Sol Janus never), HEXA Stat I–III once each; no Void Origin (GMS's 3rd Skill node, Dec 16); no final damage anywhere
+    const last = new Map<string, number>(b.order.map((s: { node: string; to: number }) => [s.node, s.to]));
+    expect([...last.keys()].sort()).toEqual(["ascent", "boost1", "boost2", "boost3", "boost4", "common3", "hecate", "mastery1", "mastery2", "mastery3", "mastery4", "origin", "stat1", "stat2", "stat3"]);
+    expect([...last.entries()].filter(([k]) => !k.startsWith("stat")).every(([, to]) => to === 30)).toBe(true);
+    expect(b.order.filter((s: { node: string }) => s.node.startsWith("stat")).map((s: { node: string }) => s.node)).toEqual(["stat1", "stat2", "stat3"]);
+    expect(b.order.every((s: { node: string; fd: number }) => s.node.startsWith("stat") || s.fd === 0)).toBe(true);
+    // every step goes up (a copying slip in the hand-written order would show here)
+    expect(b.order.filter((s: { node: string; from: number; to: number }) => !s.node.startsWith("stat") && !(s.to > s.from))).toEqual([]);
+    // each step from where the one before left the node (Origin from 1; Sol Hecate's first goes 0 → 2, the Discord's)
+    expect(b.order.find((s: { node: string }) => s.node === "origin")).toMatchObject({ from: 1, to: 2 });
+    expect(b.order.find((s: { node: string }) => s.node === "hecate")).toMatchObject({ from: 0, to: 2 });
+    expect(b.order.find((s: { node: string; to: number }) => s.node === "mastery4" && s.to === 7)).toMatchObject({ from: 5 });
+    // its costs are every job's: everything left from nothing
+    expect(b.left).toMatchObject({ erda: NODES_LEFT.erda + 3 * 0 + (5 + 10 + 15), frags: expect.any(Number) });
+    expect(b.priority[0]).toMatchObject({ node: "mastery4", to: 1, fd: 0 });
   });
 
   it("a saved row that no longer passes the rules reads as the defaults", async () => {

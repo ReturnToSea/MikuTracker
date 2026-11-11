@@ -73,6 +73,7 @@ const BOARD: HexaBoard = {
   // (made-up figures, not the game's: the page shows and adds the server's)
   figures: { erdaRequest: 91, dungeons: { none: 0, highMountain: 41, anglerCompany: 56, nightmareParadise: 71 } },
   source: "MapleScouter (GMS, Heroic)",
+  fixedOrder: false,
   attNode: null,
 };
 
@@ -102,6 +103,26 @@ describe("the HEXA page", () => {
     expect(await screen.findByText(/HEXA for Jett isn't in the figures yet/)).toBeTruthy();
     // nothing asked for them (no character's board at all)
     expect(s.calls.filter((c) => c.path.startsWith("/hexa/")).map((c) => c.path)).toEqual(["/hexa/1"]);
+  });
+
+  it("a class with a fixed order (Lethe, no damage figures yet): no final damage anywhere, the order's source said", async () => {
+    show({ ...BOARD, fixedOrder: true, source: "The Lethe Discord's order (no damage figures for Lethe yet)" });
+    const side = await region("Upgrade priority");
+    expect(side.queryByText(/in all/)).toBeNull();
+    expect(side.queryByRole("columnheader", { name: "FD" })).toBeNull();
+    expect(side.getByRole("group", { name: "Next upgrade" }).textContent).not.toMatch(/\+\d/);
+    expect(side.getByText(/The Lethe Discord's order \(no damage figures for Lethe yet\): no final damage figures for this class yet/)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Full order" }));
+    const order = await region("Full upgrade order");
+    expect(order.getByText(/^The Lethe Discord's order/)).toBeTruthy();
+    expect(order.getAllByRole("tooltip").some((t) => /%/.test(t.textContent!))).toBe(false);
+  });
+
+  it("with figures: the final damage shows (the same board, not fixed)", async () => {
+    show();
+    const side = await region("Upgrade priority");
+    expect(side.getByText(/in all/)).toBeTruthy();
+    expect(side.getByRole("columnheader", { name: "FD" })).toBeTruthy();
   });
 
   it("HEXA Stat's damage on each node: at rank 20 what it gives; else what rank 20 adds on average; the best stats assumed where none are picked", async () => {

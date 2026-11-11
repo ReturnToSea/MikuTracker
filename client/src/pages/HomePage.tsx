@@ -1,4 +1,5 @@
 import { worldName } from "@miku/shared";
+import { Fragment } from "react";
 import { useCharacters, useDeleteCharacter, useReorderCharacters, useSelectCharacter, useSettings, useUpdateSettings } from "../api/hooks";
 import { AddCharacter } from "../components/AddCharacter";
 import { CharacterProgress } from "../components/CharacterProgress";
@@ -51,15 +52,16 @@ export function HomePage() {
         </section>
       )}
       {selected && (
-        <>
-        <CharacterSummary
-          c={selected}
-          onDelete={() => {
-            if (window.confirm(`Delete ${selected.name}? This also deletes all of its saved history.`)) remove.mutate(selected.id);
-          }}
-        />
-        <CharacterProgress key={selected.id} id={selected.id} />
-        </>
+        // (keyed: another character's card and chart start fresh, without the last one's open rename or level box)
+        <Fragment key={selected.id}>
+          <CharacterSummary
+            c={selected}
+            onDelete={() => {
+              if (window.confirm(`Delete ${selected.name}? This also deletes all of its saved history.`)) remove.mutate(selected.id);
+            }}
+          />
+          <CharacterProgress id={selected.id} byHand={selected.byHand} />
+        </Fragment>
       )}
     </>
   );

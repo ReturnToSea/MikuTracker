@@ -46,11 +46,16 @@ export function withTaskDone(board: ChecklistBoard, id: number, task: string, do
   return { ...board, characters: board.characters.map(change) };
 }
 
-// A new custom task's starting values, or an existing one's, for the form.
-export function taskForm(t?: TaskView): CustomTaskInput {
-  if (!t?.custom) return { name: "", category: "other", reset: "daily", weekday: null, worlds: "both", limitScope: "character", limitCount: 1 };
+// A new custom task's starting values (on the world being looked at), or an existing one's, for the form.
+export function taskForm(t: TaskView | undefined, world: number): CustomTaskInput {
+  if (!t?.custom) return { name: "", category: "other", reset: "daily", weekday: null, worlds: [world], limitScope: "character", limitCount: 1 };
   return { name: t.name, category: t.category, reset: t.reset, weekday: t.weekday, worlds: t.custom.worlds, limitScope: t.limit?.scope ?? "character", limitCount: t.limit?.count ?? 1 };
 }
+
+// A world clicked in a task's worlds: on if it was off, off if it was on, except the last one on (a task
+// shows on one world at least). In world ID order.
+export const toggleWorld = (worlds: number[], id: number): number[] =>
+  worlds.includes(id) ? (worlds.length > 1 ? worlds.filter((w) => w !== id) : worlds) : [...worlds, id].sort((a, b) => a - b);
 
 // Switching a form's reset keeps it valid: a weekly task gets a day (the game's, Thursday), and
 // the others none.

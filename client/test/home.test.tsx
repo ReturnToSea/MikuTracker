@@ -17,6 +17,7 @@ function character(id: number, name: string, extra: Partial<CharacterView> = {})
     level: 285,
     exp: 86_500_000_000_000,
     expToNext: 99_512_176_519_276,
+    byHand: false,
     worldRank: 6_390,
     overallRank: 19_172,
     legion: { level: 5_804, raidPower: 297_290_139, from: name },
@@ -123,7 +124,7 @@ describe("the character tabs", () => {
     await waitFor(() => expect(tabNames()).toEqual(["MikuBeam", "LeekSpin"]));
     expect(tab("LeekSpin").textContent).toContain("Lv. 272 · Bishop");
     expect(tab("MikuBeam").querySelector("img")!.getAttribute("src")).toBe("/avatars/mikubeam.png");
-    expect(within(tab("LeekSpin")).getByRole("img").getAttribute("aria-label")).toBe("LeekSpin (no avatar yet)");
+    expect(within(tab("LeekSpin")).getByRole("img").getAttribute("aria-label")).toBe("LeekSpin (no picture)");
     expect(tabs().map((t) => t.getAttribute("aria-selected"))).toEqual(["true", "false"]);
     expect(screen.queryByText(/No characters/)).toBeNull();
   });
@@ -521,7 +522,7 @@ describe("adding a character", () => {
     await userEvent.click(plus());
     await userEvent.type(nameBox(), "NewOne{Enter}");
     const found = (await screen.findByText("NewOne")).closest(".found") as HTMLElement;
-    expect(within(found).getByRole("img").getAttribute("aria-label")).toBe("NewOne (no avatar yet)");
+    expect(within(found).getByRole("img").getAttribute("aria-label")).toBe("NewOne (no picture)");
     expect(within(found).queryByRole("progressbar")).toBeNull();
     expect(found.textContent).toContain("Level 300: the highest level.");
     expect(Array.from(found.querySelectorAll(".found-stats dd")).map((d) => d.textContent)).toEqual(["#1,234", "—", "N/A", "N/A"]);

@@ -43,6 +43,7 @@ describe("adding a character", () => {
       level: 285,
       exp: 86_500_000_000_000,
       expToNext: EXP_TO_NEXT[284],
+      byHand: false,
       worldRank: 6_390,
       overallRank: 19_172,
       legion: { level: 5_804, raidPower: 297_290_139, from: "MikuBeam" },

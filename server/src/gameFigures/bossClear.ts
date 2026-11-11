@@ -32,6 +32,34 @@ export interface Phase {
 
 export const BOSS_FIGURES = { generated: figures.generated };
 export const bossFigures = (): readonly BossFigure[] => figures.bosses as BossFigure[];
+
+// Challenger World's own boss (v4.2.0): Mayrin, Season 4's event boss, in the list for characters on
+// Challenger only. Written by hand: MapleScouter lists it only in its Challenger mode, its cut on its server,
+// so mapledoro (and the figures script) don't have it. From the owner's captures of MapleScouter (2026-11-10,
+// tempdata/maplescouterbossesChalkr.com.har): level 270 / 280 (also where it lets you in), 380% defense, no
+// Force, solo (its HP per phase is in boss-clear.json with the others', from the Boss Info capture). Its cut: worked back from MapleScouter's clear
+// rates for the owner's Lv. 278 Ren (507% Normal, 87% Hard) with the usual difficulty rate (0.969), so close
+// for that Ren, less sure for other classes (the owner: good enough, not marked). Its damage: 95% the HEXA
+// figure's, 5% MapleScouter's "Normal" one (mapledoro's reading of MapleScouter's page code). Its place: where
+// MapleScouter's list puts it (Hard after Extreme Lotus, Normal after Hard Seren).
+export const CHALLENGER_BOSSES: readonly { after: string; boss: BossFigure }[] = [
+  { after: "lotus Extreme", boss: { name: "maerin", label: "Mayrin", difficulty: "Hard", level: 280, guard: 380, arcane: null, sacred: null, partyLimit: 1, cut: 43_300, partyCut: null, easyRate: 0.969, entryLevel: 280 } },
+  { after: "seren Hard", boss: { name: "maerin", label: "Mayrin", difficulty: "Normal", level: 270, guard: 380, arcane: null, sacred: null, partyLimit: 1, cut: 18_600, partyCut: null, easyRate: 0.969, entryLevel: 270 } },
+];
+// Mayrin's damage: this much of the 380% (HEXA) figure and of the "Normal" one.
+export const MAYRIN_MIX = { hexa: 0.95, normal: 0.05 } as const;
+// The bosses a character can be shown: every world's, and on Challenger its own, each in its place (a
+// rebuilt list without the boss it goes after is a mistake to fix, not one to hide: it throws).
+export function bossesFor(challenger: boolean, listed: readonly BossFigure[] = bossFigures()): readonly BossFigure[] {
+  const all = [...listed];
+  if (!challenger) return all;
+  for (const { after, boss } of CHALLENGER_BOSSES) {
+    const at = all.findIndex((b) => `${b.name} ${b.difficulty}` === after);
+    if (at === -1) throw new Error(`${boss.label} ${boss.difficulty} goes after ${after}, which the boss figures no longer have`);
+    all.splice(at + 1, 0, boss);
+  }
+  return all;
+}
 // A Champion difficulty has the HP of the one it's built on (the owner: it's harder through damage limits
 // and its timer, not HP).
 const CHAMPION_HP: Readonly<Record<string, string>> = { seren: "hard", blackMage: "hard", verusHilla: "hard", kalos: "normal", lotus: "hard" };

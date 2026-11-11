@@ -1,7 +1,7 @@
 import type { StatsInput } from "@miku/shared";
 import {
   ARCANE_CAP, ARCANE_GAP, ARCANE_GAP_FLOOR, ARCANE_TOP, ARCANE_TOP_BLACK_MAGE, ASCENT, type BossFigure, CHAMPION_BLACK_MAGE_VS_HARD, GENESIS_PASS, LEVEL_GAP, LEVEL_TOP, PARTY_TAGS, SACRED_GAP,
-  KALING_ASCENT_WEIGHT, SACRED_GAP_FLOOR, SACRED_TOP, SOLO_MIN, SOLO_TAGS,
+  KALING_ASCENT_WEIGHT, MAYRIN_MIX, SACRED_GAP_FLOOR, SACRED_TOP, SOLO_MIN, SOLO_TAGS,
 } from "../gameFigures/bossClear";
 import type { CooldownRefs, StatsJob } from "../gameFigures/stats";
 import { curveDamage, splineAt, splineReach, type StatsContext, statsScore } from "./stats";
@@ -21,6 +21,7 @@ export interface ClearInputs {
   d380: number; // the damage the 380% score stands for (the curve's: unrounded), without any Sacred symbol's bonus
   d300: number; // and the 300% score's
   kaling: number; // Kaling's own figure (380%, without the symbol)
+  mayrin: number; // Mayrin's (Challenger's): 95% the 380% figure, 5% MapleScouter's "Normal" one (every HEXA core at 30)
   sacredBoost: number; // what a maxed Sacred symbol's +20% multiplies the 380% damage by
   maxed: ReadonlySet<string>; // the bosses whose own Sacred symbol is maxed (by MapleScouter's id)
   genesisPass: number | null; // what the Genesis Pass's buff multiplies the damage by (its 300% figure's; null: not on)
@@ -77,7 +78,8 @@ function seen(b: BossFigure, level: number, arcane: number, sacred: number, x: C
   if (b.sacred) gaps.push({ kind: "sacred", you: sacred, boss: b.sacred, full: b.sacred + SACRED_TOP.lead, loss: 1 - sacredGap(sacred, b.sacred) / SACRED_TOP.damage });
   const kept = gaps.reduce((k, g) => k * (1 - g.loss), 1);
   // (the Genesis Pass's: against Extreme Lotus too, at 380%, the same)
-  const raw = (b.guard === 300 ? x.d300 : (b.name === "kaling" ? x.kaling : x.d380) * (x.maxed.has(b.name) ? x.sacredBoost : 1)) * (genesis ? x.genesisPass! : 1);
+  const own = b.name === "kaling" ? x.kaling : b.name === "maerin" ? x.mayrin : x.d380;
+  const raw = (b.guard === 300 ? x.d300 : own * (x.maxed.has(b.name) ? x.sacredBoost : 1)) * (genesis ? x.genesisPass! : 1);
   return { gaps, kept, damage: raw * kept };
 }
 // The clear rate for the damage a boss sees, and Ascent's bonus in it.
@@ -128,7 +130,7 @@ export function scoreNeeded(b: BossFigure, all: readonly BossFigure[], x: ClearI
 // What the boss clears need from a sheet: the damage the scores stand for without any
 // Sacred symbol's bonus, what a maxed symbol multiplies it by, Kaling's figure, the Ascent core's share and
 // the Genesis Pass's buff (ascentLess: the context with the Ascent core at 0). null: no curve, or no damage.
-export function clearInputs(job: StatsJob, input: StatsInput, ctx: StatsContext, ascentLess: StatsContext, maxed: ReadonlySet<string>, hpMain: boolean, links: Links, refs: CooldownRefs): ClearInputs | null {
+export function clearInputs(job: StatsJob, input: StatsInput, ctx: StatsContext, ascentLess: StatsContext, normal: StatsContext | null, maxed: ReadonlySet<string>, hpMain: boolean, links: Links, refs: CooldownRefs): ClearInputs | null {
   const plain = { ...ctx, sacred: false };
   const s = statsScore(job, input, plain, links, refs);
   const d380 = curveDamage(job, refs, s.damage, input.stats.cdSec, job.spline380);
@@ -150,5 +152,9 @@ export function clearInputs(job: StatsJob, input: StatsInput, ctx: StatsContext,
     g.stats.ied = 100 - (100 - g.stats.ied) * (1 - GENESIS_PASS.ied / 100);
     genesisPass = statsScore(job, g, plain, links, refs).damage300 / s.damage300;
   }
-  return { d380, d300, kaling: d380 * ((1 + KALING_ASCENT_WEIGHT * ascent) / (1 + KALING_ASCENT_WEIGHT * A)), sacredBoost, maxed, genesisPass, ascent, spline300: job.spline300!, spline380: job.spline380! };
+  // Mayrin's, only where it shows (`normal`: Challenger's; null elsewhere, its figure then unused): MapleScouter's
+  // "Normal" figure on the same scale as the 380% one: its damage × what the curve makes of this sheet's
+  const normal380 = normal ? (d380 * statsScore(job, input, { ...normal, sacred: false }, links, refs).damage) / s.damage : d380;
+  const mayrin = MAYRIN_MIX.hexa * d380 + MAYRIN_MIX.normal * normal380;
+  return { d380, d300, kaling: d380 * ((1 + KALING_ASCENT_WEIGHT * ascent) / (1 + KALING_ASCENT_WEIGHT * A)), mayrin, sacredBoost, maxed, genesisPass, ascent, spline300: job.spline300!, spline380: job.spline380! };
 }

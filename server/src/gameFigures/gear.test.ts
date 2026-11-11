@@ -53,14 +53,22 @@ describe("the gear list", () => {
     expect(oz.filter((i) => i.oz!.kind === "active").every((i) => !i.name.startsWith("Weapon Jump"))).toBe(true);
   });
 
-  it("the items the owner picked are there, and the Korean-only one isn't", () => {
+  it("the items the owner picked are there, and the Korean-only ones aren't (Sanguinary Spirit isn't any more: GMS has it from v.272)", () => {
     for (const name of ["Will o' the Wisps", "Ayame's Treasure", "Kanna's Treasure", "Heroic Tenebris Expedition Ring (Complete)", "Heroic Awake Ring (Lv. 4)", "Glory Guard Ring: Justicar", "Treasure Hunter John's Ring", "Seven Day Monster Parker", "Immortal Legacy", "Total Control", "Gold Maple Leaf Emblem", "Mitra's Rage: Thief", "Meister Earring"]) {
       expect(items.some((i) => i.name === name), name).toBe(true);
     }
     expect(items.filter((i) => i.slot === "heart").map((i) => i.name).sort()).toEqual(["Black Heart", "Fairy Heart", "Liquid-Metal Heart", "Outlaw Heart", "Plasma Heart", "Titanium Heart", "Total Control"]);
     expect(items.filter((i) => i.slot === "totem").map((i) => i.name)).toEqual(["Guild Castle Blue Brooch", "Guild Castle Red Brooch", "Guild Castle Green Brooch"]);
     expect(items.filter((i) => i.slot === "medal").map((i) => i.name).sort()).toEqual(["Immortal Legacy", "Seven Day Monster Parker"]);
-    expect(items.some((i) => ["Sanguinary Spirit", "Lidium Heart", "Hayato's Treasure"].includes(i.name))).toBe(false);
+    expect(items.some((i) => ["Lidium Heart", "Hayato's Treasure"].includes(i.name))).toBe(false);
+    expect(items.find((i) => i.name === "Sanguinary Spirit")).toMatchObject({ slot: "eye", set: "Brilliant Boss", level: 250, flames: "boss" });
+  });
+
+  it("Lethe (v.272): a Magician with Dominiums; its weapons, and three of its four Quills (Astra Quill has no GMS wiki page yet)", () => {
+    const of = (slot: string) => items.filter((i) => i.slot === slot && fits(i, "Lethe")).map((i) => i.name).sort();
+    expect(of("weapon")).toEqual(["AbsoLab Treatise", "Arcane Umbra Dictio", "Destiny Dominium (Stage 1)", "Destiny Dominium (Stage 2)", "Fafnir Edict", "Genesis Dominium"]);
+    expect(of("secondary")).toEqual(["Frozen Intempestus Quill", "Nox Quill", "Princess No's Quill"]);
+    expect(items.find((i) => i.name === "Arcane Umbra Dictio")).toMatchObject({ level: 200, flames: "boss", stats: { int: 100, luk: 100, matt: 347 } });
   });
 
   it("Ren's and Night Walker's secondaries are the four agreed (shop, Frozen, Princess No, Astra)", () => {

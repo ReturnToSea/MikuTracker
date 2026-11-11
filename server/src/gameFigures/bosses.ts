@@ -9,7 +9,7 @@ import type { Difficulty } from "@miku/shared";
 // except Jupiter's (Normal 593M vs 591M, Hard 1,190.6M vs 1,205.2M), where the wiki's is used and
 // unconfirmed. GMS v.271's patch notes change no prices.
 //
-// Heroic worlds (Kronos and Hyperion are both Heroic) pay 5× these prices (the wiki: "these
+// Heroic worlds (Kronos, Hyperion and Challenger are all Heroic) pay 5× these prices (the wiki: "these
 // values are quintupled in GMS Heroic Worlds"). A party splits the crystal equally, rounded down.
 // Whether the ×5 comes before or after the split isn't documented; we multiply first (it changes
 // at most a few meso).

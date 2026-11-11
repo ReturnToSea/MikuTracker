@@ -16,7 +16,7 @@ export interface TaskView {
   weekday: number | null; // a weekly task's reset day (0 Sunday … 6 Saturday)
   level: number | null;
   limit: { scope: LimitScope; count: number } | null;
-  custom: { worlds: "both" | "45" | "70" } | null; // null for a preset
+  custom: { worlds: number[] } | null; // the worlds it shows on, by ID in order; null for a preset
   resetsAt: Date | null; // when its current period ends; null for a one-off
 }
 
@@ -31,7 +31,7 @@ export interface ChecklistCharacter {
 }
 
 // Who has used a limited task this period, among the characters sharing its limit (for a
-// per-account task, on both worlds).
+// per-account task, on every world).
 export interface LimitUse {
   task: string;
   users: string[]; // character names, in the order they ticked it
@@ -49,6 +49,9 @@ export interface ChecklistBoard {
 const customId = (id: number) => `custom-${id}`;
 const period = taskPeriod;
 
+// A task's worlds are saved as their IDs in order, joined by commas ("45,70,900").
+const worldsOf = (t: Pick<ChecklistTask, "worlds">) => t.worlds.split(",").map(Number);
+
 const fromCustom = (t: ChecklistTask, now: Date): TaskView => ({
   id: customId(t.id),
   name: t.name,
@@ -57,7 +60,7 @@ const fromCustom = (t: ChecklistTask, now: Date): TaskView => ({
   weekday: t.weekday,
   level: null,
   limit: t.limitScope === "character" ? null : { scope: t.limitScope as LimitScope, count: t.limitCount },
-  custom: { worlds: t.worlds as "both" | "45" | "70" },
+  custom: { worlds: worldsOf(t) },
   resetsAt: period({ reset: t.reset as TaskReset, weekday: t.weekday }, now).resetsAt,
 });
 const fromPreset = (t: TaskFigure, now: Date): TaskView => ({ ...t, custom: null, resetsAt: period(t, now).resetsAt });
@@ -65,7 +68,8 @@ const fromPreset = (t: TaskFigure, now: Date): TaskView => ({ ...t, custom: null
 // Every task that shows on a world: the presets, and the owner's own tasks for that world.
 async function tasksFor(ownerId: string, worldId: number, now: Date): Promise<TaskView[]> {
   // Stryker disable next-line ObjectLiteral: SQLite already returns them in the order they were made; the order is spelled out anyway
-  const custom = await db().checklistTask.findMany({ where: { ownerId, worlds: { in: ["both", String(worldId)] } }, orderBy: { id: "asc" } });
+  const own = await db().checklistTask.findMany({ where: { ownerId }, orderBy: { id: "asc" } });
+  const custom = own.filter((t) => worldsOf(t).includes(worldId));
   return [...PRESET_TASKS.map((t) => fromPreset(t, now)), ...custom.map((t) => fromCustom(t, now))];
 }
 
@@ -82,7 +86,7 @@ export async function checklistBoard(ownerId: string, worldId: number): Promise<
   // Stryker disable next-line ObjectLiteral: only narrows what's read; each plan is matched to its character by id below
   const plans = await db().checklistPlan.findMany({ where: { characterId: { in: ids } } });
   // Only the current periods' ticks, of every character the owner has (per-account limits span
-  // both worlds); a tick counts if it's in its own task's current period.
+  // every world); a tick counts if it's in its own task's current period.
   const current = new Map(tasks.map((t) => [t.id, period(t, now).period]));
   // Stryker disable next-line ObjectLiteral: only narrows what's read (each tick is matched to its task's current period and to the owner's characters below); the order is SQLite's own
   const ticks = await db().checklistTick.findMany({ where: { characterId: { in: all.map((c) => c.id) }, period: { in: [...new Set(current.values())] } }, orderBy: { id: "asc" } });
@@ -159,7 +163,7 @@ export async function setTaskDone(ownerId: string, characterId: number, taskId: 
 // The owner's own tasks: made, changed, deleted. Deleting one takes it off every character, with
 // its ticks.
 // (The input rules already allow a day only on a weekly task.)
-const fields = (t: CustomTaskInput) => ({ ...t, limitCount: t.limitScope === "character" ? 1 : t.limitCount });
+const fields = (t: CustomTaskInput) => ({ ...t, worlds: [...t.worlds].sort((a, b) => a - b).join(","), limitCount: t.limitScope === "character" ? 1 : t.limitCount });
 
 async function ownTask(ownerId: string, id: number) {
   const t = await db().checklistTask.findFirst({ where: { id, ownerId } });
@@ -171,12 +175,12 @@ export async function createCustomTask(ownerId: string, input: CustomTaskInput):
   return fromCustom(await db().checklistTask.create({ data: { ownerId, ...fields(input) } }), new Date());
 }
 
-// Changing a task's worlds takes it off the characters of the world it leaves, with their ticks:
+// Changing a task's worlds takes it off the characters of the worlds it leaves, with their ticks:
 // left there, they could still use up a per-account limit, with no way to untick them.
 export async function updateCustomTask(ownerId: string, id: number, input: CustomTaskInput): Promise<TaskView> {
   await ownTask(ownerId, id);
   const task = customId(id);
-  const gone = input.worlds === "both" ? [] : (await db().character.findMany({ where: { ownerId, worldId: { not: Number(input.worlds) } }, select: { id: true } })).map((c) => c.id);
+  const gone = (await db().character.findMany({ where: { ownerId, worldId: { notIn: input.worlds } }, select: { id: true } })).map((c) => c.id);
   const [updated] = await db().$transaction([
     db().checklistTask.update({ where: { id }, data: fields(input) }),
     db().checklistPlan.deleteMany({ where: { task, characterId: { in: gone } } }),

@@ -192,8 +192,8 @@ A major version (decided 2026-10-23: a lot of work; moved from v4.0.0 on 2026-10
 
 ### v4.0.0–v4.1.0: Stats, and the bosses each character can clear
 A major version, in smaller steps, after HEXA (v3: its levels are needed) (the owner, 2026-10-28). Each roster character's **stats**, and what they're worth.
-- **v4.0.0, the typed Stats page and MapleScouter's score: built** (how it works: DESIGN.md "Stats"; planned with the owner 2026-11-03, research in `tempdata/stats/`). Status: built and every check done (tests, typecheck, `qa:check` 344/344, the review pass with its 10 fixes, mutation testing 100% in a full run); waiting for the owner's agreement, then the commit.
-- **v4.1.0, the boss clears, stat efficiency, test mode and MapleScouter's order: built** (how it works: DESIGN.md "Stats", "Boss clears", "Stat efficiency"; planned with the owner 2026-11-04 with the picker and mockups, research in `tempdata/v41/`). Status: building checked so far (tests, typecheck, `qa:check` 358/358); the review pass and mutation testing (a full run: the test setup changed) still to come, then the owner's agreement and the commit.
+- **v4.0.0, the typed Stats page and MapleScouter's score: done** (how it works: DESIGN.md "Stats"; planned with the owner 2026-11-03, research in `tempdata/stats/`).
+- **v4.1.0, the boss clears, stat efficiency, test mode and MapleScouter's order: done** (2026-11-05; how it works: DESIGN.md "Stats", "Boss clears", "Stat efficiency"; planned with the owner 2026-11-04 with the picker and mockups, research in `tempdata/v41/`).
 - **Left for later, from v4.1.0's planning (the owner, 2026-11-04):**
   - **Arctic Friends and Baby Dragon Food** count nothing until their effect is known (a capture of MapleScouter with each ticked would show it).
   - **The Weapon Jump Ring:** how it counts for the classes that use it (MapleScouter's damage doesn't).
@@ -202,8 +202,28 @@ A major version, in smaller steps, after HEXA (v3: its levels are needed) (the o
   - **Hand checks against MapleScouter** (the owner, 2026-10-28): real sheets typed by hand into its Enter Directly page, the score, stat efficiency and boss clears compared with ours; differences reported, not hidden. The first (the owner's Ren): ours 0.25% low (44,705 / 45,194 against 44,820 / 45,311), from MapleScouter's hidden fields; its boss clears match within 0.4% (54 of 55; Champion Black Mage: the fix).
 - **The data:** copied once, by hand, never scraped (MapleScouter blocks scripted requests since Oct 2026; never work around it): mapledoro's figures and boss cuts, the phase HP and pictures from the owner's own captures. A snapshot goes stale after big patches: the page says its date.
 
-### For later (after v4.1.0): the Upgrades page's Star Force steps
-Noted 2026-11-05 by the owner, to talk about before building. The Upgrades page lists an item's Star Force only as its next single star; once that's taken, the item doesn't come back for stars, so the list never shows the path past one star. Idea: keep each item in the list, one entry per further step, grouped at breakpoints (for example up to 18★ as one step, then 21★, then 1★ at a time after that). To settle then: which breakpoints (the same for every item, or by its level and boss tag), how a group's cost and final damage are worked out (expected meso to reach it, booms included), and how the steps of one item sit among the others' in the cheapest-first order.
+### v4.2.0: Challenger World, Lethe and Mayrin — done
+2026-11-10 (planned with the owner with the picker and mockups, layout A; how it works: DESIGN.md "Home", "Checklist", "HEXA", "Boss clears"; the planning notes and research, MapleScouter's Challenger mode included, in `tempdata/v42/PLAN-v420-notes.md`). Left for later from it:
+- **Mayrin's score needed** comes from one class's capture (the owner's Ren); a second class's capture (KMS, Challenger mode, as in `tempdata/scouter-preset-challenger-KMS.json`) would make it exact for every class.
+- **MapleScouter's Challenger mode** (~3.3% more damage, ~1.2% higher clear rates on current bosses) isn't used (the owner: the same bosses); its rule couldn't be worked out from the captures.
+- **Lethe:** its HEXA order and Stats page wait on mapledoro's figures (then it joins `hexa-jobs.json` and `hexaFixed.ts` goes); Astra Quill once the wiki has its page (rerun `node scripts/gear-data.mjs`).
+- **Bellona** (GMS 2026-12-16): with MapleScouter's and mapledoro's data then. **The 3rd Skill node** (Void Origin for Lethe; every class) from the same date.
+
+### After v4.2.0: v.272 changes to check (not planned yet)
+Found 2026-11-10 on the wiki's page for the KMS version of this update (MapleStory: Overdrive); **not in v4.2.0** (the owner: not in the plan). To check against the GMS patch notes once out, and, for any GMS has, a small version of their own:
+- Arcane River weekly content once a week, 240 symbols per area (the Symbols page's weekly clears).
+- Epic Dungeons: 15 Sol Erda Fragments a clear (the HEXA page's 40/55/70 a week).
+- Monster Park Extreme removed, a new weekly quest instead (Advanced Dungeon 5 times, 2 characters per world): the Checklist presets.
+- The Legion revamp (Legion Points; raid power worked out automatically): whether Nexon's rankings data changes (Home's Legion).
+- Crystal prices: the owner saw no change for GMS on the PTS.
+
+### v4.3.0: the Upgrades page's Star Force steps, and 1 s of cooldown
+Moved out of v4.2.0 on 2026-11-10 (the owner).
+
+**The Upgrades page's Star Force steps**
+Noted 2026-11-05 by the owner; made v4.2.0 the same day (next, before v5.0.0). The Upgrades page lists an item's Star Force only as its next single star; once that's taken, the item doesn't come back for stars, so the list never shows the path past one star. Idea: keep each item in the list, one entry per further step, grouped at breakpoints (for example up to 18★ as one step, then 21★, then 1★ at a time after that). To settle then: which breakpoints (the same for every item, or by its level and boss tag), how a group's cost and final damage are worked out (expected meso to reach it, booms included), and how the steps of one item sit among the others' in the cheapest-first order. Worth knowing then: the rows already use the Star Force page's best jump (19→21★ when 20★ alone isn't worth it), and an item's chain of best jumps never gets cheaper per 1% from one jump to the next, so its steps keep their order in the list; fixed breakpoints don't promise that. Questions drafted for the picker: how the steps are split (the best-jump chain, fixed breakpoints, or the chain cut at breakpoints), how far they go (the last star, a budget, a few per item, a set star), how a later step shows it needs the earlier one, and whether the Chart gets a dot per step.
+
+**1 s of skill cooldown** (a small change; the owner, 2026-11-05): **count it.** A hat whose cooldown lines add up to 1 s is worth nothing now (the gear pages' cooldown values start at 2 s). Work out a 1 s value from the Stats page the same way as 2–6 s (from the sheet's seconds without the hat's, + 1 s), with a 1 s box like the others (typed overrides it); the Potential and Upgrades pages then count a −1 s line. Needs a `cd1` column (a migration), the shared rules, `cooldownFd`, `statEfficiency`'s cooldowns, the boxes, and the hat minimum's choices (1 s too?: to ask). The hat minimum itself stays as it is (the owner, 2026-11-05).
 
 ### For later (after v4.1.0): the SHINE classes
 Decided 2026-11-01 (the owner): not in v3.1.0; probably after the boss clears (v4.1.0 since 2026-11-04).

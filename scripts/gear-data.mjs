@@ -108,6 +108,8 @@ const HAMMERS = {
 // Boss flames the wiki doesn't tag: Ayame's Treasure (owner, 2026-10-24), and the Fafnir and Arcane
 // Umbra chakrams (every other weapon of those sets is tagged; taken as a wiki slip).
 const BOSS_FLAMES_TOO = new Set(["Ayame's Treasure", "Fafnir Chakram", "Arcane Umbra Chakram"]);
+// The wiki's tag for boss flames: "BossReward", renamed "FlameAdvantaged" by 2026-11-10 (v.272).
+const BOSS_TAGS = ["BossReward", "FlameAdvantaged"];
 
 // A set page's item rows: id, name ("Genesis Guards#Unsealed"), type, job. Rows have typos (an id
 // "1254p26", a fan typed "Chain"), so only the name is relied on; the rest comes from the item's own page.
@@ -119,7 +121,7 @@ function setRows(text) {
 // Nexon's rankings job names (from Nexon's own site code, 2026-10-24), plus the jobs added since
 // (Ren confirmed from a tracked character), and the wiki page for each where it's named differently.
 // Not Beast Tamer: still in Nexon's list, but Beast Tamers were converted into Lynn.
-const JOBS = ["Adele", "Angelic Buster", "Aran", "Arch Mage Fire/Poison", "Arch Mage Ice/Lightning", "Ark", "Battle Mage", "Bishop", "Blaster", "Blaze Wizard", "Bow Master", "Buccaneer", "Cadena", "Cannoneer", "Corsair", "Dark Knight", "Dawn Warrior", "Demon Avenger", "Demon Slayer", "Dual Blade", "Evan", "Hayato", "Hero", "Hoyoung", "Illium", "Kain", "Kaiser", "Kanna", "Khali", "Kinesis", "Lara", "Luminous", "Marksman", "Mechanic", "Mercedes", "Mihile", "Night Lord", "Night Walker", "Paladin", "Pathfinder", "Phantom", "Shade", "Shadower", "Thunder Breaker", "Wild Hunter", "Wind Archer", "Xenon", "Zero", "Ren", "Lynn", "Mo Xuan", "Sia Astelle", "Erel Light"];
+const JOBS = ["Adele", "Angelic Buster", "Aran", "Arch Mage Fire/Poison", "Arch Mage Ice/Lightning", "Ark", "Battle Mage", "Bishop", "Blaster", "Blaze Wizard", "Bow Master", "Buccaneer", "Cadena", "Cannoneer", "Corsair", "Dark Knight", "Dawn Warrior", "Demon Avenger", "Demon Slayer", "Dual Blade", "Evan", "Hayato", "Hero", "Hoyoung", "Illium", "Kain", "Kaiser", "Kanna", "Khali", "Kinesis", "Lara", "Luminous", "Marksman", "Mechanic", "Mercedes", "Mihile", "Night Lord", "Night Walker", "Paladin", "Pathfinder", "Phantom", "Shade", "Shadower", "Thunder Breaker", "Wild Hunter", "Wind Archer", "Xenon", "Zero", "Ren", "Lynn", "Mo Xuan", "Sia Astelle", "Erel Light", "Lethe"];
 const WIKI_JOB = { "Arch Mage Fire/Poison": "Arch Mage (Fire, Poison)", "Arch Mage Ice/Lightning": "Arch Mage (Ice, Lightning)", "Bow Master": "Bowmaster" };
 const FROM_WIKI = { ...Object.fromEntries(Object.entries(WIKI_JOB).map(([n, w]) => [w, n])), Bowmaster: "Bow Master" };
 const GROUPS = { "Cygnus Knights": ["Dawn Warrior", "Blaze Wizard", "Wind Archer", "Night Walker", "Thunder Breaker"] };
@@ -235,6 +237,11 @@ const nev = (await page("Neville")) ?? "";
 for (const m of nev.matchAll(/\[\[File:[^\]]+\]\]\s*\[\[([^\]|]+)(?:\|([^\]]*))?\]\]\s*\(580,000 Mesos\)/g)) {
   wanted.push({ ...linked(m[1]), slot: "secondary", set: null, group: "Secondary weapons", secondaryKind: "Shop" });
 }
+// Lethe's (v.272): the wiki's Neville and Frozen box pages don't list them yet (2026-11-10); their own pages
+// exist. (Astra Quill has no page of its own yet: left out, and reported, until it does.)
+for (const [name, kind] of [["Nox Quill", "Shop"], ["Frozen Intempestus Quill", "Frozen"]]) {
+  if (!wanted.some((w) => w.name === name)) wanted.push({ page: name, name, slot: "secondary", set: null, group: "Secondary weapons", jobs: ["Lethe"], secondaryKind: kind });
+}
 const princess = (await wiki({ action: "query", list: "allpages", apprefix: "Princess No's", aplimit: "200" })).query.allpages.map((p) => p.title);
 for (const t of princess) wanted.push({ page: t, name: t, slot: "secondary", set: null, group: "Secondary weapons", secondaryKind: "Princess No", maybe: true });
 
@@ -323,7 +330,7 @@ for (const w of wanted) {
       // Genesis can't be enhanced at all (its limit is 22; the wiki gives Genesis Lapis none); Destiny's
       // second stage goes to 25.
       starMin: genesisOrDestiny ? 22 : undefined,
-      flames: canFlame ? (box.tags.includes("BossReward") || BOSS_FLAMES_TOO.has(box.name) ? "boss" : "normal") : undefined,
+      flames: canFlame ? (BOSS_TAGS.some((t) => box.tags.includes(t)) || BOSS_FLAMES_TOO.has(box.name) ? "boss" : "normal") : undefined,
       potential: potential ?? undefined,
       hammers: HAMMERS[box.name],
       // "exclusive equipment": only one of it can be worn (Guardian Angel Ring, Dawn Guardian Angel Ring)

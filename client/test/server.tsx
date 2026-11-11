@@ -66,6 +66,7 @@ export const NO_PROGRESS = {
   bars: Array.from({ length: 90 }, (_, i) => ({ day: new Date(Date.UTC(2026, 9, 20 - 89 + i)).toISOString().slice(0, 10), gained: null, covers: 0 })),
   levels: [],
   ranges: [7, 14, 30, 90].map((days) => ({ days, stats: null, goals: [] })),
+  typed: null,
 };
 
 // A world's Bosses tab with no characters: the week of Thu 15 Oct 2026, and two bosses (one

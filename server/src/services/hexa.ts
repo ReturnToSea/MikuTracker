@@ -2,7 +2,7 @@ import { HEXA_DEFAULTS, HEXA_NODES, HEXA_STATS, type HexaInput, type HexaNode, t
 import { addCost, bestStats, buildOrder, type Cost, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, type PriorityRow, statExpected, statFd, statOutcomes, statSpent } from "../calc/hexa";
 import { type CoreKey, hexaDamage } from "../calc/hexaDamage";
 import { db } from "../db";
-import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, HEXA_FIGURES, HEXA_ICONS, forgetHexaJobs, HEXA_MAX, type HexaGroup, type HexaJob, hexaJob, isShine, STAT_AMOUNTS, STAT_LEVEL, STAT_MAIN_NOT_WORKED_OUT, STAT_MAX_RANK, STAT_PRIMARY_CHANCE, STAT_RANK_COST, STAT_UNLOCK } from "../gameFigures/hexa";
+import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, type FiguredHexaJob, HEXA_FIGURES, HEXA_ICONS, forgetHexaJobs, hasFigures, HEXA_MAX, type HexaGroup, type HexaJob, hexaJob, isShine, STAT_AMOUNTS, STAT_LEVEL, STAT_MAIN_NOT_WORKED_OUT, STAT_MAX_RANK, STAT_PRIMARY_CHANCE, STAT_RANK_COST, STAT_UNLOCK } from "../gameFigures/hexa";
 import { listCharacters, ownCharacter } from "./characters";
 import { statValuesView } from "./statValues";
 import { iconFiles } from "./icons";
@@ -88,6 +88,7 @@ export interface HexaBoard {
   // what comes in from the input as typed)
   figures: { erdaRequest: number; dungeons: Record<HexaInput["dungeon"], number> };
   source: string; // where the order and final damage come from
+  fixedOrder: boolean; // a job without damage figures (Lethe): its order as written, and no final damage (all 0; not shown)
   attNode: string | null; // the node that also gives flat ATT (its name), counted from the 1 ATT value
 }
 
@@ -112,7 +113,7 @@ export async function savedInput(characterId: number): Promise<HexaInput> {
 // A job's order (calc/hexa.ts buildOrder) from its figures; a job with a node that also gives flat ATT
 // (v3.2.0), with that ATT's final damage too: `attWorth`, % final damage per 1 ATT (the character's 1 ATT
 // value), on top of the figures' (which leave it out).
-export function orderFor(job: HexaJob, attWorth = 0): ReturnType<typeof buildOrder> {
+export function orderFor(job: FiguredHexaJob, attWorth = 0): ReturnType<typeof buildOrder> {
   // (every core is one node's)
   const cores = (levels: Readonly<Record<string, number>>) => Object.fromEntries(Object.entries(CORE_OF).map(([node, core]) => [core, levels[node]!])) as Record<CoreKey, number>;
   const att = job.att;
@@ -123,11 +124,11 @@ export function orderFor(job: HexaJob, attWorth = 0): ReturnType<typeof buildOrd
 }
 // The same, built once per job (and 1 ATT's worth, for a job with an ATT node, to 4 decimals: stat values
 // typed again or another character's land on the same order) and kept (a third of a second each; null: a
-// job the page doesn't work out).
+// job the page doesn't work out, or one with a fixed order instead of figures).
 const orders = new Map<string, ReturnType<typeof buildOrder>>();
 export function jobOrder(name: string, attWorth = 0): ReturnType<typeof buildOrder> | null {
   const job = hexaJob(name);
-  if (!job) return null;
+  if (!job || !hasFigures(job)) return null;
   const worth = Math.round(attWorth * 10_000) / 10_000;
   const key = job.att ? `${name}|${worth}` : name;
   const known = orders.get(key) ?? orderFor(job, worth);
@@ -157,7 +158,7 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   const icons = { stat: icon(HEXA_ICONS.stat), erda: icon(HEXA_ICONS.erda), frags: icon(HEXA_ICONS.frags) };
   const none = { ...NO_COST, exact: true };
   const figures = { erdaRequest: ERDA_REQUEST_FRAGS, dungeons: DUNGEON_FRAGS };
-  if (!job) return { known: false, input, nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek, needed: 0, days: 0 }, order: [], icons, figures, source: "", attNode: null };
+  if (!job) return { known: false, input, nodes: [], invested: none, left: none, stats: [], priority: [], fdToDesired: 0, fragments: { perWeek, needed: 0, days: 0 }, order: [], icons, figures, source: "", fixedOrder: false, attNode: null };
   // (a level wanted below the level now is the level now: nothing to do)
   const desired = Object.fromEntries(HEXA_NODES.map((n) => [n, Math.max(input.current[n], input.desired[n])])) as Record<HexaNode, number>;
   const nodes: HexaNodeView[] = job.nodes.map((f) => ({ key: f.key, name: f.name, group: f.group, icon: icon(f.icon), min: f.free, max: HEXA_MAX }));
@@ -223,11 +224,14 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
   const tables = Object.fromEntries(job.nodes.map((f) => [f.key, f.costs]));
   // each HEXA Stat node from scratch: its unlock and every rank-up on average (its place in the order, its step)
   const fullCost = input.stats.map((_, i) => statLeft(i, false, 0, 0));
-  const steps = placeStats(
-    jobOrder(c.job, job.att ? worth.att : 0)!,
-    (st) => levelCost(tables[st.node]!, st.from, st.to).frags,
-    worked.map((w, i) => ({ stat: (i + 1) as 1 | 2 | 3, frags: fullCost[i]!.frags, fd: w.fromZero })),
-  );
+  // (a job without figures: its fixed order as written, HEXA Stat where it puts it)
+  const steps =
+    job.fixed?.order ??
+    placeStats(
+      jobOrder(c.job, job.att ? worth.att : 0)!,
+      (st) => levelCost(tables[st.node]!, st.from, st.to).frags,
+      worked.map((w, i) => ({ stat: (i + 1) as 1 | 2 | 3, frags: fullCost[i]!.frags, fd: w.fromZero })),
+    );
   const rows = priority(steps, input.current, desired, tables, (n) => {
     const s = stats[n - 1]!;
     return s.rank >= STAT_MAX_RANK || s.needs ? null : { from: s.rank, to: STAT_MAX_RANK, cost: s.left, fd: s.fdToCome };
@@ -271,7 +275,8 @@ export async function hexaBoard(ownerId: string, characterId: number): Promise<H
     order,
     icons,
     figures,
-    source: `MapleScouter's figures (mapledoro's copy, read ${HEXA_FIGURES.generated}); the order built from them`,
+    source: job.fixed?.source ?? `MapleScouter's figures (mapledoro's copy, read ${HEXA_FIGURES.generated}); the order built from them`,
+    fixedOrder: job.fixed !== null,
     attNode: job.att ? names[job.att.node]! : null,
   };
 }

@@ -2,10 +2,10 @@ import { MAX_LEVEL } from "@miku/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { keys, useProgress } from "../api/hooks";
-import type { DayBar, LevelGoal, LevelPoint, ProgressView } from "../api/types";
+import type { DayBar, LevelGoal, LevelPoint, ProgressView, TypedDay } from "../api/types";
 import { amountStyle, barDetail, barLabel, dayLabel, fmtLevelPct, niceMax, showDate, ticks } from "../lib/chart";
 import { nextUtcMidnight, untilNextUtcDay, utcDay } from "../lib/countdown";
-import { levelDetail, levelHeight, levelScale, tickLabel } from "../lib/levelChart";
+import { levelDetail, levelHeight, levelScale, tickLabel, typedDetail, typedScale } from "../lib/levelChart";
 import { fmtDuration, fmtExp, fmtFutureDate } from "../lib/format";
 
 type Range = ProgressView["ranges"][number];
@@ -13,7 +13,7 @@ type Range = ProgressView["ranges"][number];
 // Below the selected character: EXP per UTC day for the last 7, 14, 30 or 90 days (today
 // included), each range's daily average, share of a level a day and total, and the time to the
 // next level and the next multiple of 5 at the chosen range's average.
-export function CharacterProgress({ id }: { id: number }) {
+export function CharacterProgress({ id, byHand = false }: { id: number; byHand?: boolean }) {
   const progress = useProgress(id);
   const [days, setDays] = useState(14);
   const [view, setView] = useState<"exp" | "level">("exp");
@@ -25,7 +25,8 @@ export function CharacterProgress({ id }: { id: number }) {
       </p>
     );
   }
-  const { today, bars, levels, ranges } = progress.data;
+  const { today, bars, levels, ranges, typed } = progress.data;
+  if (byHand) return <TypedProgress typed={typed ?? []} days={bars.slice(-days).map((b) => b.day)} ranges={ranges.map((r) => r.days)} today={today} onDays={setDays} />;
   const range = ranges.find((r) => r.days === days)!;
   const average = range.stats?.average ?? null;
   return (
@@ -223,6 +224,75 @@ function LevelChart({ days, levels, today }: { days: string[]; levels: LevelPoin
         ))}
       </div>
     </div>
+  );
+}
+
+// A character added by hand (Challenger): no EXP, so instead of the EXP boxes, chart and time to level, a
+// note and its levels as typed: a step line (flat until the day a new level was typed), a dot on each day
+// one was, with the EXP chart's day ranges.
+function TypedProgress({ typed, days: shown, ranges, today, onDays }: { typed: TypedDay[]; days: string[]; ranges: number[]; today: string; onDays: (n: number) => void }) {
+  const at = new Map(typed.map((p) => [p.day, p]));
+  const points = shown.flatMap((day) => at.get(day) ?? []);
+  const scale = typedScale(points.map((p) => p.level));
+  const x = (day: string) => ((shown.indexOf(day) + 0.5) / shown.length) * 100;
+  const y = (level: number) => (scale ? levelHeight(level, scale) * 100 : 0);
+  // Flat to each next day, then up (or down) to its level.
+  const line = points.map((p, i) => (i === 0 ? `${x(p.day)},${100 - y(p.level)}` : `${x(p.day)},${100 - y(points[i - 1]!.level)} ${x(p.day)},${100 - y(p.level)}`)).join(" ");
+  return (
+    <section className="block" aria-label="Level">
+      <p className="muted typed-note">Added by hand: Challenger characters aren't on Nexon's rankings, so there's no EXP, rank, Legion or time to level. Change the level on the card when you level up.</p>
+      <div className="chart-head">
+        <h3 className="chart-title">Level per day (UTC), as you typed it</h3>
+        <div className="segmented" role="group" aria-label="Days shown">
+          {ranges.map((n) => (
+            <button key={n} type="button" aria-pressed={n === shown.length} onClick={() => onDays(n)}>
+              {n} days
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="chart level-chart" role="group" aria-label="Level per day">
+        <div className="yaxis" aria-hidden="true">
+          {scale?.ticks.map((t) => (
+            <span key={t} style={{ bottom: `${y(t)}%` }}>
+              {t}
+            </span>
+          ))}
+        </div>
+        <div className="plot">
+          {scale?.ticks.map((t) => (
+            <div key={t} className="grid-line" style={{ bottom: `${y(t)}%` }} />
+          ))}
+          <div className="level-area">
+            {scale && (
+              <svg className="level-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <polygon points={`${x(points[0]!.day)},100 ${line} ${x(points.at(-1)!.day)},100`} />
+                <polyline points={line} />
+              </svg>
+            )}
+            {points
+              .filter((p) => p.typed)
+              .map((p) => (
+                <span key={p.day} className={`level-dot up${p === points.at(-1) ? " latest" : ""}`} style={{ left: `${x(p.day)}%`, bottom: `${y(p.level)}%` }} aria-hidden="true" />
+              ))}
+          </div>
+          {!scale && <p className="chart-empty muted">No level typed in these days.</p>}
+          <div className="bars">
+            {shown.map((day) => {
+              const p = at.get(day);
+              const detail = p ? typedDetail(day, p.level, p.typed, today) : `${dayLabel(day)}: before it was added`;
+              return <div key={day} className={`level-col${p ? "" : " no-data"}`} tabIndex={0} title={detail} aria-label={detail} />;
+            })}
+          </div>
+        </div>
+        <div className="xaxis" aria-hidden="true">
+          {shown.map((day, i) => (
+            <span key={day}>{showDate(i, shown.length) ? (day === today ? "Today" : dayLabel(day)) : ""}</span>
+          ))}
+        </div>
+      </div>
+      <p className="chart-foot muted small">Each step is a level you typed, on the UTC day you typed it (a second change that day replaces it). Dots: the days you changed it.</p>
+    </section>
   );
 }
 

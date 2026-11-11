@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import reference from "../../test/fixtures/boss-mapledoro.json";
-import { bossFigures, PARTY_TAGS, phasesOf, SOLO_MIN, SOLO_TAGS } from "../gameFigures/bossClear";
+import { bossesFor, bossFigures, PARTY_TAGS, phasesOf, SOLO_MIN, SOLO_TAGS } from "../gameFigures/bossClear";
 import figures from "../gameFigures/boss-clear.json";
 import jobFigures from "../gameFigures/stats-jobs.json";
 import { cooldownRefs, statLinks, statsJob } from "../gameFigures/stats";
@@ -18,7 +18,7 @@ describe("bossClear against mapledoro's code (the reference)", () => {
     let n = 0;
     for (const c of reference.cases) {
       const job = statsJob(c.job)!;
-      const x = clearInputs(job, c.input as never, c.ctx, c.ascentLess, new Set(c.maxed), c.job === "Demon Avenger", statLinks(), cooldownRefs())!;
+      const x = clearInputs(job, c.input as never, c.ctx, c.ascentLess, c.ctx, new Set(c.maxed), c.job === "Demon Avenger", statLinks(), cooldownRefs())!;
       all.forEach((b, i) => {
         const [rate, shown, tag, bossStat, need, lv, af, sf] = c.bosses[i] as [number, number, string, number, number, number, number, number];
         const got = bossClear(b, all, c.ctx.level, c.input.stats.arcane, c.input.stats.sacred, x);
@@ -43,7 +43,7 @@ describe("bossClear against mapledoro's code (the reference)", () => {
 });
 
 const first = reference.cases[0]!;
-const inputsOf = (c: (typeof reference.cases)[number]) => clearInputs(statsJob(c.job)!, c.input as never, c.ctx, c.ascentLess, new Set(c.maxed), c.job === "Demon Avenger", statLinks(), cooldownRefs())!;
+const inputsOf = (c: (typeof reference.cases)[number]) => clearInputs(statsJob(c.job)!, c.input as never, c.ctx, c.ascentLess, c.ctx, new Set(c.maxed), c.job === "Demon Avenger", statLinks(), cooldownRefs())!;
 
 describe("a party-only boss (Hard Jupiter, 3 at most) you could solo", () => {
   const all = bossFigures();
@@ -95,6 +95,50 @@ describe("the boss figures", () => {
   it("with a sheet whose defense leaves nothing at 380%: no boss clears", () => {
     const c = first;
     const low = { ...c.input, stats: { ...c.input.stats, ied: 0 } };
-    expect(clearInputs(statsJob(c.job)!, low as never, c.ctx, c.ascentLess, new Set(), false, statLinks(), cooldownRefs())).toBeNull();
+    expect(clearInputs(statsJob(c.job)!, low as never, c.ctx, c.ascentLess, c.ctx, new Set(), false, statLinks(), cooldownRefs())).toBeNull();
+  });
+});
+
+describe("Mayrin (Challenger's own boss, v4.2.0)", () => {
+  it("only on Challenger: Hard after Extreme Lotus, Normal after Hard Seren, as MapleScouter's list has them; its HP per phase", () => {
+    expect(bossesFor(false)).toEqual(bossFigures());
+    const ids = (list: readonly { name: string; difficulty: string }[]) => list.map((b) => `${b.name} ${b.difficulty}`);
+    const withIt = ids(bossesFor(true));
+    expect(withIt).toHaveLength(bossFigures().length + 2);
+    expect(withIt.slice(withIt.indexOf("lotus Extreme"), withIt.indexOf("lotus Extreme") + 2)).toEqual(["lotus Extreme", "maerin Hard"]);
+    expect(withIt.slice(withIt.indexOf("seren Hard"), withIt.indexOf("seren Hard") + 2)).toEqual(["seren Hard", "maerin Normal"]);
+    expect(withIt.filter((id) => !id.startsWith("maerin"))).toEqual(ids(bossFigures())); // the rest as they were
+    // a rebuilt list without the boss one goes after: a mistake, said, not hidden at the top
+    expect(() => bossesFor(true, bossFigures().filter((b) => !(b.name === "seren" && b.difficulty === "Hard")))).toThrow("Mayrin Normal goes after seren Hard, which the boss figures no longer have");
+    // KMS figures ×100,000,000, as the others': 591,500 and 2,843,750 a phase
+    expect(phasesOf({ name: "maerin", difficulty: "Normal" })).toEqual([{ name: "Phase 1", hp: [59_150_000_000_000] }, { name: "Phase 2", hp: [59_150_000_000_000] }]);
+    expect(phasesOf({ name: "maerin", difficulty: "Hard" })!.map((p) => p.hp)).toEqual([[284_375_000_000_000], [284_375_000_000_000]]);
+  });
+
+  it("its damage: 95% the 380% figure, 5% MapleScouter's Normal one (every core at 30), on the same scale", () => {
+    // the same context for both: the Normal figure is the 380% one, so Mayrin's is too
+    expect(inputsOf(first).mayrin).toBeCloseTo(inputsOf(first).d380, 6);
+    // a Normal context with the cores' figure doubled (it multiplies the damage): the Normal figure twice the
+    // 380% one, so Mayrin's 0.95 + 0.05 × 2 of it
+    const job = statsJob(first.job)!;
+    const doubled = { ...first.ctx, cores: first.ctx.cores * 2 };
+    const x = clearInputs(job, first.input as never, first.ctx, first.ascentLess, doubled, new Set(first.maxed), false, statLinks(), cooldownRefs())!;
+    expect(x.mayrin / x.d380).toBeCloseTo(1.05, 9);
+    // off Challenger (no Normal context: Mayrin isn't shown) the Normal figure isn't worked out: Mayrin's is the 380% one
+    const off = clearInputs(job, first.input as never, first.ctx, first.ascentLess, null, new Set(first.maxed), false, statLinks(), cooldownRefs())!;
+    expect(off.mayrin).toBe(off.d380);
+    expect(x.mayrin).toBeGreaterThan(x.d380);
+  });
+
+  it("gives back MapleScouter's clear rates for the owner's Ren it was worked out from (Lv. 278: 507% Normal, 87% Hard)", () => {
+    // MapleScouter's figures for that Ren (KMS, Challenger mode): HEXA 405,499,155 and Normal 657,341,462 at 380%
+    const ren = statsJob("Ren")!;
+    const mayrin = 0.95 * 405_499_154.62 + 0.05 * 657_341_462.2;
+    const x = { ...inputsOf(first), d380: 405_499_154.62, mayrin, ascent: 0, spline380: ren.spline380!, maxed: new Set<string>() };
+    const all = bossesFor(true);
+    const rate = (difficulty: string) => bossClear(all.find((b) => b.name === "maerin" && b.difficulty === difficulty)!, all, 278, 0, 0, x).rate;
+    expect(Math.abs(rate("Normal") / 5.0695 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(rate("Hard") / 0.8745 - 1)).toBeLessThan(0.01);
+    expect(bossClear(all.find((b) => b.name === "maerin" && b.difficulty === "Hard")!, all, 278, 0, 0, x).cannotEnter).toBe(true);
   });
 });

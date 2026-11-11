@@ -251,11 +251,50 @@ try {
   await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "7 days" }).click();
   await settle(300);
 
+  // ---------- Challenger (v4.2.0): characters added and changed by hand ----------
+  await page.locator("button", { hasText: "Challenger" }).first().click();
+  await settle(600);
+  check("Challenger", "the third world starts empty, and says so", (await text(".notice")) === "No characters on Challenger yet. Use + to add one.");
+  await plus.click();
+  check("Challenger", "+ opens the by-hand box: name, class, level; no Nexon search", (await text(".popover h3")) === "Add a character on Challenger" && (await count('input[aria-label="Character name"]')) === 0 && (await count(".class-picker")) === 1);
+  await page.locator(".popover label", { hasText: "Name" }).locator("input").fill("Hatsune");
+  await page.locator('.class-picker input[role="combobox"]').fill("le");
+  await settle(100);
+  const offered = await page.locator('.class-list [role="option"]').allInnerTexts();
+  check("Challenger", "typing filters the classes, those starting with it first (Lethe offered)", offered.join(",") === "Lethe,Adele,Battle Mage,Mihile,Sia Astelle", offered.join(","));
+  await page.locator('.class-list [role="option"]', { hasText: "Lethe" }).click();
+  await page.locator(".popover label", { hasText: "Level" }).locator("input").fill("200");
+  await shot("03c-challenger-add");
+  await page.locator(".popover button[type=submit]").click();
+  await page.waitForFunction(() => [...document.querySelectorAll(".ctab b")].some((b) => b.textContent === "Hatsune"), null, { timeout: 10000 }).catch(() => {});
+  await settle(300);
+  const hero = (await text(".hero")) ?? "";
+  check("Challenger", "added and selected: Lethe · Challenger, level 200, a blank picture, no EXP bar", /Lethe · Challenger/.test(hero) && (await text(".level")) === "200" && (await count(".hero .avatar-blank")) === 1 && (await count(".hero .expbar")) === 0, hero.replace(/\n/g, " | "));
+  check("Challenger", "no ranks, Legion or time to level; the note and the typed level graph instead", (await count(".stats")) === 0 && (await count('section[aria-label="Time to level"]')) === 0 && /Added by hand/.test((await text("main")) ?? "") && (await count(".level-dot")) === 1);
+  await page.locator(".level-box .link-button").click();
+  await page.locator('input[aria-label="New level"]').fill("190");
+  check("Challenger", "a lower level asks first (Save anyway)", /lower than 200/.test((await text(".level-edit")) ?? "") && (await text('.level-edit button[type="submit"]')) === "Save anyway");
+  await page.locator('input[aria-label="New level"]').fill("214");
+  await page.locator('.level-edit button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector(".level")?.textContent === "214", null, { timeout: 10000 }).catch(() => {});
+  check("Challenger", "Change level saves today's level (tab and card)", (await text(".level")) === "214" && (await text('.ctab[aria-selected="true"] small'))?.startsWith("Lv. 214"));
+  await page.locator(".page-foot .link-button", { hasText: "Rename" }).click();
+  await page.locator('input[aria-label="New name"]').fill("Mikurin");
+  await page.locator('.rename button[type="submit"]').click();
+  await page.waitForFunction(() => [...document.querySelectorAll(".ctab b")].some((b) => b.textContent === "Mikurin"), null, { timeout: 10000 }).catch(() => {});
+  check("Challenger", "Rename… renames it", (await text(".hero h2")) === "Mikurin");
+  await shot("03d-challenger");
+  check("API", "searching Nexon on Challenger is refused (400)", (await api("GET", "/search?world=900&name=MikuBeam")).status === 400);
+  const kronosId = (await api("GET", "/characters?world=45")).json.characters[0].id;
+  check("API", "a Kronos character can't be changed by hand (400)", (await api("PATCH", `/characters/${kronosId}`, { level: 290 })).status === 400);
+  await page.locator("button", { hasText: "Kronos" }).first().click();
+  await settle(600);
+
   // ---------- a refresh: a level-up, and a character that disappears ----------
   await nexon("set", { name: "MikuBeam", level: 286, exp: 1_000 });
   await nexon("remove", { name: "LeekSpin" });
   const out = refresh();
-  check("Refresh", "the run checks both worlds: 3 updated, 1 not found", /Checked 4: 3 updated, 1 not found, 0 failed/.test(out), out.trim());
+  check("Refresh", "the run checks Kronos and Hyperion, never Challenger: 3 updated, 1 not found", /Checked 4: 3 updated, 1 not found, 0 failed/.test(out), out.trim());
   await go("/");
   check("Refresh", "the level-up shows (286) in the tab and summary", (await text('.ctab[aria-selected="true"] small'))?.startsWith("Lv. 286") && /286/.test((await text(".hero")) ?? ""));
   check("Refresh", "today's bar grew by the EXP to the level-up", (await page.locator(".bar-label").last().innerText()) !== "400B");
@@ -383,7 +422,13 @@ try {
   await tform.getByLabel("Name").fill("Mondays");
   await tform.getByRole("button", { name: "Weekly" }).click();
   await tform.getByRole("combobox", { name: "Reset day" }).selectOption({ label: "Monday" });
+  const worldsOn = async () => (await tform.getByRole("group", { name: "Worlds" }).locator('[aria-pressed="true"]').allInnerTexts()).join(",");
+  check("Custom tasks", "the worlds start as the one shown; several can be on; the last one on stays", (await worldsOn()) === "Kronos" && (await tform.getByRole("group", { name: "Worlds" }).getByRole("button").count()) === 3);
+  await tform.getByRole("button", { name: "Challenger" }).click();
+  const twoOn = await worldsOn();
+  await tform.getByRole("button", { name: "Challenger" }).click();
   await tform.getByRole("button", { name: "Kronos" }).click();
+  check("Custom tasks", "…(Kronos and Challenger on together; Kronos alone can't be turned off)", twoOn === "Kronos,Challenger" && (await worldsOn()) === "Kronos", twoOn);
   await tform.getByRole("button", { name: "Add task" }).click();
   await tform.waitFor({ state: "detached" });
   await planTasks("MikuBeam", ["Mondays"]);
@@ -415,7 +460,7 @@ try {
     ["checklist: bad world", "GET", "/checklist?world=3", undefined, 400],
     ["checklist plan: unknown task", "PUT", `/checklist/${miku.id}/plan`, { tasks: ["nobody"] }, 400],
     ["checklist tick: a task not planned", "PUT", `/checklist/${miku.id}/ticks/geardock`, { done: true }, 409],
-    ["custom task: no name", "POST", "/checklist/tasks", { name: " ", category: "other", reset: "daily", weekday: null, worlds: "both", limitScope: "character", limitCount: 1 }, 400],
+    ["custom task: no name", "POST", "/checklist/tasks", { name: " ", category: "other", reset: "daily", weekday: null, worlds: [45, 70], limitScope: "character", limitCount: 1 }, 400],
   ]) {
     const r = await api(method, where, body);
     check("API", `${what}: ${status}`, r.status === status, `${r.status} ${JSON.stringify(r.json)}`);

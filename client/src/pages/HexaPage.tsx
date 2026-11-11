@@ -238,12 +238,14 @@ function Fragments({ b, onSave }: { b: HexaBoard; onSave: Save }) {
 function Priority({ b }: { b: HexaBoard }) {
   const now = new Date();
   const [next, ...rest] = b.priority;
+  // (a job without damage figures, Lethe: its order as written, and no final damage to show)
+  const fd = !b.fixedOrder;
   return (
     <section className="block hexa-side" aria-label="Upgrade priority">
       <div className="page-head">
         <h2>Upgrade priority</h2>
         <span className="tiny muted">
-          {b.priority.length} upgrades · <span className="good">{formatFd(b.fdToDesired)}</span> in all
+          {b.priority.length} upgrades{fd && <> · <span className="good">{formatFd(b.fdToDesired)}</span> in all</>}
         </span>
       </div>
       {!next ? (
@@ -259,7 +261,7 @@ function Priority({ b }: { b: HexaBoard }) {
                   {shortName(next.name)} → {next.to}
                 </b>
               </span>
-              <b className="good">{`${approx(!next.estimate.fd)}${formatFd(next.fd)}`}</b>
+              {fd && <b className="good">{`${approx(!next.estimate.fd)}${formatFd(next.fd)}`}</b>}
             </div>
             <div className="hexa-next-row">
               <span className="tiny muted">
@@ -276,7 +278,7 @@ function Priority({ b }: { b: HexaBoard }) {
                   <th className="num">Lv.</th>
                   <th className="num">{b.icons.erda ? <img className="hexa-th" src={b.icons.erda} alt="Sol Erda" /> : "Sol Erda"}</th>
                   <th className="num">{b.icons.frags ? <img className="hexa-th" src={b.icons.frags} alt="Fragments" /> : "Fragments"}</th>
-                  <th className="num">FD</th>
+                  {fd && <th className="num">FD</th>}
                   <th className="num">Ready</th>
                 </tr>
               </thead>
@@ -295,7 +297,7 @@ function Priority({ b }: { b: HexaBoard }) {
                       {approx(!r.estimate.cost)}
                       {formatCount(r.cost.frags)}
                     </td>
-                    <td className="num good">{`${approx(!r.estimate.fd)}${formatFd(r.fd)}`}</td>
+                    {fd && <td className="num good">{`${approx(!r.estimate.fd)}${formatFd(r.fd)}`}</td>}
                     <td className="num tiny">{readyText(r.days, now)}</td>
                   </tr>
                 ))}
@@ -305,14 +307,19 @@ function Priority({ b }: { b: HexaBoard }) {
         </>
       )}
       <p className="tiny muted">
-        FD: the skills', MapleScouter's figures (the order built from them); HEXA Stat's, from your stat values, on average.{b.attNode && ` ${b.attNode}'s flat ATT counted from your 1 ATT value (≈).`} Sol Janus isn't listed (no damage). Green: you have the fragments now.
+        {fd ? (
+          <>FD: the skills', MapleScouter's figures (the order built from them); HEXA Stat's, from your stat values, on average.{b.attNode && ` ${b.attNode}'s flat ATT counted from your 1 ATT value (≈).`}</>
+        ) : (
+          <>{b.source}: no final damage figures for this class yet, so the order is followed as written.</>
+        )}{" "}
+        Sol Janus isn't listed (no damage). Green: you have the fragments now.
       </p>
     </section>
   );
 }
 
 // One step of the full order, its details shown on hover (or focus).
-function Step({ s, n, state, icons, now }: { s: HexaOrderStep; n: number; state: string; icons: Icons; now: Date }) {
+function Step({ s, n, state, icons, now, fd }: { s: HexaOrderStep; n: number; state: string; icons: Icons; now: Date; fd: boolean }) {
   const stat = s.node.startsWith("stat");
   return (
     <li className={`hexa-step ${state}`} tabIndex={0} aria-label={`${n}. ${s.name} ${levelsText(s)}`}>
@@ -326,7 +333,7 @@ function Step({ s, n, state, icons, now }: { s: HexaOrderStep; n: number; state:
           {n}. {s.name} {stat ? "unlock → rank 20" : levelsText(s)}
         </b>
         <Mats icons={icons} cost={s.cost} prefix={approx(!s.estimate.cost)} />
-        <span className="good">{`${approx(!s.estimate.fd)}${formatFd(s.fd)}`}</span>
+        {fd && <span className="good">{`${approx(!s.estimate.fd)}${formatFd(s.fd)}`}</span>}
         {stat && <span className="muted">rank 0 to 20 on average, with its stats (or the best for you)</span>}
         <span className="muted">{s.done ? "done" : s.days === 0 ? "you have the fragments now" : `ready ${readyText(s.days, now)}`}</span>
       </span>
@@ -349,10 +356,12 @@ function FullOrder({ b }: { b: HexaBoard }) {
           <input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} /> Hide done
         </label>
       </div>
-      <p className="tiny muted">MapleScouter's order for GMS Heroic worlds; the same skill several steps in a row is one step. Sol Janus isn't in it (no damage).</p>
+      <p className="tiny muted">
+        {b.fixedOrder ? `${b.source}` : "MapleScouter's order for GMS Heroic worlds"}; the same skill several steps in a row is one step. Sol Janus isn't in it (no damage).
+      </p>
       <ol className="hexa-order">
         {shown.map(({ s, n, state }) => (
-          <Step key={n} s={s} n={n} state={state} icons={b.icons} now={now} />
+          <Step key={n} s={s} n={n} state={state} icons={b.icons} now={now} fd={!b.fixedOrder} />
         ))}
       </ol>
       <p className="hexa-legend tiny muted">

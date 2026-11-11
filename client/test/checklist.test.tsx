@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChecklistBoard, ChecklistCharacter, TaskView } from "../src/api/types";
 import { App } from "../src/App";
-import { byCategory, customNumber, doneCount, limitState, limitText, offDay, resetText, taskForm, togglePlanned, withReset, withTaskDone } from "../src/lib/checklist";
+import { byCategory, customNumber, doneCount, limitState, limitText, offDay, resetText, taskForm, togglePlanned, toggleWorld, withReset, withTaskDone } from "../src/lib/checklist";
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 const UTC = process.env.TZ === "UTC";
@@ -18,8 +18,8 @@ const MP = task("monster-park", "Monster Park", { level: 105, limit: { scope: "w
 const URSUS = task("ursus", "Ursus", { level: 100, limit: { scope: "account", count: 1 } });
 const SPECTRUM = task("erda-spectrum", "Erda Spectrum", { category: "arcane", reset: "weekly", weekday: 4, level: 200, resetsAt: new Date(WEEKLY) });
 const EPIC = task("epic-dungeon", "Epic Dungeon", { reset: "weekly", weekday: 4, level: 260, limit: { scope: "account", count: 2 }, resetsAt: new Date(WEEKLY) });
-const MONDAY = task("custom-7", "Guild check", { reset: "weekly", weekday: 1, custom: { worlds: "both" }, resetsAt: new Date("2026-10-26T00:00:00.000Z") });
-const STORY = task("custom-8", "Finish Geardock story", { reset: "none", custom: { worlds: "45" }, resetsAt: null });
+const MONDAY = task("custom-7", "Guild check", { reset: "weekly", weekday: 1, custom: { worlds: [45, 70] }, resetsAt: new Date("2026-10-26T00:00:00.000Z") });
+const STORY = task("custom-8", "Finish Geardock story", { reset: "none", custom: { worlds: [45] }, resetsAt: null });
 const TASKS = [VJ, CERNIUM, TALLAHART, MP, URSUS, SPECTRUM, EPIC, MONDAY, STORY];
 
 const character = (id: number, name: string, plan: string[], done: string[] = [], level = 278): ChecklistCharacter => ({ id, name, job: "Ren", level, avatar: null, plan, done });
@@ -83,14 +83,21 @@ describe("the checklist's logic", () => {
   });
 
   it("taskForm: a new task's defaults, or a custom task's values", () => {
-    expect(taskForm()).toEqual({ name: "", category: "other", reset: "daily", weekday: null, worlds: "both", limitScope: "character", limitCount: 1 });
-    expect(taskForm(MONDAY)).toEqual({ name: "Guild check", category: "other", reset: "weekly", weekday: 1, worlds: "both", limitScope: "character", limitCount: 1 });
-    expect(taskForm({ ...STORY, limit: { scope: "world", count: 3 } })).toEqual({ name: "Finish Geardock story", category: "other", reset: "none", weekday: null, worlds: "45", limitScope: "world", limitCount: 3 });
-    expect(taskForm(CERNIUM).name).toBe(""); // a preset isn't editable: a fresh form
+    expect(taskForm(undefined, 900)).toEqual({ name: "", category: "other", reset: "daily", weekday: null, worlds: [900], limitScope: "character", limitCount: 1 });
+    expect(taskForm(MONDAY, 70)).toEqual({ name: "Guild check", category: "other", reset: "weekly", weekday: 1, worlds: [45, 70], limitScope: "character", limitCount: 1 });
+    expect(taskForm({ ...STORY, limit: { scope: "world", count: 3 } }, 70)).toEqual({ name: "Finish Geardock story", category: "other", reset: "none", weekday: null, worlds: [45], limitScope: "world", limitCount: 3 });
+    expect(taskForm(CERNIUM, 45)).toMatchObject({ name: "", worlds: [45] }); // a preset isn't editable: a fresh form
+  });
+
+  it("toggleWorld: a world off turns on (in order), on turns off, but the last one on stays", () => {
+    expect(toggleWorld([45], 900)).toEqual([45, 900]);
+    expect(toggleWorld([70, 900], 45)).toEqual([45, 70, 900]);
+    expect(toggleWorld([45, 70, 900], 70)).toEqual([45, 900]);
+    expect(toggleWorld([900], 900)).toEqual([900]);
   });
 
   it("withReset: weekly gets a day (Thursday, unless one was set); the others none", () => {
-    const f = taskForm();
+    const f = taskForm(undefined, 45);
     expect(withReset(f, "weekly").weekday).toBe(4);
     expect(withReset({ ...f, reset: "weekly", weekday: 1 }, "weekly").weekday).toBe(1);
     expect(withReset({ ...f, reset: "weekly", weekday: 1 }, "daily")).toMatchObject({ reset: "daily", weekday: null });
@@ -307,7 +314,15 @@ describe("your own tasks", () => {
     await userEvent.click(form.getByRole("button", { name: "Weekly" }));
     expect((form.getByRole("combobox", { name: "Reset day" }) as HTMLSelectElement).value).toBe("4");
     await userEvent.selectOptions(form.getByRole("combobox", { name: "Reset day" }), "Monday");
+    // Worlds: the one being looked at to start with; several at once, but never none.
+    const on = () => ["Kronos", "Hyperion", "Challenger"].filter((w) => form.getByRole("button", { name: w }).getAttribute("aria-pressed") === "true");
+    expect(on()).toEqual(["Kronos"]);
     await userEvent.click(form.getByRole("button", { name: "Kronos" }));
+    expect(on()).toEqual(["Kronos"]);
+    await userEvent.click(form.getByRole("button", { name: "Challenger" }));
+    await userEvent.click(form.getByRole("button", { name: "Hyperion" }));
+    await userEvent.click(form.getByRole("button", { name: "Kronos" }));
+    expect(on()).toEqual(["Hyperion", "Challenger"]);
     expect(form.queryByRole("spinbutton")).toBeNull(); // per character: no count
     await userEvent.click(form.getByRole("button", { name: "Per world" }));
     const n = form.getByRole("spinbutton", { name: "Characters per period" });
@@ -316,7 +331,7 @@ describe("your own tasks", () => {
     expect(form.getByText(/characters each week/)).toBeTruthy();
     await userEvent.click(form.getByRole("button", { name: "Add task" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(s.sent("POST", "/checklist/tasks")).toEqual([{ name: "Guild check", category: "sacred", reset: "weekly", weekday: 1, worlds: "45", limitScope: "world", limitCount: 3 }]);
+    expect(s.sent("POST", "/checklist/tasks")).toEqual([{ name: "Guild check", category: "sacred", reset: "weekly", weekday: 1, worlds: [70, 900], limitScope: "world", limitCount: 3 }]);
     await waitFor(() => expect(loads(s)).toBeGreaterThanOrEqual(2));
   });
 
@@ -379,7 +394,7 @@ describe("your own tasks", () => {
     await userEvent.clear(again.getByLabelText("Name"));
     await userEvent.type(again.getByLabelText("Name"), "Guild stuff");
     await userEvent.click(again.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(s.sent("PUT", "/checklist/tasks/7")).toEqual([{ name: "Guild stuff", category: "other", reset: "weekly", weekday: 1, worlds: "both", limitScope: "character", limitCount: 1 }]));
+    await waitFor(() => expect(s.sent("PUT", "/checklist/tasks/7")).toEqual([{ name: "Guild stuff", category: "other", reset: "weekly", weekday: 1, worlds: [45, 70], limitScope: "character", limitCount: 1 }]));
     // delete: cancelled, then confirmed
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
     await userEvent.click(screen.getByRole("button", { name: "Change Finish Geardock story" }));

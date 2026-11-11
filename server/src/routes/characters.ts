@@ -1,9 +1,9 @@
-import { addCharacterInput, characterListQuery, reorderInput } from "@miku/shared";
+import { addCharacterInput, characterListQuery, editCharacterInput, reorderInput } from "@miku/shared";
 import { Router } from "express";
 import { z } from "zod";
 import type { NexonClient } from "../nexon";
 import { currentOwner } from "../owner";
-import { addCharacter, deleteCharacter, listCharacters, reorderCharacters, selectCharacter } from "../services/characters";
+import { addByHand, addCharacter, deleteCharacter, editCharacter, listCharacters, reorderCharacters, selectCharacter } from "../services/characters";
 import { characterProgress } from "../services/progress";
 
 const idParam = z.coerce.number().int().positive();
@@ -18,13 +18,19 @@ export function charactersRouter(nexon: () => NexonClient) {
 
   // Stryker disable next-line StringLiteral: Express treats "" the same as "/" for a router's root
   router.post("/", async (req, res) => {
-    const { world, name } = addCharacterInput.parse(req.body);
-    res.status(201).json(await addCharacter(currentOwner(res), world, name, nexon()));
+    const input = addCharacterInput.parse(req.body);
+    const owner = currentOwner(res);
+    const { world, name, job, level } = input;
+    res.status(201).json(job !== undefined ? await addByHand(owner, world, name, job, level!) : await addCharacter(owner, world, name, nexon()));
   });
 
   router.put("/order", async (req, res) => {
     const { world, ids } = reorderInput.parse(req.body);
     res.json(await reorderCharacters(currentOwner(res), world, ids));
+  });
+
+  router.patch("/:id", async (req, res) => {
+    res.json(await editCharacter(currentOwner(res), idParam.parse(req.params.id), editCharacterInput.parse(req.body)));
   });
 
   router.post("/:id/select", async (req, res) => {

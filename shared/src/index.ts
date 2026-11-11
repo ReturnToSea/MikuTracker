@@ -1,10 +1,13 @@
 // Input rules shared by the API (server/) and the app (client/), written with zod.
 import { z } from "zod";
 import { DIFFICULTIES } from "./bosses";
-import { LIMIT_SCOPES, TASK_CATEGORIES, TASK_RESETS, TASK_WORLDS } from "./checklist";
-import { WORLDS } from "./worlds";
+import { CLASSES } from "./classes";
+import { LIMIT_SCOPES, TASK_CATEGORIES, TASK_RESETS } from "./checklist";
+import { MAX_LEVEL } from "./levels";
+import { byHandWorld, WORLDS } from "./worlds";
 
 export * from "./bosses";
+export * from "./classes";
 export * from "./checklist";
 export * from "./levels";
 export * from "./worlds";
@@ -16,8 +19,10 @@ export const themeId = z.enum(THEMES);
 
 
 
-// A world MikuTracker tracks (45 Kronos, 70 Hyperion), from a form or an address.
+// A world MikuTracker tracks (45 Kronos, 70 Hyperion, 900 Challenger), from a form or an address.
 export const worldId = z.coerce.number().refine((id) => WORLDS.some((w) => w.id === id), { message: "Unknown world" });
+// One whose characters are in Nexon's rankings (not Challenger's, added by hand).
+export const nexonWorldId = worldId.refine((id) => !byHandWorld(id), { message: "Challenger characters aren't in Nexon's rankings: they're added by hand" });
 
 // A GMS character name: 1–12 letters and numbers (no spaces or symbols). Spaces around it are ignored.
 export const characterName = z
@@ -26,7 +31,7 @@ export const characterName = z
   .regex(/^[A-Za-z0-9]{1,12}$/, { message: "Names are 1–12 letters and numbers" });
 
 // Looking a character up on a world: /api/search?world=45&name=…
-export const searchQuery = z.strictObject({ world: worldId, name: characterName });
+export const searchQuery = z.strictObject({ world: nexonWorldId, name: characterName });
 export type SearchQuery = z.infer<typeof searchQuery>;
 
 // Saving settings: the theme, the world shown on Home, the price of a Black Flame (meso: at most
@@ -37,9 +42,22 @@ export const settingsInput = z
   .refine((s) => Object.keys(s).length > 0, { message: "Nothing to save" });
 export type SettingsInput = z.infer<typeof settingsInput>;
 
-// Adding a character: looked up again by the server, never taken from the page as is.
-export const addCharacterInput = z.strictObject({ world: worldId, name: characterName });
+// A level a character added by hand can have.
+export const levelInput = z.number().int().min(1).max(MAX_LEVEL);
+
+// Adding a character: on a Nexon world by its name (looked up again by the server, never taken from the
+// page as is); on Challenger by hand, with its class and level too.
+export const addCharacterInput = z
+  .strictObject({ world: worldId, name: characterName, job: z.enum(CLASSES, { message: "Pick a class from the list" }).optional(), level: levelInput.optional() })
+  .refine((a) => !byHandWorld(a.world) || (a.job !== undefined && a.level !== undefined), { message: "Challenger characters aren't in Nexon's rankings: add them with their class and level" })
+  .refine((a) => byHandWorld(a.world) || (a.job === undefined && a.level === undefined), { message: "Only Challenger characters are added by hand" });
 export type AddCharacterInput = z.infer<typeof addCharacterInput>;
+
+// Changing a character added by hand: its name, its level, or both.
+export const editCharacterInput = z
+  .strictObject({ name: characterName.optional(), level: levelInput.optional() })
+  .refine((e) => e.name !== undefined || e.level !== undefined, { message: "Nothing to change" });
+export type EditCharacterInput = z.infer<typeof editCharacterInput>;
 
 // The characters of a world: /api/characters?world=45
 export const characterListQuery = z.strictObject({ world: worldId });
@@ -86,7 +104,11 @@ export const customTaskInput = z
     category: z.enum(TASK_CATEGORIES),
     reset: z.enum(TASK_RESETS),
     weekday: z.number().int().min(0).max(6).nullable(),
-    worlds: z.enum(TASK_WORLDS),
+    // The worlds it shows on: at least one, each once.
+    worlds: z
+      .array(z.number().refine((id) => WORLDS.some((w) => w.id === id), { message: "Unknown world" }))
+      .min(1, { message: "Pick at least one world" })
+      .refine((ws) => new Set(ws).size === ws.length, { message: "Each world once" }),
     limitScope: z.enum(LIMIT_SCOPES),
     limitCount: z.number().int().min(1).max(50),
   })

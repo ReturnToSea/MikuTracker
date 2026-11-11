@@ -5,8 +5,9 @@ import { afterEach, beforeEach, vi } from "vitest";
 // same as a browser without canvas support; the drawing code handles that.
 beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-  // jsdom doesn't scroll; browsers all have scrollIntoView. Record calls instead.
-  Element.prototype.scrollIntoView = vi.fn();
+  // jsdom doesn't scroll; browsers all have scrollIntoView. Record calls instead, answering as Chrome now
+  // does: with a promise (v4.2.0: an effect returning it crashed the page in Chrome, not here).
+  Element.prototype.scrollIntoView = vi.fn(() => Promise.resolve()) as unknown as Element["scrollIntoView"];
   // Node 25's own localStorage (inactive without a file) hides jsdom's: a browser's, kept in memory and
   // empty every test (the Stats page's test mode keeps its test there, v4.1.0).
   Object.defineProperty(window, "localStorage", { configurable: true, value: memoryStorage() });

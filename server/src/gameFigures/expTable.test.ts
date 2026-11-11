@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GMS_EXP_BEFORE_V271 } from "../../test/fixtures/gmsExpBeforeV271";
 import { EXP_TABLE_PATCH, EXP_TO_NEXT, MAX_LEVEL } from "./expTable";
+import { byHandWorld, CHALLENGER, heroicWorld, nexonWorlds } from "@miku/shared";
 import { WORLDS } from "./worlds";
 
 const need = (level: number) => EXP_TO_NEXT[level - 1]!;
@@ -66,10 +67,14 @@ describe("v.271's cuts", () => {
 });
 
 describe("worlds", () => {
-  it("are Kronos (45) and Hyperion (70), the IDs Nexon's rankings use", () => {
+  it("are Kronos (45) and Hyperion (70), the IDs Nexon's rankings use, and Challenger (900, ours) added by hand; all Heroic", () => {
     expect(WORLDS).toEqual([
-      { id: 45, name: "Kronos" },
-      { id: 70, name: "Hyperion" },
+      { id: 45, name: "Kronos", byHand: false, heroic: true },
+      { id: 70, name: "Hyperion", byHand: false, heroic: true },
+      { id: 900, name: "Challenger", byHand: true, heroic: true },
     ]);
+    // and an ID no world has is neither
+    expect([byHandWorld(900), byHandWorld(45), byHandWorld(1), heroicWorld(70), heroicWorld(900), heroicWorld(1)]).toEqual([true, false, false, true, true, false]);
+    expect([nexonWorlds(), CHALLENGER]).toEqual([[45, 70], 900]);
   });
 });

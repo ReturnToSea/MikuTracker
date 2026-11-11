@@ -16,6 +16,7 @@ const MIKU: CharacterView = {
   level: 285,
   exp: 86_500_000_000_000,
   expToNext: 99_512_176_519_276,
+  byHand: false,
   worldRank: 6_390,
   overallRank: 19_172,
   legion: null,
@@ -52,6 +53,7 @@ const PROGRESS: ProgressView = {
     { day: dayBack(0), level: 278.93, reached: [], covers: 1 },
   ],
   ranges: [range(7, 14 * T, 0.0205), range(14, 21 * T, 0.0151), range(30, 45 * T, 0.0153), range(90, 270 * T, 0.0306)],
+  typed: null,
 };
 
 function show(progress: unknown = PROGRESS, character = MIKU) {

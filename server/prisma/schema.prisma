@@ -17,7 +17,7 @@ datasource db {
 model Settings {
   ownerId   String   @id
   theme     String   @default("ren") // "ren" | "pochacco"
-  worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion
+  worldId   Int      @default(45) // the world shown on Home: 45 Kronos, 70 Hyperion, 900 Challenger
   blackFlamePrice Int @default(3000000) // meso per Black Flame, for the Flames page's costs (v2.1.0)
   mvp             String @default("none") // the MVP tier, for its Star Force discount (v2.2.0): none | silver | gold | diamond
   updatedAt DateTime @updatedAt
@@ -27,7 +27,7 @@ model Settings {
 model Character {
   id          Int        @id @default(autoincrement())
   ownerId     String
-  worldId     Int // 45 Kronos, 70 Hyperion
+  worldId     Int // 45 Kronos, 70 Hyperion, 900 Challenger (added by hand)
   name        String // as Nexon spells it
   nameKey     String // the name in lowercase, for spotting duplicates
   job         String
@@ -157,7 +157,7 @@ model ChecklistTask {
   category   String // "arcane" | "sacred" | "other"
   reset      String // "daily" | "weekly" | "none"
   weekday    Int?
-  worlds     String // "both" | "45" | "70"
+  worlds     String // the world IDs it shows on, in order, joined by commas: "45,70", "900" (v4.2.0; "both" before)
   limitScope String // "character" | "world" | "account"
   limitCount Int
   createdAt  DateTime @default(now())
