@@ -169,7 +169,7 @@ export function SymbolsPage() {
                     </button>
                   ))}
                 </div>
-                <span className="muted small">Level · symbols held · days a week · weekly clears</span>
+                <span className="muted small">Level · symbols held · days a week · weekly quest</span>
               </div>
               <div className="symbol-grid">
                 {symbols.map((s) => {
@@ -212,15 +212,9 @@ export function SymbolsPage() {
                           </select>{" "}
                           days/wk
                         </label>
-                        {s.weeklyPerClear !== null && (
+                        {s.weeklyQuest !== null && (
                           <label>
-                            Weekly{" "}
-                            <select aria-label={`${s.name} weekly clears`} value={st.weekly} onChange={(e) => set(s, { weekly: Number(e.target.value) })}>
-                              {[0, 1, 2, 3].map((d) => (
-                                <option key={d}>{d}</option>
-                              ))}
-                            </select>{" "}
-                            clears
+                            <input type="checkbox" aria-label={`${s.name} weekly quest`} checked={st.weekly === 1} onChange={(e) => set(s, { weekly: e.target.checked ? 1 : 0 })} /> Weekly
                           </label>
                         )}
                       </div>

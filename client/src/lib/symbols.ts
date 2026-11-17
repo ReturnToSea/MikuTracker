@@ -6,7 +6,7 @@ import type { SymbolInfo } from "../api/types";
 
 export type SymbolState = SymbolInput;
 
-// A symbol not entered yet: not unlocked, daily every day, no weekly clears.
+// A symbol not entered yet: not unlocked, daily every day, the weekly quest not done.
 export const blankState = (): SymbolState => ({ level: 0, held: 0, days: 7, weekly: 0 });
 
 // Symbols needed from `level` to the next, and the most that can be held at it (none at level 0 or
@@ -15,19 +15,19 @@ export const need = (s: SymbolInfo, level: number): number => s.steps[level - 1]
 export const room = (s: SymbolInfo, level: number): number => (level === 0 || level >= s.maxLevel ? 0 : need(s, level) - 1);
 
 // A typed state made valid for its symbol: the level within 0 to the top, the symbols held within
-// what that level can hold, days 0–7, weekly clears 0–3 (none without weekly content).
+// what that level can hold, days 0–7, the weekly quest 0 or 1 (0 without weekly content).
 export function fit(s: SymbolInfo, st: SymbolState): SymbolState {
   const level = Math.min(s.maxLevel, Math.max(0, st.level));
   return {
     level,
     held: Math.min(room(s, level), Math.max(0, st.held)),
     days: Math.min(7, Math.max(0, st.days)),
-    weekly: s.weeklyPerClear === null ? 0 : Math.min(3, Math.max(0, st.weekly)),
+    weekly: s.weeklyQuest === null ? 0 : Math.min(1, Math.max(0, st.weekly)),
   };
 }
 
 // Symbols a day, averaged over the week: e.g. 5 days of 40 is 200 / 7 ≈ 28.6 a day.
-export const perDay = (s: SymbolInfo, st: SymbolState): number => (s.daily * st.days + (s.weeklyPerClear ?? 0) * st.weekly) / 7;
+export const perDay = (s: SymbolInfo, st: SymbolState): number => (s.daily * st.days + (s.weeklyQuest ?? 0) * st.weekly) / 7;
 
 // Symbols still needed to reach the top, with `extra` more held (null: not unlocked).
 export function left(s: SymbolInfo, st: SymbolState, extra = 0): number | null {

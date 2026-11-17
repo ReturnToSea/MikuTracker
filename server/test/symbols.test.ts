@@ -20,15 +20,15 @@ describe("GET /api/symbols", () => {
     await character("Elsewhere", { worldId: 70 });
     await ok(save(a, "cernium", { level: 9, held: 300, days: 5 }));
     const b = await board();
-    expect(b.patch).toBe("v.271");
+    expect(b.patch).toBe("v.272");
     expect(b.symbols).toHaveLength(14);
     const vj = b.symbols[0];
-    expect(vj).toMatchObject({ id: "vanishing-journey", name: "Vanishing Journey", kind: "arcane", grand: false, daily: 40, weeklyPerClear: 80, maxLevel: 20, selector: "arcane" });
+    expect(vj).toMatchObject({ id: "vanishing-journey", name: "Vanishing Journey", kind: "arcane", grand: false, daily: 40, weeklyQuest: 240, maxLevel: 20, selector: "arcane" });
     expect(vj.steps).toHaveLength(19);
     expect([vj.steps[0], vj.steps[18]]).toEqual([{ symbols: 12, meso: 970_000 }, { symbols: 372, meso: 36_820_000 }]);
     expect([vj.force.length, vj.force[0], vj.force[1], vj.force[20]]).toEqual([21, 0, 30, 220]);
     const geardock = b.symbols.at(-1);
-    expect(geardock).toMatchObject({ grand: true, selector: null, maxLevel: 11, weeklyPerClear: null });
+    expect(geardock).toMatchObject({ grand: true, selector: null, maxLevel: 11, weeklyQuest: null });
     expect([geardock.steps.length, geardock.steps[9].meso, geardock.force[11]]).toEqual([10, 4_708_000_000, 110]);
     expect(b.characters).toEqual([{ id: a, name: "First", job: "Ren", level: 278, avatar: null, symbols: { cernium: { level: 9, held: 300, days: 5, weekly: 0 } } }]);
   });
@@ -42,7 +42,7 @@ describe("PUT /api/symbols/:id/:symbol", () => {
   it("saves as typed, and replaces on the next save", async () => {
     const id = await character();
     const other = await character();
-    await ok(save(id, "arcana", { level: 19, held: 200, days: 7, weekly: 3 }));
+    await ok(save(id, "arcana", { level: 19, held: 200, days: 7, weekly: 1 }));
     await ok(save(other, "arcana", { level: 2 }));
     await ok(save(id, "arcana", { level: 20, held: 0, days: 0, weekly: 0 }));
     await ok(save(id, "odium", { level: 0, held: 0, days: 0 }));
@@ -68,12 +68,12 @@ describe("PUT /api/symbols/:id/:symbol", () => {
   it("the most a level can hold is fine", async () => {
     const id = await character();
     await ok(save(id, "cernium", { level: 9, held: 908 }));
-    await ok(save(id, "arcana", { level: 1, held: 11, weekly: 3 }));
+    await ok(save(id, "arcana", { level: 1, held: 11, weekly: 1 }));
   });
 
   it("refuses bad fields", async () => {
     const id = await character();
-    for (const body of [{ level: 21 }, { level: -1 }, { held: -1 }, { days: 8 }, { weekly: 4 }, { level: 1.5 }, { extra: 1 }]) {
+    for (const body of [{ level: 21 }, { level: -1 }, { held: -1 }, { days: 8 }, { weekly: 2 }, { weekly: -1 }, { level: 1.5 }, { extra: 1 }]) {
       expect((await save(id, "arcana", body as unknown as Record<string, number>)).status).toBe(400);
     }
     expect((await api().put(`/api/symbols/${id}/arcana`).send({ level: 1 })).status).toBe(400);

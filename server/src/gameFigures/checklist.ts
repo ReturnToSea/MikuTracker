@@ -14,11 +14,12 @@ import { type LimitScope, type TaskCategory, type TaskReset, WEEKLY_RESET_DAY } 
 //     Ursus, 3 entries a day per account (wiki); Erda's Request, weekly, once per account (v.264);
 //     Epic Dungeons, "Up to two Epic Dungeons can be cleared once a week per account. Each
 //     character can clear only one Epic Dungeon type per week." (v.267), so one "Epic Dungeon"
-//     task per character, 2 per account; Monster Park Extreme, 2 characters per world a week
-//     (v.260); Legion's Weekly Dragon Extermination, once per world (Legion is per world).
-//   - Monster Park Extreme may be removed in November 2026 (the wiki): drop it then.
+//     task per character, 2 per account; Extreme Monster Parker, a weekly quest for Lv. 260+ (clear
+//     Monster Park 5 times), its rewards on up to 2 characters per world (v.272, which removed
+//     Monster Park Extreme, 2 characters per world a week since v.260); Legion's Weekly Dragon
+//     Extermination, once per world (Legion is per world).
 // Re-check after each GMS patch.
-export const CHECKLIST_PATCH = "v.271";
+export const CHECKLIST_PATCH = "v.272";
 
 export interface TaskFigure {
   id: string;
@@ -58,7 +59,7 @@ export const PRESET_TASKS: readonly TaskFigure[] = [
   weekly("esfera-guardian", "Esfera Guardian", "arcane", 235),
   weekly("erdas-request", "Erda's Request", "other", 260, { scope: "account", count: 1 }),
   weekly("epic-dungeon", "Epic Dungeon", "other", 260, { scope: "account", count: 2 }),
-  weekly("monster-park-extreme", "Monster Park Extreme", "other", 260, { scope: "world", count: 2 }),
+  weekly("extreme-monster-parker", "Extreme Monster Parker", "other", 260, { scope: "world", count: 2 }),
   weekly("legion-dragon", "Legion Weekly Dragon", "other", null, { scope: "world", count: 1 }),
   weekly("guild-culvert", "Guild Culvert", "other", 101),
   weekly("guild-flag-race", "Guild Flag Race", "other", 101),

@@ -1,8 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { HEXA_STATS } from "@miku/shared";
-import { attOf, BOOST, type CostTable, type FiguredHexaJob, hexaJob, type HexaStep, MASTERY, STAT_AMOUNTS, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
+import { attOf, BOOST, type CostTable, hexaJob, type HexaStep, MASTERY, STAT_AMOUNTS, STAT_PRIMARY_CHANCE, STAT_RANK_COST } from "../gameFigures/hexa";
 import { forgetHexa, jobOrder, orderFor } from "../services/hexa";
 import hoyoungCapture from "../../test/fixtures/maplescouter-hoyoung.json";
+import letheCapture from "../../test/fixtures/maplescouter-lethe.json";
 import renCapture from "../../test/fixtures/maplescouter-ren.json";
 import { addCost, bestStats, buildOrder, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
 
@@ -235,7 +236,7 @@ describe("priority: the job's order, without what's done or past what's wanted",
 // A job's order built from its figures, the HEXA page's own way (services/hexa.ts), afresh (nothing kept
 // from before: mutation testing's planted bugs then run).
 beforeAll(forgetHexa);
-const built = (job: string) => orderFor(hexaJob(job) as FiguredHexaJob);
+const built = (job: string) => orderFor(hexaJob(job)!);
 // Each node's level after `frags` fragments spent along an order (its node steps only).
 function levelsAfter(steps: readonly ({ node: string; from: number; to: number } | { stat: number })[], frags: number): Record<string, number> {
   const at: Record<string, number> = { origin: 1 };
@@ -311,6 +312,16 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     expect(g.average).toBeLessThan(0.1);
     expect(g.most).toBeLessThanOrEqual(16);
   });
+  it("Lethe's too (v4.3.0: her levels from MapleScouter's own order, the owner's capture): an eighth of a level a node on average (0.115; 0.44 on mapledoro's figures and Ren's shape)", () => {
+    const ours = built("Lethe") as HexaStep[];
+    const g = gap(ours, letheCapture.steps as HexaStep[]);
+    // (what's left: the three Boosts, worth almost the same, taken in another order for a while)
+    expect(g.average).toBeLessThan(0.12);
+    expect(g.most).toBeLessThanOrEqual(16);
+    // its first steps exactly (Majeure, Dread Knight, Assize, Sol Hecate), with MapleScouter's gains to 0.01
+    expect(ours.slice(0, 4).map((s) => ("node" in s ? [s.node, s.from, s.to] : []))).toEqual([["mastery4", 0, 1], ["mastery3", 0, 1], ["mastery1", 0, 1], ["hecate", 0, 1]]);
+    ours.slice(0, 4).forEach((s, i) => expect((s as { fd: number }).fd).toBeCloseTo((letheCapture.steps[i] as { fd: number }).fd, 2));
+  });
   it("a job's nodes: MapleScouter's icon names (none for Mo Xuan: MapleScouter has none)", () => {
     expect(hexaJob("Night Walker")!.nodes.map((n) => n.icon)).toEqual(["NightWalker_1", "NightWalker_10", "NightWalker_2", "NightWalker_7", "NightWalker_8", "NightWalker_9", "NightWalker_3", "NightWalker_4", "NightWalker_5", "NightWalker_6", "General_1_0", "General_2", "NightWalker_11"]);
     expect(hexaJob("Mo Xuan")!.nodes.filter((n) => n.icon !== null).map((n) => n.key)).toEqual(["janus", "hecate"]);
@@ -338,7 +349,7 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     expect(attOf({ core: "masteryCore4", points: [[1, 2], [30, 9]] })).toEqual({ node: "mastery4", points: [[1, 2], [30, 9]] });
   });
   it("an ATT node's order: with ATT worth more, the node comes earlier and every step together gains more; worth nothing, the figures' order", () => {
-    const kanna = hexaJob("Kanna") as FiguredHexaJob;
+    const kanna = hexaJob("Kanna")!;
     const firstAt = (steps: ReturnType<typeof orderFor>) => steps.findIndex((s) => s.node === "common3");
     const together = (steps: ReturnType<typeof orderFor>) => steps.reduce((m, s) => m * (1 + s.fd / 100), 1);
     const [none, some, lots] = [orderFor(kanna, 0), orderFor(kanna, 0.05), orderFor(kanna, 0.2)];
@@ -347,19 +358,17 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     // every step together: the figures' whole gain × what 48 ATT adds (at 0.2% a 1 ATT: × 1.096)
     expect(together(lots) / together(none)).toBeCloseTo(1 + (48 * 0.2) / 100, 6);
     // a job without one: the same order at any ATT worth
-    expect(orderFor(hexaJob("Ren") as FiguredHexaJob, 0.2)).toEqual(orderFor(hexaJob("Ren") as FiguredHexaJob, 0));
+    expect(orderFor(hexaJob("Ren")!, 0.2)).toEqual(orderFor(hexaJob("Ren")!, 0));
     // (several orders built: slow under mutation testing's instrumented code)
   }, 60_000);
   it("the page's order for an ATT job: kept per 1 ATT's worth; for another job, one per job whatever the worth", () => {
     expect(jobOrder("Kanna", 0.05)).toBe(jobOrder("Kanna", 0.05));
     expect(jobOrder("Kanna", 0.05)).not.toEqual(jobOrder("Kanna", 0.2));
-    expect(jobOrder("Kanna", 0.2)).toEqual(orderFor(hexaJob("Kanna") as FiguredHexaJob, 0.2));
+    expect(jobOrder("Kanna", 0.2)).toEqual(orderFor(hexaJob("Kanna")!, 0.2));
     expect(jobOrder("Ren", 0.05)).toBe(jobOrder("Ren", 0.2));
     // to 4 decimals: the same order kept for the same value typed slightly differently; built with that value
     expect(jobOrder("Kanna", 0.05000001)).toBe(jobOrder("Kanna", 0.05));
-    expect(jobOrder("Kanna", 0.12344)).toEqual(orderFor(hexaJob("Kanna") as FiguredHexaJob, 0.1234));
-    // a job with a fixed order instead of figures (Lethe) has none worked out
-    expect(jobOrder("Lethe")).toBeNull();
+    expect(jobOrder("Kanna", 0.12344)).toEqual(orderFor(hexaJob("Kanna")!, 0.1234));
     expect(jobOrder("Kanna", 0.12346)).not.toBe(jobOrder("Kanna", 0.12344));
     // (several orders built: slow under mutation testing's instrumented code)
   }, 60_000);

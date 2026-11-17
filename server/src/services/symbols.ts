@@ -13,7 +13,7 @@ export interface SymbolInfo {
   kind: SymbolFigure["kind"];
   grand: boolean;
   daily: number;
-  weeklyPerClear: number | null;
+  weeklyQuest: number | null;
   maxLevel: number;
   selector: SymbolFigure["kind"] | null;
   steps: { symbols: number; meso: number }[]; // steps[L − 1]: from level L to L + 1
@@ -41,7 +41,7 @@ const info = (s: SymbolFigure): SymbolInfo => ({
   kind: s.kind,
   grand: s.grand,
   daily: s.daily,
-  weeklyPerClear: s.weeklyPerClear,
+  weeklyQuest: s.weeklyQuest,
   maxLevel: s.maxLevel,
   selector: s.selector,
   steps: Array.from({ length: s.maxLevel - 1 }, (_, i) => ({ symbols: symbolsToLevel(s, i + 1), meso: mesoToLevel(s, i + 1) })),
@@ -67,8 +67,8 @@ export async function symbolsBoard(ownerId: string, worldId: number): Promise<Sy
 }
 
 // Saves one symbol of a character, as typed. The level must be one the symbol has; the symbols
-// held must be fewer than the next level needs (none at level 0 or at the top); weekly clears are
-// for Arcane symbols only.
+// held must be fewer than the next level needs (none at level 0 or at the top); the weekly quest
+// (done or not, `weekly` 0 or 1: the rules) is for Arcane symbols only.
 export async function saveSymbol(ownerId: string, characterId: number, symbolId: string, input: SymbolInput) {
   await ownCharacter(ownerId, characterId);
   const s = findSymbol(symbolId);
@@ -76,7 +76,7 @@ export async function saveSymbol(ownerId: string, characterId: number, symbolId:
   if (input.level > s.maxLevel) throw new HttpError(400, `${s.name} goes up to Lv. ${s.maxLevel}`);
   const room = input.level === 0 || input.level === s.maxLevel ? 0 : symbolsToLevel(s, input.level) - 1;
   if (input.held > room) throw new HttpError(400, room === 0 ? `${s.name} holds no symbols at Lv. ${input.level}` : `${s.name} Lv. ${input.level} holds at most ${room} symbols`);
-  if (input.weekly > 0 && s.weeklyPerClear === null) throw new HttpError(400, `${s.name} has no weekly content`);
+  if (input.weekly > 0 && s.weeklyQuest === null) throw new HttpError(400, `${s.name} has no weekly content`);
   await db().symbolState.upsert({
     where: { characterId_symbol: { characterId, symbol: symbolId } },
     create: { characterId, symbol: symbolId, ...input },

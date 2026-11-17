@@ -80,9 +80,10 @@ describe("countedCrystals", () => {
 });
 
 describe("the boss list", () => {
-  it("has 28 weekly bosses in game order, then Black Mage as the monthly one", () => {
-    expect(BOSSES).toHaveLength(29);
-    expect(BOSSES.map((b) => b.name).slice(0, 3)).toEqual(["Zakum", "Magnus", "Hilla"]);
+  it("has 25 weekly bosses in game order, then Black Mage as the monthly one (v.272's new daily bosses left out)", () => {
+    expect(BOSSES).toHaveLength(26);
+    expect(BOSSES.map((b) => b.name).slice(0, 3)).toEqual(["Zakum", "Magnus", "Papulatus"]);
+    expect(BOSSES.map((b) => b.name).filter((n) => ["Hilla", "Pink Bean", "Cygnus"].includes(n))).toEqual([]);
     expect(BOSSES.at(-2)!.name).toBe("Jupiter");
     expect(BOSSES.filter((b) => b.kind === "monthly").map((b) => b.name)).toEqual(["Black Mage"]);
   });

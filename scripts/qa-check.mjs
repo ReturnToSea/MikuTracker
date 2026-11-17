@@ -283,6 +283,9 @@ try {
   await page.locator('.rename button[type="submit"]').click();
   await page.waitForFunction(() => [...document.querySelectorAll(".ctab b")].some((b) => b.textContent === "Mikurin"), null, { timeout: 10000 }).catch(() => {});
   check("Challenger", "Rename… renames it", (await text(".hero h2")) === "Mikurin");
+  const letheId = (await api("GET", "/characters?world=900")).json.characters[0].id;
+  const letheHexa = (await api("GET", `/hexa/${letheId}`)).json;
+  check("HEXA", "Lethe (v4.3.0): worked out from MapleScouter's figures, her next upgrade adding final damage", letheHexa.known === true && /^MapleScouter's figures/.test(letheHexa.source) && letheHexa.priority[0]?.fd > 0, `${letheHexa.source} · ${letheHexa.priority[0]?.fd}`);
   await shot("03d-challenger");
   check("API", "searching Nexon on Challenger is refused (400)", (await api("GET", "/search?world=900&name=MikuBeam")).status === 400);
   const kronosId = (await api("GET", "/characters?world=45")).json.characters[0].id;
@@ -312,10 +315,11 @@ try {
   await go("/bosses");
   check("Bosses", "a card for each of the world's characters, in tab order", (await page.locator("article.boss-card h2").allInnerTexts()).join(",") === "MikuBeam,LeekSpin");
   check("Bosses", "nothing planned yet: each card says so", (await page.locator(".boss-empty").count()) === 2);
-  check("Bosses", "the weekly reset countdown and the price patch show", /Weekly reset in (\d+d \d+h|\d+h \d+m|\d+m) · \w{3} \d+:\d\d [AP]M your time/.test((await text(".countdown")) ?? "") && /v\.270/.test((await text(".page-head")) ?? ""), await text(".countdown"));
+  check("Bosses", "the weekly reset countdown and the price patch show", /Weekly reset in (\d+d \d+h|\d+h \d+m|\d+m) · \w{3} \d+:\d\d [AP]M your time/.test((await text(".countdown")) ?? "") && /v\.272/.test((await text(".page-head")) ?? ""), await text(".countdown"));
   await card("MikuBeam").getByRole("button", { name: "Plan bosses…" }).click();
   check("Planner", "opens for that character, with focus inside", (await dialog.getByRole("heading").first().innerText()) === "Plan bosses · MikuBeam" && (await dialog.evaluate((d) => d === document.activeElement)));
-  check("Planner", "lists every boss once: 28 weekly, then Black Mage", (await dialog.getByRole("group").filter({ has: page.locator(".plan-pick") }).count()) === 29 && (await dialog.locator(".plan-grid").last().locator(".plan-card").count()) === 1);
+  check("Planner", "lists every boss once: 25 weekly, then Black Mage", (await dialog.getByRole("group").filter({ has: page.locator(".plan-pick") }).count()) === 26 && (await dialog.locator(".plan-grid").last().locator(".plan-card").count()) === 1);
+  check("Planner", "v.272's daily bosses aren't offered (Hilla, Pink Bean, Cygnus)", (await planCard("Hilla").count()) + (await planCard("Pink Bean").count()) + (await planCard("Cygnus").count()) === 0 && (await planCard("Verus Hilla").count()) === 1);
   check("Planner", "a boss not in the plan has its controls off", (await planCard("Magnus").getByRole("button", { name: "Hard" }).isDisabled()) && (await planCard("Magnus").getByRole("button", { name: "More people" }).isDisabled()));
   if (existsSync(path.join(qa.dir, "boss-art"))) {
     const art = await planCard("Lucid").locator("img").evaluate((i) => [i.naturalWidth, i.getBoundingClientRect().width, getComputedStyle(i).imageRendering]);
@@ -395,6 +399,7 @@ try {
   const menuHeads = (await menu.getByRole("heading", { level: 3 }).allInnerTexts()).join("|");
   check("Planner", "the checklist menu lists every preset (29) by reset", (await menu.getByRole("checkbox").count()) === 29 && /^daily · 00:00 utc\|weekly$/i.test(menuHeads), `${await menu.getByRole("checkbox").count()} boxes; ${menuHeads}`);
   check("Planner", "a level above the character's is flagged (Geardock 295 vs MikuBeam 286)", (await menu.getByText("295+ (above Lv. 286)").count()) === 1);
+  check("Planner", "v.272: Extreme Monster Parker offered, Monster Park Extreme gone", (await menu.getByRole("checkbox", { name: "Plan Extreme Monster Parker", exact: true }).count()) === 1 && (await menu.getByRole("checkbox", { name: "Plan Monster Park Extreme", exact: true }).count()) === 0);
   await page.keyboard.press("Escape");
   await planTasks("MikuBeam", ["Cernium", "Monster Park", "Ursus", "Erda Spectrum", "Epic Dungeon"]);
   check("Checklist", "the plan shows by category: Sacred and Other daily, Arcane and Other weekly", (await col("Daily").getByRole("heading", { level: 3 }).allInnerTexts()).join("|").toLowerCase() === "sacred symbols|other" && (await col("Weekly").getByRole("heading", { level: 3 }).allInnerTexts()).join("|").toLowerCase() === "arcane symbols|other");
@@ -480,9 +485,12 @@ try {
   await typeIn("Esfera symbols held", 40);
   await typeIn("Arcana level", 19);
   await typeIn("Arcana symbols held", 200);
-  await page.getByRole("combobox", { name: "Arcana weekly clears" }).selectOption("3");
+  // (clicked, not check(): the box is ticked by the saved state a moment later, which check() doesn't wait for)
+  await page.getByRole("checkbox", { name: "Arcana weekly quest" }).click();
   await settle();
-  // Arcana: 372 − 200 = 172 left at (7 × 40 + 3 × 80) / 7 ≈ 74.3 a day → 2.3 days; Esfera: 300 + 335 + 372 − 40 = 967 at 40 a day → 24.2 days
+  check("Symbols", "the Arcane weekly quest is a tick box: ticked once clicked", await page.getByRole("checkbox", { name: "Arcana weekly quest" }).isChecked());
+  await shot("09a-symbols-arcane");
+  // Arcana: 372 − 200 = 172 left at (7 × 40 + the weekly quest's 240) / 7 ≈ 74.3 a day → 2.3 days; Esfera: 300 + 335 + 372 − 40 = 967 at 40 a day → 24.2 days
   const ttmText = await page.getByRole("region", { name: "Time to max" }).innerText();
   check("Symbols", "time to max worked out by hand: Arcana ≈ 2.3 days, Esfera ≈ 24.2 days (all maxed)", /Arcana\s+2\.3 days/.test(ttmText) && /Esfera\s+24\.2 days/.test(ttmText) && /All maxed\s+24\.2 days/.test(ttmText), ttmText.replace(/\n/g, " | "));
   check("Symbols", "Force: Arcana 210 + Esfera 190 = 400 of 1,320", /400\s*\/ 1320/.test(ttmText));
@@ -493,15 +501,16 @@ try {
   check("Symbols", "300 coupons: maxed soonest puts them all into Esfera; most Force first finishes Arcana (172)", /Everything maxed soonest\s+Esfera\s+300/.test(advice) && /Most Force soonest\s+Arcana\s+172/.test(advice), advice.replace(/\n/g, " | "));
   check("Symbols", "the forecast graph is drawn", (await page.locator("svg.force-graph path.graph-line").count()) === 1);
   await go("/symbols");
-  check("Symbols", "what was typed is saved: still there after reloading", (await page.getByRole("spinbutton", { name: "Esfera level", exact: true }).inputValue()) === "17" && (await page.getByRole("combobox", { name: "Arcana weekly clears" }).inputValue()) === "3");
+  check("Symbols", "what was typed is saved: still there after reloading", (await page.getByRole("spinbutton", { name: "Esfera level", exact: true }).inputValue()) === "17" && (await page.getByRole("checkbox", { name: "Arcana weekly quest" }).isChecked()));
   await page.getByRole("button", { name: "Sacred", exact: true }).click();
-  check("Symbols", "Sacred: 8 symbols, Tallahart and Geardock marked Grand, Geardock without a selector, no weekly clears", (await page.getByRole("group").filter({ has: page.locator(".symbol-top") }).count()) === 8 && (await symCard("Geardock").getByText("no selector").count()) === 1 && (await symCard("Tallahart").getByText("Grand").count()) === 1 && (await page.getByRole("combobox", { name: /weekly clears/ }).count()) === 0);
+  check("Symbols", "Sacred: 8 symbols, Tallahart and Geardock marked Grand, Geardock without a selector, no weekly quest", (await page.getByRole("group").filter({ has: page.locator(".symbol-top") }).count()) === 8 && (await symCard("Geardock").getByText("no selector").count()) === 1 && (await symCard("Tallahart").getByText("Grand").count()) === 1 && (await page.getByRole("checkbox", { name: /weekly quest/ }).count()) === 0);
   await shot("09-symbols");
   for (const [what, method, where, body, status] of [
     ["symbols: bad world", "GET", "/symbols?world=3", undefined, 400],
     ["symbol: above its top level", "PUT", `/symbols/${miku.id}/cernium`, { level: 12, held: 0, days: 7, weekly: 0 }, 400],
     ["symbol: more held than the level takes", "PUT", `/symbols/${miku.id}/cernium`, { level: 9, held: 909, days: 7, weekly: 0 }, 400],
-    ["symbol: weekly clears on a Sacred symbol", "PUT", `/symbols/${miku.id}/cernium`, { level: 1, held: 0, days: 7, weekly: 1 }, 400],
+    ["symbol: the weekly quest on a Sacred symbol", "PUT", `/symbols/${miku.id}/cernium`, { level: 1, held: 0, days: 7, weekly: 1 }, 400],
+    ["symbol: the weekly quest more than once (once a week since v.272)", "PUT", `/symbols/${miku.id}/arcana`, { level: 1, held: 0, days: 7, weekly: 2 }, 400],
     ["symbol: unknown", "PUT", `/symbols/${miku.id}/nowhere`, { level: 1, held: 0, days: 7, weekly: 0 }, 404],
   ]) {
     const r = await api(method, where, body);
@@ -987,7 +996,7 @@ try {
   await hexaCalc.getByRole("combobox", { name: "Epic Dungeon" }).selectOption("nightmareParadise");
   await settle(800);
   const hexaCalcText = (await hexaCalc.innerText()).replace(/\s+/g, " ");
-  check("HEXA", "fragments coming in: 10 a day × 7 + Erda's Request 90 + Nightmare Paradise 70 = 230 a week, and a time to everything wanted", /Coming in 230 a week/.test(hexaCalcText) && /Everything wanted: [\d,]+ days \(/.test(hexaCalcText), hexaCalcText);
+  check("HEXA", "fragments coming in: 10 a day × 7 + Erda's Request 90 + Nightmare Paradise 80 = 240 a week, and a time to everything wanted", /Coming in 240 a week/.test(hexaCalcText) && /Everything wanted: [\d,]+ days \(/.test(hexaCalcText), hexaCalcText);
   const firstReady = (await prio.locator("tbody tr").first().locator("td").last().innerText()).trim();
   check("HEXA", "the priority's rows say when they're ready, as a date", /^[A-Z][a-z]{2} \d{1,2}(, \d{4})?$/.test(firstReady), firstReady);
   const stat2 = page.getByRole("group", { name: "HEXA Stat II", exact: true });

@@ -191,8 +191,9 @@ model ChecklistTick {
 }
 
 // One symbol of a character in the symbol calculator, saved as typed: its level (0: not
-// unlocked), symbols held toward the next level, the days a week its daily is done, and its weekly
-// clears (Arcane only). `symbol` is an id from src/gameFigures/symbols.ts.
+// unlocked), symbols held toward the next level, the days a week its daily is done, and whether its
+// weekly quest is done (0 or 1, Arcane only; 0–3 clears before v4.3.0). `symbol` is an id from
+// src/gameFigures/symbols.ts.
 model SymbolState {
   id          Int       @id @default(autoincrement())
   characterId Int

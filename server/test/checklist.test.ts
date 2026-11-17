@@ -31,7 +31,7 @@ describe("the presets", () => {
       "Ursus: 1 per account",
       "Erda's Request: 1 per account",
       "Epic Dungeon: 2 per account",
-      "Monster Park Extreme: 2 per world",
+      "Extreme Monster Parker: 2 per world",
       "Legion Weekly Dragon: 1 per world",
     ]);
   });
@@ -51,13 +51,13 @@ describe("GET /api/checklist", () => {
     const b = await board();
     expect(b.daily).toEqual({ day: "2026-10-20", resetsAt: "2026-10-21T00:00:00.000Z" });
     expect(b.weekly).toEqual({ week: "2026-10-15", resetsAt: "2026-10-22T00:00:00.000Z" });
-    expect(b.patch).toBe("v.271");
+    expect(b.patch).toBe("v.272");
     expect(b.tasks).toHaveLength(PRESET_TASKS.length);
     expect(b.tasks.find((t: { id: string }) => t.id === "cernium")).toEqual({ id: "cernium", name: "Cernium", category: "sacred", reset: "daily", weekday: null, level: 260, limit: null, custom: null, resetsAt: "2026-10-21T00:00:00.000Z" });
     expect(b.tasks.find((t: { id: string }) => t.id === "ursus").limit).toEqual({ scope: "account", count: 1 });
     expect(b.tasks.find((t: { id: string }) => t.id === "guild-culvert").resetsAt).toBe("2026-10-22T00:00:00.000Z");
     expect(b.characters).toEqual([{ id: a, name: "First", job: "Kanna", level: 270, avatar: null, plan: [], done: [] }]);
-    expect(b.limits.map((l: { task: string }) => l.task)).toEqual(["monster-park", "ursus", "erdas-request", "epic-dungeon", "monster-park-extreme", "legion-dragon"]);
+    expect(b.limits.map((l: { task: string }) => l.task)).toEqual(["monster-park", "ursus", "erdas-request", "epic-dungeon", "extreme-monster-parker", "legion-dragon"]);
     expect(b.limits.every((l: { users: string[] }) => l.users.length === 0)).toBe(true);
   });
 

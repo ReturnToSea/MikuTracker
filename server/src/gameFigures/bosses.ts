@@ -7,7 +7,9 @@ import type { Difficulty } from "@miku/shared";
 // "Intense Power Crystal" table (labeled GMS v270, edited 2026-10-15), checked against
 // masonym.dev's boss data (src/data/bossData.js, updated 2026-08-06): they agree on every price
 // except Jupiter's (Normal 593M vs 591M, Hard 1,190.6M vs 1,205.2M), where the wiki's is used and
-// unconfirmed. GMS v.271's patch notes change no prices.
+// unconfirmed. GMS v.271's patch notes change no prices; v.272's (2026-11-10) none of these, but make
+// Hard Hilla, Chaos Pink Bean and Normal Cygnus daily bosses (no longer weekly crystals: left out) and
+// remove Easy Cygnus.
 //
 // Heroic worlds (Kronos, Hyperion and Challenger are all Heroic) pay 5× these prices (the wiki: "these
 // values are quintupled in GMS Heroic Worlds"). A party splits the crystal equally, rounded down.
@@ -24,7 +26,7 @@ import type { Difficulty } from "@miku/shared";
 // GMS game time is UTC).
 //
 // Re-check after each GMS patch.
-export const BOSS_PRICES_PATCH = "v.270";
+export const BOSS_PRICES_PATCH = "v.272";
 
 export { DIFFICULTIES, type Difficulty } from "@miku/shared"; // shared with the app
 
@@ -49,14 +51,11 @@ const UP_TO_3 = { Easy: 3, Normal: 3, Hard: 3, Extreme: 3 };
 export const BOSSES: readonly BossFigure[] = [
   boss("zakum", "Zakum", [["Chaos", 16_200_000]]),
   boss("magnus", "Magnus", [["Hard", 19_012_500]]),
-  boss("hilla", "Hilla", [["Hard", 11_250_000]]),
   boss("papulatus", "Papulatus", [["Chaos", 26_450_000]]),
   boss("pierre", "Pierre", [["Chaos", 16_200_000]]),
   boss("von_bon", "Von Bon", [["Chaos", 16_200_000]]),
   boss("crimson_queen", "Crimson Queen", [["Chaos", 16_200_000]]),
   boss("vellum", "Vellum", [["Chaos", 21_012_500]]),
-  boss("pink_bean", "Pink Bean", [["Chaos", 12_800_000]]),
-  boss("cygnus", "Cygnus", [["Easy", 9_112_500], ["Normal", 14_450_000]]),
   boss("princess_no", "Princess No", [["Normal", 16_200_000]]),
   boss("akechi_mitsuhide", "Akechi Mitsuhide", [["Normal", 28_800_000]]),
   boss("lotus", "Lotus", [["Normal", 32_512_500], ["Hard", 88_935_000], ["Extreme", 279_500_000]], { Extreme: 2 }),

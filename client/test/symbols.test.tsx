@@ -8,14 +8,14 @@ import { allMaxedWith, blankState, daysToMax, fit, forecast, left, mesoToMax, mo
 import { BASE_ROUTES, fakeServer, renderWithApp } from "./server";
 
 // Made-up symbols with small numbers, worked out by hand: up to Lv. 4, needing 10, 20, then 30
-// symbols, costing 100, 200, then 300 meso, with 10 Force a level.
+// symbols, costing 100, 200, then 300 meso, with 10 Force a level; 10 a daily, 60 the weekly quest.
 const toy = (id: string, extra: Partial<SymbolInfo> = {}): SymbolInfo => ({
   id,
   name: id.toUpperCase(),
   kind: "arcane",
   grand: false,
   daily: 10,
-  weeklyPerClear: 20,
+  weeklyQuest: 60,
   maxLevel: 4,
   selector: "arcane",
   steps: [
@@ -39,16 +39,16 @@ describe("the calculator's maths", () => {
   });
 
   it("fit keeps a typed state within what the symbol allows", () => {
-    expect(fit(A, st(9, 99, 9, 9))).toEqual(st(4, 0, 7, 3)); // too high everywhere: the top, nothing held
+    expect(fit(A, st(9, 99, 9, 9))).toEqual(st(4, 0, 7, 1)); // too high everywhere: the top, nothing held, the weekly done
     expect(fit(A, st(2, 99, -1, -1))).toEqual(st(2, 19, 0, 0));
     expect(fit(A, st(-3, 5))).toEqual(st(0, 0));
-    expect(fit(toy("s", { weeklyPerClear: null }), st(2, 3, 5, 3))).toEqual(st(2, 3, 5, 0)); // no weekly content
+    expect(fit(toy("s", { weeklyQuest: null }), st(2, 3, 5, 3))).toEqual(st(2, 3, 5, 0)); // no weekly content
     expect(blankState()).toEqual(st(0, 0, 7, 0));
   });
 
-  it("perDay averages the dailies and weekly clears over the week", () => {
+  it("perDay averages the dailies and the weekly quest over the week", () => {
     expect(perDay(A, st(1, 0, 7, 0))).toBe(10);
-    expect(perDay(A, st(1, 0, 5, 3))).toBe(110 / 7); // 5 × 10 + 3 × 20
+    expect(perDay(A, st(1, 0, 5, 1))).toBe(110 / 7); // 5 × 10 + 60
     expect(perDay(A, st(1, 0, 0, 0))).toBe(0);
   });
 
@@ -74,8 +74,8 @@ describe("the calculator's maths", () => {
     // A: Lv. 2 with 5, 10 a day: Lv. 3 on day 2 (25 − 20 = 5 left over), Lv. 4 on day 5; B maxed (40)
     expect(forecast([A, B], { a: st(2, 5), b: st(4) })).toEqual([0, 1, 2, 3, 4, 5].map((day) => ({ day, force: 40 + [20, 20, 30, 30, 30, 40][day]! })));
     expect(forecast([A], { a: st(2, 5, 0) })).toEqual([{ day: 0, force: 20 }]); // nothing coming in
-    // 7 dailies of 10 and 3 weekly clears of 20 = 130 / 7 ≈ 18.6 a day: Lv. 2 on day 1, Lv. 3 on day 2; stopped at 3 days
-    expect(forecast([A], { a: st(1, 0, 7, 3) }, 3).map((p) => p.force)).toEqual([10, 20, 30, 30]);
+    // 7 dailies of 10 and the weekly quest's 60 = 130 / 7 ≈ 18.6 a day: Lv. 2 on day 1, Lv. 3 on day 2; stopped at 3 days
+    expect(forecast([A], { a: st(1, 0, 7, 1) }, 3).map((p) => p.force)).toEqual([10, 20, 30, 30]);
     expect(forecast([A, C], { a: st(1, 9), c: st(0) }, 1)).toEqual([{ day: 0, force: 10 }, { day: 1, force: 20 }]); // locked C adds nothing
     expect(forecast([A], { a: st(1) }, 1)).toEqual([{ day: 0, force: 10 }, { day: 1, force: 20 }]); // exactly the 10 needed: up a level
     expect(forecast([A, C], { a: st(4), c: st(0, 0, 7) })).toEqual([{ day: 0, force: 40 }]); // only a maxed and a locked one: nothing grows
@@ -125,9 +125,9 @@ describe("the calculator's maths", () => {
 // The page, with two Arcane and three Sacred symbols (real-looking, smaller lists).
 const ARC1 = toy("vanishing-journey", { name: "Vanishing Journey" });
 const ARC2 = toy("esfera", { name: "Esfera" });
-const SAC1 = toy("cernium", { name: "Cernium", kind: "sacred", selector: "sacred", weeklyPerClear: null });
-const SAC2 = toy("tallahart", { name: "Tallahart", kind: "sacred", selector: "sacred", weeklyPerClear: null, grand: true });
-const SAC3 = toy("geardock", { name: "Geardock", kind: "sacred", selector: null, weeklyPerClear: null, grand: true });
+const SAC1 = toy("cernium", { name: "Cernium", kind: "sacred", selector: "sacred", weeklyQuest: null });
+const SAC2 = toy("tallahart", { name: "Tallahart", kind: "sacred", selector: "sacred", weeklyQuest: null, grand: true });
+const SAC3 = toy("geardock", { name: "Geardock", kind: "sacred", selector: null, weeklyQuest: null, grand: true });
 const char = (id: number, name: string, symbols: Record<string, SymbolState>): SymbolsCharacter => ({ id, name, job: "Ren", level: 278, avatar: null, symbols });
 const REMY = char(1, "Remy", { "vanishing-journey": st(4), esfera: st(2, 5), cernium: st(1, 0, 7) });
 const MEOW = char(2, "Meow", {});
@@ -156,7 +156,7 @@ describe("the Symbols tab", () => {
     const esfera = await card("Esfera");
     expect((esfera.getByRole("spinbutton", { name: "Esfera symbols held" }) as HTMLInputElement).value).toBe("5");
     expect(esfera.getByText("/ 20", { exact: false })).toBeTruthy();
-    expect((esfera.getByRole("combobox", { name: "Esfera weekly clears" }) as HTMLSelectElement).value).toBe("0");
+    expect((esfera.getByRole("checkbox", { name: "Esfera weekly quest" }) as HTMLInputElement).checked).toBe(false);
     const ttm = within(screen.getByRole("region", { name: "Time to max" }));
     expect(ttm.getByText("60")).toBeTruthy(); // Force 40 + 20
     expect(ttm.getByText("/ 80")).toBeTruthy();
@@ -166,14 +166,14 @@ describe("the Symbols tab", () => {
     expect(screen.getByRole("img", { name: "Force from 60 now to 80 on day 5" })).toBeTruthy();
   });
 
-  it("Sacred: its own symbols (Grand marked, Geardock without a selector), no weekly clears", async () => {
+  it("Sacred: its own symbols (Grand marked, Geardock without a selector), no weekly quest", async () => {
     show();
     await card("Esfera");
     await userEvent.click(screen.getByRole("button", { name: "Sacred" }));
     const tall = await card("Tallahart");
     expect(tall.getByText("Grand")).toBeTruthy();
     expect((await card("Geardock")).getByText("no selector")).toBeTruthy();
-    expect((await card("Cernium")).queryByRole("combobox", { name: "Cernium weekly clears" })).toBeNull();
+    expect((await card("Cernium")).queryByRole("checkbox", { name: "Cernium weekly quest" })).toBeNull();
     expect(screen.getByText(/Geardock has none/)).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Esfera" })).toBeNull();
   });
@@ -329,20 +329,21 @@ describe("the Symbols tab", () => {
     const remy2 = char(3, "Remy2", { esfera: st(2, 5) });
     const s = show(board([REMY, remy2]), { "PUT /symbols/:id/esfera": () => new Promise<undefined>((r) => answers.push(() => r(undefined))) });
     const esfera = await card("Esfera");
-    await userEvent.selectOptions(esfera.getByRole("combobox", { name: "Esfera weekly clears" }), "1");
-    await userEvent.selectOptions(esfera.getByRole("combobox", { name: "Esfera weekly clears" }), "2");
+    await userEvent.click(esfera.getByRole("checkbox", { name: "Esfera weekly quest" })); // ticked: done this week
+    await userEvent.click(esfera.getByRole("checkbox", { name: "Esfera weekly quest" })); // unticked again
     expect(s.sent("PUT", "/symbols/1/esfera")).toEqual([{ level: 2, held: 5, days: 7, weekly: 1 }]); // the second waits
     await userEvent.click(screen.getByRole("tab", { name: /Remy2/ }));
-    expect(((await card("Esfera")).getByRole("combobox", { name: "Esfera weekly clears" }) as HTMLSelectElement).value).toBe("0"); // not changed
+    expect(((await card("Esfera")).getByRole("checkbox", { name: "Esfera weekly quest" }) as HTMLInputElement).checked).toBe(false); // not changed
     answers.shift()!();
     await waitFor(() => expect(s.sent("PUT", "/symbols/1/esfera")).toHaveLength(2));
+    expect(s.sent("PUT", "/symbols/1/esfera")[1]).toEqual({ level: 2, held: 5, days: 7, weekly: 0 });
     answers.shift()!();
   });
 
   it("a save doesn't interrupt other loading (the saved settings)", async () => {
     let release = () => {};
     show(board([REMY]), { "GET /settings": () => new Promise((r) => (release = () => r({ theme: "pochacco", worldId: 45 }))) });
-    await userEvent.selectOptions((await card("Esfera")).getByRole("combobox", { name: "Esfera weekly clears" }), "1");
+    await userEvent.click((await card("Esfera")).getByRole("checkbox", { name: "Esfera weekly quest" }));
     release();
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("pochacco"));
   });
@@ -364,8 +365,8 @@ describe("the Symbols tab", () => {
     let answer = () => {};
     const s = show(board([REMY]), { "PUT /symbols/:id/esfera": () => new Promise<undefined>((r) => (answer = () => r(undefined))) });
     const esfera = await card("Esfera");
-    await userEvent.selectOptions(esfera.getByRole("combobox", { name: "Esfera weekly clears" }), "2");
-    expect((esfera.getByRole("combobox", { name: "Esfera weekly clears" }) as HTMLSelectElement).value).toBe("2");
+    await userEvent.click(esfera.getByRole("checkbox", { name: "Esfera weekly quest" }));
+    expect((esfera.getByRole("checkbox", { name: "Esfera weekly quest" }) as HTMLInputElement).checked).toBe(true);
     answer();
     await waitFor(() => expect(s.calls.filter((c) => c.method === "GET" && c.path.startsWith("/symbols")).length).toBe(2));
     expect(s.calls.filter((c) => c.method === "GET" && c.path === "/settings")).toHaveLength(1);

@@ -11,7 +11,7 @@ import { finalDamage, generalRange, type StatsContext, type StatShape, statsScor
 import { db } from "../db";
 import { BOSS_FIGURES, BOSS_SYMBOL, bossesFor, type Phase, phasesOf } from "../gameFigures/bossClear";
 import { gearFile } from "../gameFigures/gear";
-import { CORE_OF, type FiguredHexaJob, HEXA_FIGURES, hasFigures, hexaJob, isShine } from "../gameFigures/hexa";
+import { CORE_OF, HEXA_FIGURES, type HexaJob, hexaJob, isShine } from "../gameFigures/hexa";
 import { jobStats } from "../gameFigures/jobStats";
 import { SYMBOLS } from "../gameFigures/symbols";
 import { cooldownRefs, STATS_FIGURES, statLinks, statsJob } from "../gameFigures/stats";
@@ -99,7 +99,7 @@ function rowsOf(job: string): { labels: StatsBoard["labels"]; shape: StatShape }
 
 // The figures the formula needs besides the sheet, for some HEXA levels: the cores' share of the damage
 // (every core at 30: MapleScouter's "Normal"), and the flat ATT a node gives.
-function contextOf(hexa: FiguredHexaJob, levels: Record<HexaNode, number>, base: Omit<StatsContext, "cores" | "coreAtt">): StatsContext {
+function contextOf(hexa: HexaJob, levels: Record<HexaNode, number>, base: Omit<StatsContext, "cores" | "coreAtt">): StatsContext {
   const cores = Object.fromEntries(Object.entries(CORE_OF).map(([node, core]) => [core, levels[node as HexaNode]])) as Record<CoreKey, number>;
   return { ...base, cores: hexaDamage(hexa.model, cores), coreAtt: hexa.att ? coreAttAt(hexa.att.points, levels[hexa.att.node]) : 0 };
 }
@@ -116,8 +116,7 @@ export type StatsCharacter = Pick<Awaited<ReturnType<typeof ownCharacter>>, "id"
 const heroicOf = (c: StatsCharacter) => heroicWorld(c.worldId);
 async function figuresFor(c: StatsCharacter, input: StatsInput, level: number, levels: Record<HexaNode, number>) {
   const [job, hexa, rows] = [statsJob(c.job), hexaJob(c.job), rowsOf(c.job)];
-  // (a job without HEXA figures, Lethe, has no Stats page yet)
-  if (!job || !hexa || !hasFigures(hexa) || !rows) return null;
+  if (!job || !hexa || !rows) return null;
   const [symbols, equipped] = await Promise.all([db().symbolState.findMany({ where: { characterId: c.id } }), equippedItems(c.id)]);
   const heroic = heroicOf(c);
   const isMaxed = (id: string) => (symbols.find((r) => r.symbol === id)?.level ?? 0) >= SYMBOLS.find((y) => y.id === id)!.maxLevel;

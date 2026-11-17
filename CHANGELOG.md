@@ -2,6 +2,23 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v4.3.0: Lethe's Stats and HEXA, and v.272's weekly changes (2026-11-17)
+
+- **Lethe is worked out like every class:**
+  - **Her HEXA page:** the order built from her figures, with final damage on every step, the priority and the totals; her nodes by the wiki's names (the Masteries by their first skill, as for every job; the 3rd Common node "Demonic Wroth", the game's spelling). The Discord's written order is gone.
+  - **Her HEXA figures are MapleScouter's own**, from its HEXA order for her in the owner's capture of its HEXA page: each step's damage gives her nodes' figures at every level it stops at (mapledoro, from its v.272 update of 2026-11-16, had only her level 0, its own estimate; with Ren's shape for the rest, her order came out 0.44 of a level a node from MapleScouter's on average and, as the owner noticed, far from the Discord's). Now MapleScouter's figure after each of its 186 steps exactly, and her order 0.115 of a level a node from its (Majeure, Dread Knight, Assize, Sol Hecate first, as MapleScouter). `node scripts/hexa-data.mjs [captures…]` reads such captures; what they give is kept in `hexa-scouter-orders.json`.
+  - **Her Stats page:** the score, boss clears and stat efficiency (it said she wasn't supported), from mapledoro's v.272 figures for her, checked against its engine on 6 random sheets like the other classes.
+  - The HEXA and Stats rebuilds changed no other class's figures.
+- **GMS v.272's weekly changes:**
+  - **Bosses:** Hard Hilla, Chaos Pink Bean and Normal Cygnus are daily bosses now and Easy Cygnus is gone, so they've left the weekly crystal list (25 weekly bosses and Black Mage). Their plans were removed; past clears are kept.
+  - **HEXA:** the Epic Dungeons give **50 / 65 / 80** fragments a week (High Mountain, Angler Company, Nightmare Paradise; 40 / 55 / 70 before).
+  - **Symbols:** the Arcane River weekly quest is **once a week for 240 symbols**: a **Weekly tick box** on each Arcane card (it was a 0–3 dropdown of 80-symbol clears). Saved clears became ticked.
+  - **Checklist:** **Extreme Monster Parker** (Lv. 260+, Monster Park 5 times, 2 characters per world) replaces Monster Park Extreme. Characters planned for Monster Park Extreme plan the quest now, and their ticks from v.272's first week on count for it (so the 2-per-world limit is right); earlier weeks' stay as history.
+- **The HEXA rebuild script** reads the wiki's renamed sections ("6th Job Skills", formerly "HEXA Skills"); it couldn't read any job's node names.
+- **From the review pass** (8 findings, 5 fixed): this week's Monster Park Extreme ticks would have stayed under the old task, leaving the new quest's world limit unused; a test that Lethe's Stats page works; an old plan line, a comment and a source label brought up to date. Not changed: two leftovers from v4.1.0 (a source text the page doesn't show, a step type the tests use). (It also noted Lethe's in-between HEXA levels following Ren's shape; the owner's capture of MapleScouter's order replaced them, above.)
+- **From a second review pass** (after Lethe's MapleScouter figures; 9 findings, 7 fixed): the HEXA script refuses a capture it can't read safely (a class whose cores pair or multiply, like Hoyoung's; an order without MapleScouter's calculation at its starting levels, which would have lost the first step's figure) instead of writing figures that don't match MapleScouter's, and reads answers a browser saved base64-encoded; `weeklyPerClear` renamed `weeklyQuest` (one quest a week now); stale lines in the changelog, the plan and the design notes. Not changed: this week's ticks of the bosses that became daily stay (real clears; the list ignores bosses it doesn't have), and the HEXA page's source text (not shown).
+- **Mutation testing: 100%** on every changed file (server, shared and the app's symbols maths), nothing left uncaught, and again (forced) on the three files the second review's rename touched; the migration's three parts and the new page checks were each broken by hand to see their tests fail.
+
 ## v4.2.0: Challenger World, Lethe and Mayrin (2026-11-10)
 
 - **Challenger World, a third world** next to Kronos and Hyperion (layout A of five mockups), on every page with a world switch. Heroic like them (final damage, 5× crystals, the same weekly limits). **Its characters aren't in Nexon's rankings, so they're added and kept up to date by hand and never sent to Nexon** (no search, and the 4-hour refresh skips them).

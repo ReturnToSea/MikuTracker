@@ -240,11 +240,11 @@ describe("Home's level graph", () => {
 });
 
 describe("the classes a character added by hand can be", () => {
-  it("are every class the gear figures know, A–Z: the Stats and HEXA figures' and Lethe (v.272, not in their source yet)", () => {
-    const known = Object.keys(stats.jobs).sort();
-    expect(Object.keys(hexa.jobs).sort()).toEqual(known);
+  it("are every class the gear, Stats and HEXA figures know, A–Z (Lethe included)", () => {
     expect([...CLASSES]).toEqual(Object.keys(gear.jobs).sort());
-    expect([...CLASSES]).toEqual([...known, "Lethe"].sort());
+    expect([...CLASSES]).toEqual(Object.keys(stats.jobs).sort());
+    expect([...CLASSES]).toEqual(Object.keys(hexa.jobs).sort());
+    expect(CLASSES).toContain("Lethe");
   });
 });
 

@@ -9,15 +9,15 @@
 //   - Force: Arcane 30 at Lv. 1 and +10 a level (220 at Lv. 20); Sacred 10 at Lv. 1 and +10 a level
 //     (110 at Lv. 11) (wiki); Grand Sacred also +10 Sacred Force a level (v.270).
 //   - Symbols a day (v.271, 9 Sep 2026): Arcane River dailies 40 (Vanishing Journey and Chu Chu
-//     Island give 20 until a story quest is done: we assume it's done), Arcane River weekly content
-//     80 per clear, up to 3 clears a week (wiki); Cernium 30, Hotel Arcus to Carcion 15, Tallahart
-//     and Geardock 15.
+//     Island give 20 until a story quest is done: we assume it's done); Cernium 30, Hotel Arcus to
+//     Carcion 15, Tallahart and Geardock 15. The Arcane River weekly quest: once a week, 240 symbols
+//     (GMS v.272's patch notes, 2026-11-10; up to 3 clears of 80 before).
 //   - Selector coupons: Arcane Symbol Selector Coupons for the Arcane symbols; Sacred Symbol
 //     Selector Coupons for the Sacred symbols and Tallahart (v.271); none for Geardock (v.270).
 //   - The Vanishing Journey page's "Mentor System" meso discount appears nowhere in GMS's patch
 //     notes: treated as not in GMS.
 // Re-check after each GMS patch.
-export const SYMBOLS_PATCH = "v.271";
+export const SYMBOLS_PATCH = "v.272";
 
 export type SymbolKind = "arcane" | "sacred";
 
@@ -28,13 +28,13 @@ export interface SymbolFigure {
   grand: boolean; // a Grand Sacred Symbol (counted with the Sacred ones)
   k: number; // the area's meso factor (see the formulas above)
   daily: number; // symbols from its daily quest
-  weeklyPerClear: number | null; // symbols per weekly clear (Arcane only), up to 3 clears a week
+  weeklyQuest: number | null; // symbols from its weekly quest (Arcane only), once a week
   maxLevel: number;
   selector: SymbolKind | null; // which selector coupon can give it
 }
 
-const arcane = (id: string, name: string, k: number): SymbolFigure => ({ id, name, kind: "arcane", grand: false, k, daily: 40, weeklyPerClear: 80, maxLevel: 20, selector: "arcane" });
-const sacred = (id: string, name: string, k: number, daily: number, grand = false, selector: SymbolKind | null = "sacred"): SymbolFigure => ({ id, name, kind: "sacred", grand, k, daily, weeklyPerClear: null, maxLevel: 11, selector });
+const arcane = (id: string, name: string, k: number): SymbolFigure => ({ id, name, kind: "arcane", grand: false, k, daily: 40, weeklyQuest: 240, maxLevel: 20, selector: "arcane" });
+const sacred = (id: string, name: string, k: number, daily: number, grand = false, selector: SymbolKind | null = "sacred"): SymbolFigure => ({ id, name, kind: "sacred", grand, k, daily, weeklyQuest: null, maxLevel: 11, selector });
 
 export const SYMBOLS: readonly SymbolFigure[] = [
   arcane("vanishing-journey", "Vanishing Journey", 8),

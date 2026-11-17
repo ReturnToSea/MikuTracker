@@ -38,10 +38,12 @@ describe("GET /api/bosses", () => {
     expect(b.week).toEqual({ start: "2026-10-15", resetsAt: "2026-10-22T00:00:00.000Z" });
     expect(b.month).toEqual({ name: "2026-10", resetsAt: "2026-11-01T00:00:00.000Z" });
     expect(b.limits).toEqual({ perCharacter: 14, perWorld: 180 });
-    expect(b.pricesPatch).toBe("v.270");
+    expect(b.pricesPatch).toBe("v.272");
     expect(b.characters).toEqual([]);
     expect(b.totals).toEqual({ planned: 0, soFar: 0, cleared: 0, bosses: 0, crystals: 0, monthlyPlanned: 0, monthlySoFar: 0 });
-    expect(b.bosses).toHaveLength(29);
+    // v.272's daily bosses (Hard Hilla, Chaos Pink Bean, Normal Cygnus; Easy Cygnus removed) aren't weekly crystals
+    expect(b.bosses).toHaveLength(26);
+    expect(b.bosses.filter((x: { id: string }) => ["hilla", "pink_bean", "cygnus"].includes(x.id))).toEqual([]);
     expect(b.bosses[0]).toEqual({ id: "zakum", name: "Zakum", kind: "weekly", art: null, difficulties: [{ difficulty: "Chaos", maxParty: 6, perPerson: [81 * M, 40.5 * M, 27 * M, 20.25 * M, 16.2 * M, 13.5 * M] }] });
     // Extreme Lotus: 279.5M × 5 = 1,397.5M, for 1 or 2 people only
     expect(b.bosses.find((x: { id: string }) => x.id === "lotus").difficulties[2]).toEqual({ difficulty: "Extreme", maxParty: 2, perPerson: [1_397.5 * M, 698.75 * M] });
@@ -219,24 +221,24 @@ describe("the crystal limits", () => {
 
   it("past 180 for the world, the least valuable of what the characters can sell don't count", async () => {
     // 13 characters with 14 bosses each = 182 crystals. One character plans Zakum party of 6
-    // (13.5M) and another Hilla party of 6 (9.375M): the world's two cheapest.
+    // (13.5M) and another Chaos Pierre party of 6 (16.2M × 5 ÷ 6 = 13.5M): the world's two cheapest.
     const fourteen = FIFTEEN.slice(1);
     const ids: number[] = [];
     for (let i = 0; i < 13; i++) ids.push(await character());
     const plans = ids.flatMap((id) => fourteen.map((p) => ({ characterId: id, ...p })));
     plans[0] = { characterId: ids[0]!, boss: "zakum", difficulty: "Chaos", partySize: 6 };
-    plans[14] = { characterId: ids[1]!, boss: "hilla", difficulty: "Hard", partySize: 6 };
+    plans[14] = { characterId: ids[1]!, boss: "pierre", difficulty: "Chaos", partySize: 6 };
     await db().bossPlan.createMany({ data: plans });
     const b = await board();
     const over = b.characters.flatMap((c: { name: string; weekly: { boss: string; over: string | null; meso: number }[] }) => c.weekly.filter((r) => r.over).map((r) => [c.name, r.boss, r.over, r.meso]));
     expect(over).toEqual([
       [b.characters[0].name, "zakum", "world", 13.5 * M],
-      [b.characters[1].name, "hilla", "world", 9.375 * M],
+      [b.characters[1].name, "pierre", "world", 13.5 * M],
     ]);
     expect(b.totals.crystals).toBe(182);
     expect(b.totals.bosses).toBe(182);
     const everything = b.characters.reduce((t: number, c: { weekly: { meso: number }[] }) => t + c.weekly.reduce((s, r) => s + r.meso, 0), 0);
-    expect(b.totals.planned).toBe(everything - 13.5 * M - 9.375 * M);
+    expect(b.totals.planned).toBe(everything - 13.5 * M - 13.5 * M);
   });
 });
 

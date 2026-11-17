@@ -60,12 +60,12 @@ describe("forceAt", () => {
 });
 
 describe("the symbols", () => {
-  it("6 Arcane (to Lv. 20) and 8 Sacred (to Lv. 11, two of them Grand), each with its daily amount", () => {
-    expect(SYMBOLS.filter((s) => s.kind === "arcane").map((s) => [s.maxLevel, s.daily, s.weeklyPerClear])).toEqual(Array(6).fill([20, 40, 80]));
+  it("6 Arcane (to Lv. 20, the weekly quest 240) and 8 Sacred (to Lv. 11, two of them Grand), each with its daily amount", () => {
+    expect(SYMBOLS.filter((s) => s.kind === "arcane").map((s) => [s.maxLevel, s.daily, s.weeklyQuest])).toEqual(Array(6).fill([20, 40, 240]));
     expect(SYMBOLS.filter((s) => s.kind === "sacred").map((s) => `${s.name}:${s.daily}${s.grand ? " grand" : ""}`)).toEqual([
       "Cernium:30", "Hotel Arcus:15", "Odium:15", "Shangri-La:15", "Arteria:15", "Carcion:15", "Tallahart:15 grand", "Geardock:15 grand",
     ]);
-    expect(SYMBOLS.filter((s) => s.kind === "sacred").every((s) => s.maxLevel === 11 && s.weeklyPerClear === null)).toBe(true);
+    expect(SYMBOLS.filter((s) => s.kind === "sacred").every((s) => s.maxLevel === 11 && s.weeklyQuest === null)).toBe(true);
   });
 
   it("selector coupons: Arcane for Arcane; Sacred for Sacred and Tallahart; none for Geardock", () => {

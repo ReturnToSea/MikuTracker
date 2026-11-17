@@ -149,10 +149,10 @@ Built as layout B of the mockup (a "Level" switch on the EXP chart); described i
 How it works is in DESIGN.md ("Bosses"). **Still unconfirmed:** Jupiter's prices (the wiki's 593M / 1,190.6M against masonym.dev's 591M / 1,205.2M), and whether the Heroic ×5 is applied before or after the party split (a few meso at most). Check both in the game or a newer source. History of past weeks is under "Later": the ticks of past weeks are already kept.
 
 ### v1.3.0: Daily and weekly checklist — done
-How it works is in DESIGN.md ("Checklist"). **Still to check:** Flag Race's Thursday reset (from the owner; not documented in what was found), and drop Monster Park Extreme if it's removed in November (the wiki marks it as pending removal). History of past days and weeks is under "Later" (the ticks are kept).
+How it works is in DESIGN.md ("Checklist"). **Still to check:** Flag Race's Thursday reset (from the owner; not documented in what was found). History of past days and weeks is under "Later" (the ticks are kept).
 
 ### v1.4.0: Symbol calculator — done
-How it works is in DESIGN.md ("Symbols"); the costs, Force and symbols a day are in `server/src/gameFigures/symbols.ts` with their sources. **Still to check in the game:** Vanishing Journey and Chu Chu Island giving 40 a day (we assume their story quest is done), and the weekly content's 3 clears a week of 80 (from the wiki).
+How it works is in DESIGN.md ("Symbols"); the costs, Force and symbols a day are in `server/src/gameFigures/symbols.ts` with their sources. **Still to check in the game:** Vanishing Journey and Chu Chu Island giving 40 a day (we assume their story quest is done). (The weekly quest's 240 once a week is GMS v.272's patch notes, v4.3.0.)
 
 ### v1.5.0: Gear tab (equipped items) — done
 How it works, what's listed and how the list is checked are in DESIGN.md ("Gear"). **Still to check in the game:** that the Guild Castle Brooches are the guild shop's totems.
@@ -204,21 +204,18 @@ A major version, in smaller steps, after HEXA (v3: its levels are needed) (the o
 
 ### v4.2.0: Challenger World, Lethe and Mayrin — done
 2026-11-10 (planned with the owner with the picker and mockups, layout A; how it works: DESIGN.md "Home", "Checklist", "HEXA", "Boss clears"; the planning notes and research, MapleScouter's Challenger mode included, in `tempdata/v42/PLAN-v420-notes.md`). Left for later from it:
-- **Mayrin's score needed** comes from one class's capture (the owner's Ren); a second class's capture (KMS, Challenger mode, as in `tempdata/scouter-preset-challenger-KMS.json`) would make it exact for every class.
 - **MapleScouter's Challenger mode** (~3.3% more damage, ~1.2% higher clear rates on current bosses) isn't used (the owner: the same bosses); its rule couldn't be worked out from the captures.
-- **Lethe:** its HEXA order and Stats page wait on mapledoro's figures (then it joins `hexa-jobs.json` and `hexaFixed.ts` goes); Astra Quill once the wiki has its page (rerun `node scripts/gear-data.mjs`).
+- **Lethe:** Astra Quill once the wiki has its page (rerun `node scripts/gear-data.mjs`; still none on 2026-11-17). Her HEXA order and Stats: v4.3.0.
 - **Bellona** (GMS 2026-12-16): with MapleScouter's and mapledoro's data then. **The 3rd Skill node** (Void Origin for Lethe; every class) from the same date.
 
-### After v4.2.0: v.272 changes to check (not planned yet)
-Found 2026-11-10 on the wiki's page for the KMS version of this update (MapleStory: Overdrive); **not in v4.2.0** (the owner: not in the plan). To check against the GMS patch notes once out, and, for any GMS has, a small version of their own:
-- Arcane River weekly content once a week, 240 symbols per area (the Symbols page's weekly clears).
-- Epic Dungeons: 15 Sol Erda Fragments a clear (the HEXA page's 40/55/70 a week).
-- Monster Park Extreme removed, a new weekly quest instead (Advanced Dungeon 5 times, 2 characters per world): the Checklist presets.
-- The Legion revamp (Legion Points; raid power worked out automatically): whether Nexon's rankings data changes (Home's Legion).
-- Crystal prices: the owner saw no change for GMS on the PTS.
+### v4.3.0: Lethe's Stats and HEXA, and v.272's weekly changes — done
+2026-11-17 (planned with the owner with the picker; how it works: DESIGN.md "HEXA", "Stats", "Bosses", "Symbols", "Checklist"; sources: GMS v.272's patch notes, Nexon's news data `https://g.nexonstatic.com/maplestory/cms/v1/news/47132`, and mapledoro's v.272 update of 2026-11-15/16). Left for later from it (the owner):
+- **The boss clears for v.272** (not in v4.3.0): bosses lost ~32% HP (Hard Black Mage 64.9%); mapledoro's boss cuts were redone for v.272 (MapleScouter's per-boss changes, Hard Black Mage ~2.17× easier against Extreme, **Champion Black Mage now Hard × 0.75 in MapleScouter's own numbers**, so our fix may go; **Mayrin's cut from a second class**). Needs a fresh capture of MapleScouter's Boss Info page from the owner for the new phase HP. Kai: skipped (the owner: very easy).
+- **The Legion revamp** (Legion grid removed; Legion Points; the raid placed automatically): check by hand whether Nexon's rankings still give Home's Legion.
+- **MapleScouter's HEXA order for more classes:** Lethe's levels come from the owner's capture of MapleScouter's order (v4.3.0); the same works for any class whose figures are thin (Hoyoung, the five with an unmeasured core), a capture each. Its order then shows HEXA Stat III only (the sheet had I and II open): a capture from before HEXA Stat II would show where MapleScouter places it.
 
-### v4.3.0: the Upgrades page's Star Force steps, and 1 s of cooldown
-Moved out of v4.2.0 on 2026-11-10 (the owner).
+### v4.4.0: the Upgrades page's Star Force steps, and 1 s of cooldown
+Moved out of v4.2.0 on 2026-11-10 (the owner); v4.3.0 until 2026-11-17 (v.272's changes went first).
 
 **The Upgrades page's Star Force steps**
 Noted 2026-11-05 by the owner; made v4.2.0 the same day (next, before v5.0.0). The Upgrades page lists an item's Star Force only as its next single star; once that's taken, the item doesn't come back for stars, so the list never shows the path past one star. Idea: keep each item in the list, one entry per further step, grouped at breakpoints (for example up to 18★ as one step, then 21★, then 1★ at a time after that). To settle then: which breakpoints (the same for every item, or by its level and boss tag), how a group's cost and final damage are worked out (expected meso to reach it, booms included), and how the steps of one item sit among the others' in the cheapest-first order. Worth knowing then: the rows already use the Star Force page's best jump (19→21★ when 20★ alone isn't worth it), and an item's chain of best jumps never gets cheaper per 1% from one jump to the next, so its steps keep their order in the list; fixed breakpoints don't promise that. Questions drafted for the picker: how the steps are split (the best-jump chain, fixed breakpoints, or the chain cut at breakpoints), how far they go (the last star, a budget, a few per item, a set star), how a later step shows it needs the earlier one, and whether the Chart gets a dot per step.

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { coreSteps } from "../gameFigures/hexa";
 import figures from "../gameFigures/hexa-jobs.json";
 import mapledoro from "../../test/fixtures/hexa-mapledoro.json";
+import letheCapture from "../../test/fixtures/maplescouter-lethe.json";
+import { CORE_OF, coreSteps } from "../gameFigures/hexa";
+import scouterOrders from "../gameFigures/hexa-scouter-orders.json";
 import { CORE_KEYS, type CurveKey, type HexaModel, hexaDamage, stairs } from "./hexaDamage";
 
 type Job = { class: string; cores: Record<string, number> };
@@ -10,10 +12,11 @@ const model = (j: Job): HexaModel => ({ cores: j.cores, curves: figures.curves a
 const at = (levels: number[]) => Object.fromEntries(CORE_KEYS.map((c, i) => [c, levels[i]!])) as Record<(typeof CORE_KEYS)[number], number>;
 
 describe("hexaDamage: a job's damage at given core levels, as a share of every core at 30", () => {
-  it("gives mapledoro's engine's figures for every job (each core alone at seven levels, and 18 mixes of levels), but where a core is worth more at 0 than at 30", () => {
+  it("gives mapledoro's engine's figures for every job (each core alone at seven levels, and 18 mixes of levels), but where a core is worth more at 0 than at 30, or the levels are MapleScouter's own (Lethe)", () => {
     const cases = mapledoro.classes as Record<string, { levels: number[]; damage: number }[]>;
     let checked = 0;
-    for (const j of jobs) {
+    // (a class whose levels come from MapleScouter's order: mapledoro's figures for it were its own estimates)
+    for (const j of jobs.filter((x) => !Object.hasOwn(scouterOrders.classes, x.class))) {
       const m = model(j);
       // (Lynn's and Mo Xuan's 3rd Common node: worth nothing here, more at 0 there)
       const above = CORE_KEYS.flatMap((c, i) => (j.cores[`${c}=0`]! > 1 ? [i] : []));
@@ -49,6 +52,21 @@ describe("hexaDamage: a job's damage at given core levels, as a share of every c
   it("a core measured at a level gives its own figure there, the rest at 30 (Ren's Lotus Flower at 12)", () => {
     const ren = jobs.find((j) => j.class === "ren")!;
     expect(hexaDamage(model(ren), at(CORE_KEYS.map((c) => (c === "generalCore3" ? 12 : 30))))).toBeCloseTo(ren.cores["generalCore3=12"]!, 12);
+  });
+
+  it("Lethe (v4.3.0): at the start and after each of MapleScouter's 186 steps (the owner's capture), MapleScouter's own share of every core at 30", () => {
+    const m = model(jobs.find((j) => j.class === "lethe")!);
+    const levels: Record<string, number> = Object.fromEntries(CORE_KEYS.map((c) => [c, c === "skillCore1" ? 1 : 0]));
+    expect(hexaDamage(m, at(CORE_KEYS.map((c) => levels[c]!)))).toBeCloseTo(letheCapture.start, 9);
+    // (HEXA Stat III's step changes no core: its gain is HEXA Stat's, added on from there)
+    let [stat, before] = [0, letheCapture.start];
+    for (const s of letheCapture.steps) {
+      if ("node" in s) {
+        levels[CORE_OF[s.node as keyof typeof CORE_OF]] = s.to;
+        expect(hexaDamage(m, at(CORE_KEYS.map((c) => levels[c]!))) + stat).toBeCloseTo(s.share, 9);
+      } else stat += s.share - before;
+      before = s.share;
+    }
   });
 });
 

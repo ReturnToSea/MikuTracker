@@ -1,6 +1,6 @@
 // Every GMS class, by the name Nexon's rankings give it (the names the gear, HEXA and Stats figures use):
-// the classes a character added by hand can be. The gear list's (a server test keeps them the same): the 53
-// the Stats and HEXA figures know, and Lethe (GMS v.272, 2026-11-11), which their source doesn't have yet.
+// the classes a character added by hand can be. The gear list's, the Stats figures' and the HEXA figures'
+// (a server test keeps them the same), Lethe (GMS v.272, 2026-11-11) included.
 export const CLASSES = [
   "Adele", "Angelic Buster", "Aran", "Arch Mage Fire/Poison", "Arch Mage Ice/Lightning", "Ark", "Battle Mage", "Bishop", "Blaster",
   "Blaze Wizard", "Bow Master", "Buccaneer", "Cadena", "Cannoneer", "Corsair", "Dark Knight", "Dawn Warrior", "Demon Avenger",

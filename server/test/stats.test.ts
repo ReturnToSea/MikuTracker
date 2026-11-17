@@ -74,6 +74,23 @@ describe("GET /api/stats/:id", () => {
     expect(out.score380).toBeGreaterThan(10_000);
   });
 
+  it("Lethe (v.272, in the figures since v4.3.0), on Challenger: worked out like every job, a magician's rows, Heroic, her own figures in the score", async () => {
+    const id = await character("Lethe", 260, SOLE_OWNER, 900);
+    await save(id, SCREENSHOT);
+    const b = await get(`/api/stats/${id}`);
+    expect([b.known, b.shine, b.level, b.heroic]).toEqual([true, false, 260, true]);
+    expect(b.labels).toEqual({ main: "INT", sub: "LUK", third: null, atk: "Magic ATT" });
+    expect(b.hexa).toHaveLength(12);
+    // her own figures (no node of hers gives flat ATT): the same sheet scores differently from a Mercedes's
+    const job = hexaJob("Lethe")!;
+    expect(job.att).toBeNull();
+    const levels = HEXA_DEFAULTS.current;
+    const cores = Object.fromEntries(Object.entries(CORE_OF).map(([n, c]) => [c, levels[n as keyof typeof levels]])) as Record<CoreKey, number>;
+    const expected = statsScore(statsJob("Lethe")!, SCREENSHOT, { level: 260, heroic: true, cores: hexaDamage(job.model, cores), coreAtt: 0, sacred: false }, statLinks(), cooldownRefs());
+    expect([b.out.score380, b.out.score300]).toEqual([expected.score380, expected.score300]);
+    expect(b.out.score380).toBeGreaterThan(0);
+  });
+
   it("HEXA levels typed on the HEXA page raise the score; the level from the rankings counts", async () => {
     const id = await character();
     await save(id, SCREENSHOT);

@@ -1,7 +1,6 @@
 import { type EPIC_DUNGEONS, HEXA_LEVEL_MAX, HEXA_RANK_MAX, type HexaNode, type HexaStat } from "@miku/shared";
 import type { CoreKey, CurveKey, HexaModel } from "../calc/hexaDamage";
 import figures from "./hexa-jobs.json";
-import { FIXED_HEXA, type FixedHexaJob } from "./hexaFixed";
 
 // The HEXA Matrix (6th job), GMS, read 2026-10-29 (research in tempdata/hexa/RESEARCH.md).
 // - Which nodes: Nexon's 6th Job page (two Skill Nodes, Origin and Ascent; four Mastery; four Boost;
@@ -13,7 +12,8 @@ import { FIXED_HEXA, type FixedHexaJob } from "./hexaFixed";
 // - HEXA Stat: unlock costs (Nexon, the wiki); the upgrade cost and the primary stat's chance by its
 //   level (the wiki; two guides agree it rises from 10 to 20 at level 3; Nexon's page, from launch,
 //   says a flat 10).
-// - Fragments a week (Heroic): Erda's Request 90 (once per Maple ID), the Epic Dungeons' base rewards.
+// - Fragments a week (Heroic): Erda's Request 90 (once per Maple ID), the Epic Dungeons' base rewards
+//   (GMS v.272's patch notes, 2026-11-10: High Mountain 50, Angler Company 65, Nightmare Paradise 80; 40 / 55 / 70 before).
 
 export interface CostTable {
   erda: readonly number[]; // erda[L − 1]: from level L − 1 to L
@@ -100,8 +100,7 @@ const stepsTable = (): Record<string, Partial<Record<CoreKey, number[]>>> => ({
 
 export interface HexaJob {
   nodes: readonly HexaNodeFigure[];
-  model: HexaModel | null; // its damage per core level (calc/hexaDamage.ts); null: no figures yet (a fixed order instead)
-  fixed: { order: readonly HexaStep[]; source: string } | null; // a job without figures' order, as written (hexaFixed.ts)
+  model: HexaModel; // its damage per core level (calc/hexaDamage.ts)
   // the node that also gives flat ATT (v3.2.0), with MapleScouter's measured ATT by level (calc/hexa.ts
   // coreAttAt), or null: none does
   att: { node: HexaNode; points: (readonly [number, number])[] } | null;
@@ -111,16 +110,12 @@ export function attOf(coreAtt: JobFigures["coreAtt"]): HexaJob["att"] {
   const node = coreAtt && (Object.keys(CORE_OF) as (keyof typeof CORE_OF)[]).find((k) => CORE_OF[k] === coreAtt.core);
   return node ? { node, points: coreAtt.points.map(([L, a]) => [L!, a!] as const) } : null;
 }
-// A job with damage figures (not a fixed order): what the order and the Stats page work from.
-export type FiguredHexaJob = HexaJob & { model: HexaModel };
-export const hasFigures = (job: HexaJob): job is FiguredHexaJob => job.model !== null;
-
-// A job's nodes, from its names and its pictures' name.
-function nodesOf(names: JobFigures["names"], icons: string | null): HexaNodeFigure[] {
-  const icon = (key: string) => (key === "janus" ? "General_1_0" : key === "hecate" ? "General_2" : icons ? `${icons}_${ICON_NUMBER[key]}` : null);
+function job(f: JobFigures): HexaJob {
+  const icon = (key: string) => (key === "janus" ? "General_1_0" : key === "hecate" ? "General_2" : f.icons ? `${f.icons}_${ICON_NUMBER[key]}` : null);
   const n = (key: HexaNode, name: string, group: HexaGroup, costs: CostTable, free = 0) => node(key, name, group, costs, icon(key), free);
-  const { origin, ascent, mastery, boost, common3 } = names;
-  return [
+  const { origin, ascent, mastery, boost, common3 } = f.names;
+  return {
+    nodes: [
       n("origin", origin, "skill", SKILL, 1),
       n("ascent", ascent, "skill", SKILL),
       ...mastery.map((name, i) => n(`mastery${i + 1}` as HexaNode, name, "mastery", MASTERY)),
@@ -128,28 +123,10 @@ function nodesOf(names: JobFigures["names"], icons: string | null): HexaNodeFigu
       n("janus", "Sol Janus", "common", COMMON),
       n("hecate", "Sol Hecate", "common", COMMON),
       n("common3", common3, "common", COMMON_BOOST),
-  ];
-}
-function job(f: JobFigures): HexaJob {
-  return {
-    nodes: nodesOf(f.names, f.icons),
+    ],
     model: { cores: f.cores, curves: figures.curves as Record<CurveKey, number[]>, steps: coreSteps(f.class) },
-    fixed: null,
     att: attOf(f.coreAtt),
   };
-}
-// A job with a fixed order instead of figures (hexaFixed.ts): each step from the level before (Origin from 1);
-// no damage figures, so every step's final damage is 0 (the page doesn't show it).
-function fixedJob(f: FixedHexaJob): HexaJob {
-  const nodes = nodesOf(f.names, f.icons);
-  const at = Object.fromEntries(nodes.map((x) => [x.key, x.free])) as Record<HexaNode, number>;
-  const order = f.order.map(([key, to]): HexaStep => {
-    if (key === "stat") return { stat: to as 1 | 2 | 3, to: HEXA_RANK_MAX };
-    const step = { node: key, from: at[key], to, fd: 0 };
-    at[key] = to;
-    return step;
-  });
-  return { nodes, model: null, fixed: { order, source: f.source }, att: null };
 }
 
 // A step of a job's order: a node from level `from` to `to`, and the final damage it adds there (%; the
@@ -161,11 +138,10 @@ export type HexaStep = { node: HexaNode; from: number; to: number; fd: number } 
 const allJobs = () => figures.jobs as Record<string, JobFigures>;
 const built = new Map<string, HexaJob>();
 export function hexaJob(name: string): HexaJob | null {
-  const figured = Object.hasOwn(allJobs(), name);
-  if (figured ? allJobs()[name]!.shine : !Object.hasOwn(FIXED_HEXA, name)) return null;
+  if (!Object.hasOwn(allJobs(), name) || allJobs()[name]!.shine) return null;
   const known = built.get(name);
   if (known) return known;
-  const made = figured ? job(allJobs()[name]!) : fixedJob(FIXED_HEXA[name]!);
+  const made = job(allJobs()[name]!);
   built.set(name, made);
   return made;
 }
@@ -208,4 +184,4 @@ export const STAT_MAIN_NOT_WORKED_OUT: readonly string[] = ["Xenon", "Demon Aven
 
 // Fragments a week from each source (Heroic worlds): Erda's Request, and each Epic Dungeon's base reward.
 export const ERDA_REQUEST_FRAGS = 90;
-export const DUNGEON_FRAGS: Record<(typeof EPIC_DUNGEONS)[number], number> = { none: 0, highMountain: 40, anglerCompany: 55, nightmareParadise: 70 };
+export const DUNGEON_FRAGS: Record<(typeof EPIC_DUNGEONS)[number], number> = { none: 0, highMountain: 50, anglerCompany: 65, nightmareParadise: 80 };

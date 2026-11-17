@@ -119,13 +119,14 @@ export type CustomTaskInput = z.infer<typeof customTaskInput>;
 export const symbolsQuery = z.strictObject({ world: worldId });
 
 // One symbol of a character, as typed: its level (0: not unlocked), symbols held toward the next
-// level, the days a week its daily is done, and its weekly clears (Arcane only). Whether the level
+// level, the days a week its daily is done, and whether its weekly quest is done (0 or 1, Arcane only:
+// once a week since GMS v.272). Whether the level
 // and symbols held fit that symbol is checked by the server.
 export const symbolInput = z.strictObject({
   level: z.number().int().min(0).max(20),
   held: z.number().int().min(0).max(100_000),
   days: z.number().int().min(0).max(7),
-  weekly: z.number().int().min(0).max(3),
+  weekly: z.number().int().min(0).max(1),
 });
 export type SymbolInput = z.infer<typeof symbolInput>;
 
