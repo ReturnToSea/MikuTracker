@@ -1,6 +1,6 @@
 import type { StatsInput } from "@miku/shared";
 import {
-  ARCANE_CAP, ARCANE_GAP, ARCANE_GAP_FLOOR, ARCANE_TOP, ARCANE_TOP_BLACK_MAGE, ASCENT, type BossFigure, CHAMPION_BLACK_MAGE_VS_HARD, GENESIS_PASS, LEVEL_GAP, LEVEL_TOP, PARTY_TAGS, SACRED_GAP,
+  ARCANE_CAP, ARCANE_GAP, ARCANE_GAP_FLOOR, ARCANE_TOP, ARCANE_TOP_BLACK_MAGE, ASCENT, type BossFigure, GENESIS_PASS, LEVEL_GAP, LEVEL_TOP, PARTY_TAGS, SACRED_GAP,
   KALING_ASCENT_WEIGHT, MAYRIN_MIX, SACRED_GAP_FLOOR, SACRED_TOP, SOLO_MIN, SOLO_TAGS,
 } from "../gameFigures/bossClear";
 import type { CooldownRefs, StatsJob } from "../gameFigures/stats";
@@ -11,7 +11,8 @@ import { curveDamage, splineAt, splineReach, type StatsContext, statsScore } fro
 //
 // A boss sees the character's damage (the score's, before the curve turns it into the score) cut by the gaps:
 // level, Arcane Force and Sacred Force, each against its best (the cuts are measured there). That damage
-// over the damage the boss's cut stands for, × the boss's difficulty rate, then Ascent's timer bonus, is the
+// over the damage the boss's cut stands for, × the boss's difficulty rate (Champion Black Mage's: Hard's × 0.75 in
+// the figures since v.272, MapleScouter's own), then Ascent's timer bonus, is the
 // clear rate; 1 = 100%: a solo clear at the cut. Its tag by the rate.
 
 type Spline = { x: number[]; y: number[]; m: number[] };
@@ -52,11 +53,6 @@ export const levelGap = (level: number, boss: number): number => LEVEL_GAP[Strin
 export const arcaneGap = (arcane: number, boss: number): number => ((pick((arcane / boss) * 100, ARCANE_GAP) as number | undefined) ?? ARCANE_GAP_FLOOR) / 100;
 export const sacredGap = (sacred: number, boss: number): number => ((pick(sacred - boss, SACRED_GAP) as number | undefined) ?? SACRED_GAP_FLOOR) / 100;
 
-// The difficulty rate: Champion Black Mage's from Hard's (MapleScouter's own is ×1.25: a sign mistake).
-export function easyRate(b: BossFigure, all: readonly BossFigure[]): number {
-  if (b.name !== "blackMage" || b.difficulty !== "Champion") return b.easyRate;
-  return all.find((x) => x.name === "blackMage" && x.difficulty === "Hard")!.easyRate * CHAMPION_BLACK_MAGE_VS_HARD;
-}
 // Ascent's 3 uses are timed for a full fight: a boss that dies sooner gets more of them per HP.
 export function ascentBonus(b: BossFigure, preTimer: number, ascent: number): number {
   const divisor = b.name === "lucid" && b.difficulty === "Hard" ? ASCENT.hardLucid : Math.min(ASCENT.uses, Math.ceil(ASCENT.minutes / preTimer / ASCENT.perUse));
@@ -83,18 +79,18 @@ function seen(b: BossFigure, level: number, arcane: number, sacred: number, x: C
   return { gaps, kept, damage: raw * kept };
 }
 // The clear rate for the damage a boss sees, and Ascent's bonus in it.
-function rateAt(b: BossFigure, all: readonly BossFigure[], damage: number, cutDamage: number, ascentShare: number): { rate: number; ascent: number } {
+function rateAt(b: BossFigure, damage: number, cutDamage: number, ascentShare: number): { rate: number; ascent: number } {
   // (mapledoro's guard for a cut below 0 isn't needed: every job's curve gives every cut a positive damage, a test checks)
-  const preTimer = (damage / cutDamage) * easyRate(b, all);
+  const preTimer = (damage / cutDamage) * b.easyRate;
   const ascent = ascentBonus(b, preTimer, ascentShare);
   return { rate: preTimer * ascent || 0, ascent };
 }
 const splineOf = (b: BossFigure, x: ClearInputs) => (b.guard === 300 ? x.spline300 : x.spline380);
 const cutOf = (b: BossFigure, x: ClearInputs) => splineAt(splineOf(b, x), (b.cut ?? b.partyCut)!);
 
-export function bossClear(b: BossFigure, all: readonly BossFigure[], level: number, arcane: number, sacred: number, x: ClearInputs): BossClear {
+export function bossClear(b: BossFigure, level: number, arcane: number, sacred: number, x: ClearInputs): BossClear {
   const { gaps, kept, damage } = seen(b, level, arcane, sacred, x);
-  const { rate, ascent } = rateAt(b, all, damage, cutOf(b, x), x.ascent);
+  const { rate, ascent } = rateAt(b, damage, cutOf(b, x), x.ascent);
   const partyOnly = b.cut === null;
   let shown = rate;
   let tag = String(pick(rate, SOLO_TAGS[b.partyLimit] ?? SOLO_TAGS[6]!) ?? "Impossible");
@@ -112,7 +108,7 @@ export function bossClear(b: BossFigure, all: readonly BossFigure[], level: numb
 // The score that clears this boss exactly (100%; a party-only boss's on the solo scale), as this boss would
 // see it: the damage that takes, found by halving over a million times less to a million times more than its
 // cut's (only the clear rate in the loop; the score once at the end).
-export function scoreNeeded(b: BossFigure, all: readonly BossFigure[], x: ClearInputs): number {
+export function scoreNeeded(b: BossFigure, x: ClearInputs): number {
   const cut = cutOf(b, x);
   const solo = b.cut === null ? soloDivisor(b.partyLimit) : 1;
   let [lo, hi] = [Math.log(cut * 1e-6), Math.log(cut * 1e6)];
@@ -120,11 +116,41 @@ export function scoreNeeded(b: BossFigure, all: readonly BossFigure[], x: ClearI
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2;
     // Stryker disable next-line EqualityOperator: only a mid at exactly 100% differs, and both ends then close on that same point
-    if (rateAt(b, all, Math.exp(mid), cut, x.ascent).rate / solo < 1) lo = mid;
+    if (rateAt(b, Math.exp(mid), cut, x.ascent).rate / solo < 1) lo = mid;
     else hi = mid;
   }
   const d = Math.exp(hi);
-  return Math.round(splineReach(splineOf(b, x), d * rateAt(b, all, d, cut, x.ascent).ascent));
+  return Math.round(splineReach(splineOf(b, x), d * rateAt(b, d, cut, x.ascent).ascent));
+}
+
+// MapleScouter's own answer for a sheet (v4.4.0), from the owner's captures, as the boss figures' rebuild reads
+// it (scripts/boss-clear-data.mjs): its damage figures and its clear rate for each boss (by "<id> <difficulty>"),
+// for a sheet with no Ascent core (its timer bonus then can't blur the rates), no Sacred symbol bonus and no
+// Genesis Pass buff.
+export interface ScouterSheet {
+  job: string;
+  level: number;
+  arcane: number;
+  sacred: number;
+  d380: number; // calculatedHexaDamage_380
+  d300: number; // calculatedHexaDamage_300
+  kaling: number; // calculatedHexaDamage_kaling
+  normal380: number; // calculatedDamage_380 (every HEXA core at 30)
+  rates: Readonly<Record<string, number>>;
+}
+// What a boss's difficulty rate is multiplied by for our rate on a sheet to be MapleScouter's (the rate grows
+// with it: there's no Ascent bonus). A party-only boss MapleScouter counts on the solo scale (its rate the
+// party rate over the solo divisor: Extreme Kalos and Extreme First Adversary since v.272) is corrected on that
+// scale: whichever of the two needs the smaller change. null: MapleScouter has no rate for it.
+export function scouterCorrection(b: BossFigure, s: ScouterSheet, spline300: Spline, spline380: Spline): number | null {
+  const theirs = s.rates[`${b.name} ${b.difficulty}`];
+  if (theirs === undefined) return null;
+  const x: ClearInputs = { d380: s.d380, d300: s.d300, kaling: s.kaling, mayrin: MAYRIN_MIX.hexa * s.d380 + MAYRIN_MIX.normal * s.normal380, sacredBoost: 1, maxed: new Set(), genesisPass: null, ascent: 0, spline300, spline380 };
+  const party = theirs / bossClear(b, s.level, s.arcane, s.sacred, x).rate;
+  if (b.cut !== null) return party;
+  const solo = party * soloDivisor(b.partyLimit);
+  // Stryker disable next-line EqualityOperator: only an exact tie differs, and then both are as small a change
+  return Math.abs(Math.log(solo)) < Math.abs(Math.log(party)) ? solo : party;
 }
 
 // What the boss clears need from a sheet: the damage the scores stand for without any

@@ -451,7 +451,7 @@ export const statsInput = z.strictObject({
     critDmg: amount(10_000),
     cdSec: amount(100),
     cdPct: amount(100),
-    cdSkip: amount(100),
+    cdSkip: amount(27.5), // Cooldown Not Applied (the game's name; MapleScouter's most: 27.5)
     buffDuration: amount(10_000),
     statusDmg: amount(10_000),
     elemResist: amount(100),

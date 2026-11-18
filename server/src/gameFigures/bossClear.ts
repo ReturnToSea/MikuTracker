@@ -30,35 +30,20 @@ export interface Phase {
   hp: number[]; // each HP bar, or each monster fought at once
 }
 
-export const BOSS_FIGURES = { generated: figures.generated };
+// The GMS patch the figures are for, and the day we rebuilt them (shown under the boss clears: the owner, v4.4.0).
+export const BOSS_FIGURES = { patch: figures.patch, generated: figures.generated };
 export const bossFigures = (): readonly BossFigure[] => figures.bosses as BossFigure[];
 
-// Challenger World's own boss (v4.2.0): Mayrin, Season 4's event boss, in the list for characters on
-// Challenger only. Written by hand: MapleScouter lists it only in its Challenger mode, its cut on its server,
-// so mapledoro (and the figures script) don't have it. From the owner's captures of MapleScouter (2026-11-10,
-// tempdata/maplescouterbossesChalkr.com.har): level 270 / 280 (also where it lets you in), 380% defense, no
-// Force, solo (its HP per phase is in boss-clear.json with the others', from the Boss Info capture). Its cut: worked back from MapleScouter's clear
-// rates for the owner's Lv. 278 Ren (507% Normal, 87% Hard) with the usual difficulty rate (0.969), so close
-// for that Ren, less sure for other classes (the owner: good enough, not marked). Its damage: 95% the HEXA
-// figure's, 5% MapleScouter's "Normal" one (mapledoro's reading of MapleScouter's page code). Its place: where
-// MapleScouter's list puts it (Hard after Extreme Lotus, Normal after Hard Seren).
-export const CHALLENGER_BOSSES: readonly { after: string; boss: BossFigure }[] = [
-  { after: "lotus Extreme", boss: { name: "maerin", label: "Mayrin", difficulty: "Hard", level: 280, guard: 380, arcane: null, sacred: null, partyLimit: 1, cut: 43_300, partyCut: null, easyRate: 0.969, entryLevel: 280 } },
-  { after: "seren Hard", boss: { name: "maerin", label: "Mayrin", difficulty: "Normal", level: 270, guard: 380, arcane: null, sacred: null, partyLimit: 1, cut: 18_600, partyCut: null, easyRate: 0.969, entryLevel: 270 } },
-];
-// Mayrin's damage: this much of the 380% (HEXA) figure and of the "Normal" one.
+// Challenger World's own boss (v4.2.0): Mayrin, Season 4's event boss, shown for characters on Challenger only
+// (the owner, though MapleScouter's v.272 list shows it to everyone), in MapleScouter's place for it. Its
+// figures are mapledoro's like the others' (v4.4.0; they were worked back by hand from one class before).
+// Its damage: 95% the HEXA figure's, 5% MapleScouter's "Normal" one (mapledoro's reading of MapleScouter's
+// page code).
+const CHALLENGER_ONLY: ReadonlySet<string> = new Set(["maerin"]);
 export const MAYRIN_MIX = { hexa: 0.95, normal: 0.05 } as const;
-// The bosses a character can be shown: every world's, and on Challenger its own, each in its place (a
-// rebuilt list without the boss it goes after is a mistake to fix, not one to hide: it throws).
-export function bossesFor(challenger: boolean, listed: readonly BossFigure[] = bossFigures()): readonly BossFigure[] {
-  const all = [...listed];
-  if (!challenger) return all;
-  for (const { after, boss } of CHALLENGER_BOSSES) {
-    const at = all.findIndex((b) => `${b.name} ${b.difficulty}` === after);
-    if (at === -1) throw new Error(`${boss.label} ${boss.difficulty} goes after ${after}, which the boss figures no longer have`);
-    all.splice(at + 1, 0, boss);
-  }
-  return all;
+// The bosses a character can be shown: every world's, and on Challenger its own too.
+export function bossesFor(challenger: boolean): readonly BossFigure[] {
+  return challenger ? bossFigures() : bossFigures().filter((b) => !CHALLENGER_ONLY.has(b.name));
 }
 // A Champion difficulty has the HP of the one it's built on (the owner: it's harder through damage limits
 // and its timer, not HP).
@@ -114,9 +99,6 @@ export const PARTY_TAGS: Readonly<Record<number, readonly (readonly [number, str
 export const ASCENT = { minutes: 20, perUse: 5.667, uses: 3, hardLucid: 0.4 } as const;
 // Kaling's figure moves with the Ascent core (mapledoro's fit, within 0.031% of MapleScouter's answers).
 export const KALING_ASCENT_WEIGHT = 1.944;
-// Champion Black Mage: Hard's rate × 0.75 (mapledoro's correction, the owner: MapleScouter applies its −25%
-// as a bonus).
-export const CHAMPION_BLACK_MAGE_VS_HARD = 0.75;
 // Each Sacred symbol's +20% counts only against its own region's boss once maxed (mapledoro's, the owner);
 // the Symbols page's ids.
 export const BOSS_SYMBOL: Readonly<Record<string, string>> = { seren: "cernium", kalos: "hotel-arcus", adversary: "odium", kaling: "shangri-la", maleficStar: "arteria", limbo: "carcion", bardrix: "tallahart", jupiter: "geardock" };

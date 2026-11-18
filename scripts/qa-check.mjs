@@ -1149,6 +1149,12 @@ try {
   const statsRest = page.getByRole("region", { name: "HEXA, Artifact, Inner Ability and Oz Rings" });
   // (in MapleScouter's order from v4.1.0: Mastery 1–4, then Origin)
   check("Stats", "HEXA levels shown from the HEXA page, not typed here (Origin 1)", (await statsRest.locator(".stp-tile").nth(4).innerText()).includes("1") && (await statsRest.getByRole("textbox").count()) === 4);
+  // v4.4.0: Cooldown Not Applied (the game's name), at most 27.5 (MapleScouter's), saying so when lowered
+  await typeStat("Cooldown Not Applied", 30);
+  check("Stats", "Cooldown Not Applied typed past 27.5: kept to 27.5, with a note under the box", (await statsWin.getByRole("textbox", { name: "Cooldown Not Applied" }).inputValue()) === "27.5" && /At most 27\.5/.test(await statsWin.getByRole("status").innerText()));
+  const beamId = (await api("GET", "/characters?world=45")).json.characters.find((c) => c.name === "MikuBeam").id;
+  const beamInput = (await api("GET", `/stats/${beamId}`)).json.input;
+  check("API", "Cooldown Not Applied saved as 27.5; over it: 400", beamInput.stats.cdSkip === 27.5 && (await api("PUT", `/stats/${beamId}`, { ...beamInput, stats: { ...beamInput.stats, cdSkip: 27.6 } })).status === 400, String(beamInput.stats.cdSkip));
   await shot("23d-stats");
   const statsId = (await api("GET", "/characters?world=45")).json.characters.find((c) => c.name === "MikuBeam").id;
   const sb = (await api("GET", `/stats/${statsId}`)).json;
@@ -1167,6 +1173,8 @@ try {
   check("Boss clear", "every boss MapleScouter covers: 55 tiles with Show all, in its order (Hard Jupiter first)", (await bossBox.locator(".bc-tile").count()) === 55 && (await bossBox.locator(".bc-tile").first().getAttribute("aria-label")) === "Hard Jupiter" && sb.bosses.length === 55);
   // MikuBeam (the fake Nexon) is below Hard Jupiter's Lv. 295: its tile has "Lvl"
   check("Boss clear", "below a boss's level: the Lvl badge, saying the level for full damage", (await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).count()) === 1 && /For full damage: Level \d+ \/ 300/.test((await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).getAttribute("title")) ?? ""));
+  check("Boss clear", "under the tiles, which figures they use: GMS v.272 and the day they were rebuilt (the API's)", (await bossBox.locator(".bc-asof").innerText()) === `Boss figures: GMS v.272, as of ${sb.bossFigures.date}` && sb.bossFigures.patch === "v.272", await bossBox.locator(".bc-asof").innerText());
+  check("Boss clear", "not on Challenger: no Mayrin (Challenger's own)", !sb.bosses.some((x) => x.boss === "maerin") && (await bossBox.locator(".bc-tile", { hasText: "Mayrin" }).count()) === 0);
   const shownApi = sb.bosses.filter((x) => (x.partyOnly ? x.rate / x.partyLimit <= 10 && x.rate >= 0.85 / x.partyLimit : x.rate <= 10 && x.rate >= 0.15)).length;
   await allBosses.uncheck();
   await settle(300);
@@ -1333,7 +1341,8 @@ try {
   await settle(400);
   await page.locator(".chart-view button", { hasText: "Level" }).click();
   await page.locator('section[aria-label="EXP"] [aria-label="Days shown"] button', { hasText: "90 days" }).click();
-  await settle(300);
+  // (long enough for the layout to settle: at 300 ms the dot was once measured 6.7 px off, v4.4.0)
+  await settle(1000);
   check("Layout", "the Level view at 90 days, 900 px wide: no sideways scrolling", (await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
   // each point sits over its own day's column: today's dot over the last column's middle
   const lined = await page.evaluate(() => {

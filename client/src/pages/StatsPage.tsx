@@ -12,46 +12,59 @@ type Save = (f: (input: StatsInput) => StatsInput) => void;
 const Saved = createContext<StatsInput | null>(null);
 
 // A number typed in a box: saved on Enter or leaving the box (kept within its range; whole numbers only where
-// the game has them); anything else goes back. While testing, outlined when it differs from what's saved
-// (`was`), which hovering shows.
-function NumBox({ value, label, max, whole = false, min = 0, was, onCommit }: { value: number; label: string; max: number; whole?: boolean; min?: number; was?: number; onCommit: (n: number) => void }) {
+// the game has them); anything else goes back. A box with room for it (`note`) says so under it when it was
+// lowered, while it still shows that value and until it's typed in again (v4.4.0). While testing, outlined when
+// it differs from what's saved (`was`), which hovering shows.
+function NumBox({ value, label, max, whole = false, min = 0, was, note = false, onCommit }: { value: number; label: string; max: number; whole?: boolean; min?: number; was?: number; note?: boolean; onCommit: (n: number) => void }) {
   const [text, setText] = useState(String(value));
+  const [lowered, setLowered] = useState<number | null>(null); // (the value it was lowered to)
   useEffect(() => setText(String(value)), [value]);
   const commit = () => {
     const n = Number(text);
     const ok = text.trim() !== "" && Number.isFinite(n);
     const kept = Math.min(max, Math.max(min, whole ? Math.round(n) : n));
     if (ok && kept !== value) onCommit(kept);
+    setLowered(ok && n > max ? kept : null);
     setText(String(ok ? kept : value));
   };
   const changed = was !== undefined && was !== value;
   return (
-    <input
-      className={`text-input stp-num${changed ? " stp-changed" : ""}`}
-      inputMode="decimal"
-      aria-label={label}
-      title={changed ? `Saved: ${was}` : undefined}
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-    />
+    <>
+      <input
+        className={`text-input stp-num${changed ? " stp-changed" : ""}`}
+        inputMode="decimal"
+        aria-label={label}
+        title={changed ? `Saved: ${was}` : undefined}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          setLowered(null);
+        }}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+      />
+      {note && lowered === value && (
+        <span className="tiny muted stp-cap" role="status">
+          At most {max.toLocaleString("en-US")}
+        </span>
+      )}
+    </>
   );
 }
 // A picture (its first letter when it isn't downloaded).
 const Pic = ({ src, name }: { src: string | null | undefined; name: string }) => (src ? <img className="stp-pic" src={src} alt="" /> : <span className="stp-pic none">{name[0]}</span>);
 
 // A box of the sheet at a path, against what's saved while testing.
-function SheetBox({ b, path, label, max, whole, onSave }: { b: StatsBoard; path: string; label: string; max: number; whole?: boolean; onSave: Save }) {
+function SheetBox({ b, path, label, max, whole, note, onSave }: { b: StatsBoard; path: string; label: string; max: number; whole?: boolean; note?: boolean; onSave: Save }) {
   const saved = useContext(Saved);
-  return <NumBox value={valueAt(b.input, path) as number} label={label} max={max} whole={whole} was={saved ? (valueAt(saved, path) as number) : undefined} onCommit={(v) => onSave((i) => withValue(i, path, v))} />;
+  return <NumBox value={valueAt(b.input, path) as number} label={label} max={max} whole={whole} note={note} was={saved ? (valueAt(saved, path) as number) : undefined} onCommit={(v) => onSave((i) => withValue(i, path, v))} />;
 }
 // A box that's typed: its name and the number.
 function Field({ b, label, path, max, whole, onSave }: { b: StatsBoard; label: string; path: string; max: number; whole?: boolean; onSave: Save }) {
   return (
     <div className="stp-field">
       <span>{label}</span>
-      <SheetBox b={b} path={path} label={label} max={max} whole={whole} onSave={onSave} />
+      <SheetBox b={b} path={path} label={label} max={max} whole={whole} note onSave={onSave} />
     </div>
   );
 }
@@ -195,7 +208,7 @@ function StatsWindow({ b, onSave, test }: { b: StatsBoard; onSave: Save; test: {
           </span>
         </div>
         {f("Buff Duration", "buffDuration", 10_000)}
-        {f("Cooldown Skip", "cdSkip", 100)}
+        {f("Cooldown Not Applied", "cdSkip", 27.5)}
         {f("Ignore Elemental Resistance", "elemResist", 100)}
         {f("Additional Status Damage", "statusDmg", 10_000)}
         {f("Summon Duration", "summon", 10_000)}
@@ -491,6 +504,9 @@ function BossClear({ b }: { b: StatsBoard }) {
             ))}
           </div>
         )}
+        <p className="tiny muted bc-asof">
+          Boss figures: GMS {b.bossFigures.patch}, as of {b.bossFigures.date}
+        </p>
       </section>
       {shown && <BossPanel x={shown} />}
     </div>

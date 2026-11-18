@@ -43,6 +43,7 @@ const BOARD: StatsBoard = {
     { key: "champion_seren", boss: "seren", name: "Seren", difficulty: "Champion", partyLimit: 1, partyOnly: false, rate: 0.957, shown: 0.957, tag: "Solo Min", bossStat: 44_063, need: 44_900, icon: null, loss: 0, gaps: [{ kind: "level", you: 290, boss: 285, full: 290, loss: 0 }], phases: null, cannotEnter: false },
     { key: "normal_lotus", boss: "lotus", name: "Lotus", difficulty: "Normal", partyLimit: 6, partyOnly: false, rate: 451.7, shown: 451.7, tag: "Easy", bossStat: 45_409, need: 900, icon: null, loss: 0, gaps: [{ kind: "level", you: 286, boss: 210, full: 215, loss: 0 }], phases: null, cannotEnter: false },
   ],
+  bossFigures: { patch: "v.272", date: "2026-11-17" },
   source: "MapleScouter's (read 2026-11-03)",
 };
 
@@ -113,6 +114,23 @@ describe("the Stats page", () => {
     await userEvent.clear(base);
     await userEvent.type(base, "abc{Enter}");
     expect((base as HTMLInputElement).value).not.toBe("abc");
+  });
+
+  it("Cooldown Not Applied (the game's name): at most 27.5; past it, kept to 27.5 with a note under the box until it's typed in again", async () => {
+    const s = show();
+    const w = await region("Character Stats");
+    const box = w.getByRole("textbox", { name: "Cooldown Not Applied" });
+    await userEvent.clear(box);
+    await userEvent.type(box, "30{Enter}");
+    await waitFor(() => expect(sent(s).at(-1)!.stats.cdSkip).toBe(27.5));
+    expect(w.getByRole("status").textContent).toContain("27.5");
+    await userEvent.type(box, "1");
+    expect(w.queryByRole("status")).toBeNull();
+    // within it: no note
+    await userEvent.clear(box);
+    await userEvent.type(box, "12.5{Enter}");
+    await waitFor(() => expect(sent(s).at(-1)!.stats.cdSkip).toBe(12.5));
+    expect(w.queryByRole("status")).toBeNull();
   });
 
   it("a magic job's ATT row is Magic ATT; a Demon job gets the Ruin Force Shield; Hero the one-handed weapon", async () => {
@@ -276,6 +294,13 @@ describe("the Stats page's views (v4.1.0)", () => {
     expect(seren.className).toContain("champion");
   });
 
+  it("under the boss clears: which figures they use (the GMS patch, and the day they were rebuilt)", async () => {
+    show();
+    await view("Boss clear");
+    const r = await region("Boss clear");
+    expect(r.getByText(/v\.272/).textContent).toContain("2026-11-17");
+  });
+
   it("the picked boss's details: the first one to start; its HP by phase (each HP bar), and the damage lost", async () => {
     show();
     await view("Boss clear");
@@ -369,6 +394,19 @@ describe("test mode (v4.1.0)", () => {
     expect(screen.queryByRole("status")).toBeNull();
     expect(shown(w, "Level")).toBe("Level286");
     expect(sent(s)).toEqual([]);
+  });
+
+  it("a box's 'At most' note goes with the value it was about: Reset to saved, and it's gone", async () => {
+    show(BOARD, { "POST /stats/1/try": (body: { input: StatsInput; level: number }) => ({ ...BOARD, input: body.input, level: body.level }) });
+    await userEvent.click((await region("Score")).getByRole("checkbox", { name: "Testing" }));
+    const w = await region("Character Stats");
+    const box = w.getByRole("textbox", { name: "Cooldown Not Applied" });
+    await userEvent.clear(box);
+    await userEvent.type(box, "30{Enter}");
+    await waitFor(() => expect(w.getByText(/At most 27\.5/)).toBeTruthy());
+    await userEvent.click(screen.getByRole("button", { name: "Reset to saved" }));
+    await waitFor(() => expect((w.getByRole("textbox", { name: "Cooldown Not Applied" }) as HTMLInputElement).value).toBe("0"));
+    expect(w.queryByText(/At most/)).toBeNull();
   });
 
   it("kept in this browser until unticked: back on the page, still testing what was typed", async () => {

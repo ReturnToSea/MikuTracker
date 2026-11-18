@@ -31,12 +31,13 @@ const STATS = {
   "linkskill/kadena": ["kadena"], "linkskill/illium": ["illium"], "linkskill/ark": ["ark"], "linkskill/kain": ["kain"], "linkskill/magician": ["magician"],
   "linkskill/thief": ["thief"], "linkskill/angel": ["angel"], "linkskill/kanna": ["kanna"], "linkskill/mukhyun": ["mukhyun"], "linkskill/hoyoung": ["hoyoung"],
   "seedring/restraint": ["ringRestraint"], "seedring/continuos": ["ringContinuous"], "seedring/weapon": ["ringWeapon"],
+  "images/opponent": ["genepass"], // the Genesis Pass's Power of the Adversary (v4.4.0)
 };
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const found = new Map();
 for (const file of files) {
   for (const e of JSON.parse(readFileSync(file, "utf8")).log.entries) {
-    const m = e.request.url.match(/^https:\/\/maplescouter\.com\/((?:doping_v2|linkskill|seedring|bossIcon)\/[\w-]+)\.png/);
+    const m = e.request.url.match(/^https:\/\/maplescouter\.com\/((?:doping_v2|linkskill|seedring|bossIcon|images)\/[\w-]+)\.png/);
     const c = e.response?.content;
     if (!m || !c?.text) continue;
     const body = c.encoding === "base64" ? Buffer.from(c.text, "base64") : Buffer.from(c.text, "latin1");

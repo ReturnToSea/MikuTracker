@@ -7,6 +7,7 @@ import { type CoreKey, hexaDamage } from "../src/calc/hexaDamage";
 import { statsScore } from "../src/calc/stats";
 import { db } from "../src/db";
 import { bossFigures } from "../src/gameFigures/bossClear";
+import bossClearFigures from "../src/gameFigures/boss-clear.json";
 import { CORE_OF, hexaJob } from "../src/gameFigures/hexa";
 import { SYMBOLS } from "../src/gameFigures/symbols";
 import { cooldownRefs, statLinks, statsJob } from "../src/gameFigures/stats";
@@ -197,6 +198,13 @@ describe("GET /api/stats/:id", () => {
     expect(input.liberation).toBe(true);
   });
 
+  it("a sheet saved before v4.4.0 with Cooldown Not Applied over 27.5: read with it at 27.5, the rest of the sheet kept", async () => {
+    const id = await character();
+    await db().statSheet.create({ data: { characterId: id, data: JSON.stringify({ ...SCREENSHOT, stats: { ...SCREENSHOT.stats, cdSkip: 40 } }) } });
+    const { input } = await get(`/api/stats/${id}`);
+    expect(input).toEqual({ ...SCREENSHOT, stats: { ...SCREENSHOT.stats, cdSkip: 27.5 } });
+  });
+
   it("what a job can't have doesn't count, whatever's saved: a Mercedes's Ruin Force Shield or one-handed weapon, a Kanna's ATT-only food", async () => {
     const mercedes = await character();
     await save(mercedes, SCREENSHOT);
@@ -282,17 +290,20 @@ describe("PUT /api/stats/:id", () => {
     expect(await db().statSheet.count()).toBe(0);
   });
 
-  it("refuses what the rules don't allow: a link past its level, IED over 100%, an Oz ring past 6, an unknown field", async () => {
+  it("refuses what the rules don't allow: a link past its level, IED over 100%, Cooldown Not Applied over 27.5%, an Oz ring past 6, an unknown field", async () => {
     const id = await character();
     const put = (body: object) => api().put(`/api/stats/${id}`).send(body);
     expect((await put({ ...STATS_DEFAULTS, links: { ...STATS_DEFAULTS.links, kain: 4 } })).status).toBe(400);
     await save(id, { ...STATS_DEFAULTS, links: { ...STATS_DEFAULTS.links, kain: 3, thief: 9, magician: 9 } });
     expect((await put({ ...STATS_DEFAULTS, stats: { ...STATS_DEFAULTS.stats, ied: 101 } })).status).toBe(400);
+    expect((await put({ ...STATS_DEFAULTS, stats: { ...STATS_DEFAULTS.stats, cdSkip: 27.6 } })).status).toBe(400);
+    await save(id, { ...STATS_DEFAULTS, links: { ...STATS_DEFAULTS.links, kain: 3, thief: 9, magician: 9 }, stats: { ...STATS_DEFAULTS.stats, cdSkip: 27.5 } });
     expect((await put({ ...STATS_DEFAULTS, rings: { restraint: 7, continuous: 0, weapon: 0 } })).status).toBe(400);
     expect((await put({ ...STATS_DEFAULTS, extra: 1 })).status).toBe(400);
     expect((await put({ ...STATS_DEFAULTS, buffs: { ...STATS_DEFAULTS.buffs, nope: true } })).status).toBe(400);
     expect((await put({ ...STATS_DEFAULTS, combatOrders: "maybe" })).status).toBe(400);
     expect((await get(`/api/stats/${id}`)).input.links.kain).toBe(3);
+    expect((await get(`/api/stats/${id}`)).input.stats.cdSkip).toBe(27.5);
   });
 });
 
@@ -301,11 +312,12 @@ type Boss = { key: string; boss: string; difficulty: string; rate: number; shown
 const bossOf = (b: { bosses: Boss[] }, difficulty: string, boss: string) => b.bosses.find((x) => x.difficulty === difficulty && x.boss === boss)!;
 
 describe("GET /api/stats/:id: the boss clears (v4.1.0)", () => {
-  it("every boss of the figures, in their order (MapleScouter's), with its gaps from the character's level and the sheet's Force", async () => {
+  it("every boss of the figures but Challenger's own (Mayrin), in their order (MapleScouter's), with its gaps from the character's level and the sheet's Force; which figures they are", async () => {
     const id = await character("Mercedes", 278);
     await save(id, SCREENSHOT);
     const b = await get(`/api/stats/${id}`);
-    expect(b.bosses.map((x: Boss) => `${x.difficulty} ${x.boss}`)).toEqual(bossFigures().map((x) => `${x.difficulty} ${x.name}`));
+    expect(b.bosses.map((x: Boss) => `${x.difficulty} ${x.boss}`)).toEqual(bossFigures().filter((x) => x.name !== "maerin").map((x) => `${x.difficulty} ${x.name}`));
+    expect(b.bossFigures).toEqual({ patch: "v.272", date: bossClearFigures.generated });
     // Normal Kalos: level 280, Sacred 300 (the figures); the screenshot's Sacred Force 660
     const kalos = bossOf(b, "Normal", "kalos");
     expect(kalos.key).toBe("normal_kalos");

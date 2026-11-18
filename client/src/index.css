@@ -864,10 +864,11 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .stp-scores b { font-size: 1.9em; font-variant-numeric: tabular-nums; }
 .stp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 8px 0; }
 .stp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 10px; }
-.stp-field { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.stp-field { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px; border: var(--border-width) solid var(--border); border-radius: 8px; background: var(--surface-2); }
 .stp-field > span:first-child { color: var(--text-muted); }
 .stp-field > b { font-variant-numeric: tabular-nums; }
 .stp-field.muted { opacity: 0.5; }
+.stp-cap { flex-basis: 100%; text-align: right; }
 .stp-num.text-input { width: 96px; padding: 3px 6px; text-align: right; font-variant-numeric: tabular-nums; }
 .stp-cd { display: inline-flex; align-items: center; gap: 4px; }
 .stp-cd .stp-num.text-input { width: 52px; }

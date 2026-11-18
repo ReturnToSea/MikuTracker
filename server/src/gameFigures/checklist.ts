@@ -11,7 +11,7 @@ import { type LimitScope, type TaskCategory, type TaskReset, WEEKLY_RESET_DAY } 
 //   - Areas and levels: Nexon's patch notes v.259–v.271 and the MapleStory Wiki (Geardock added
 //     in v.270).
 //   - Limits: Monster Park, 2 characters a day per world, each up to 7 runs (v.269; the owner);
-//     Ursus, 3 entries a day per account (wiki); Erda's Request, weekly, once per account (v.264);
+//     Ursus, 1 entry a day per account (v.272's patch notes; 3 before); Erda's Request, weekly, once per account (v.264);
 //     Epic Dungeons, "Up to two Epic Dungeons can be cleared once a week per account. Each
 //     character can clear only one Epic Dungeon type per week." (v.267), so one "Epic Dungeon"
 //     task per character, 2 per account; Extreme Monster Parker, a weekly quest for Lv. 260+ (clear

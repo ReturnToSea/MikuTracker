@@ -48,6 +48,7 @@ export interface StatsBoard {
   out: { finalDamage: number; generalRange: number; atkTotal: number; score380: number | null; score300: number | null; normal380: number | null; normal300: number | null };
   efficiency: Efficiency | null;
   bosses: BossRow[];
+  bossFigures: { patch: string; date: string }; // the boss clears' figures: the GMS patch, and the day we rebuilt them
   source: string;
 }
 export interface BossRow extends BossClear {
@@ -70,8 +71,14 @@ const RING_ITEMS = { restraint: 1113098, continuous: 1113329, weapon: 1113113 } 
 const RING_PICS = { restraint: "ringRestraint", continuous: "ringContinuous", weapon: "ringWeapon" } as const;
 
 // The saved input: what of it still fits (a field added or removed since it was saved falls back on its own,
-// the rest kept), or the defaults (none saved, not JSON, or not passing the rules even so).
-const inputOf = (data: string | undefined): StatsInput => parseSaved(JSON.stringify(overlay(STATS_DEFAULTS, readJson(data))), statsInput) ?? structuredClone(STATS_DEFAULTS);
+// the rest kept; Cooldown Not Applied kept to its v4.4.0 limit, 27.5, which a sheet saved before could pass),
+// or the defaults (none saved, not JSON, or not passing the rules even so).
+const CD_SKIP_MAX = 27.5;
+function inputOf(data: string | undefined): StatsInput {
+  const kept = overlay(STATS_DEFAULTS, readJson(data));
+  kept.stats.cdSkip = Math.min(kept.stats.cdSkip, CD_SKIP_MAX);
+  return parseSaved(JSON.stringify(kept), statsInput) ?? structuredClone(STATS_DEFAULTS);
+}
 async function savedInput(characterId: number): Promise<StatsInput> {
   return inputOf((await db().statSheet.findUnique({ where: { characterId } }))?.data);
 }
@@ -142,7 +149,7 @@ async function worked(c: StatsCharacter, input: StatsInput, level: number, level
   const rings = Object.fromEntries(
     Object.entries(RING_ITEMS).map(([k, id]) => [k, icons[RING_PICS[k as keyof typeof RING_PICS]] ?? (existsSync(path.join(dir, `${id}.png`)) ? `/item-icons/${id}.png` : null)]),
   ) as StatsBoard["rings"];
-  const base = { input, level, heroic, rings, source: `MapleScouter's formula and figures (mapledoro's copy, read ${STATS_FIGURES.generated}); the HEXA cores' (read ${HEXA_FIGURES.generated}); the boss cuts (read ${BOSS_FIGURES.generated})` };
+  const base = { input, level, heroic, rings, bossFigures: { patch: BOSS_FIGURES.patch, date: BOSS_FIGURES.generated }, source: `MapleScouter's formula and figures (mapledoro's copy, read ${STATS_FIGURES.generated}); the HEXA cores' (read ${HEXA_FIGURES.generated}); the boss cuts (read ${BOSS_FIGURES.generated})` };
   if (!f) {
     const none = { finalDamage: 0, generalRange: 0, atkTotal: 0, score380: null, score300: null, normal380: null, normal300: null };
     return { ...base, icons: {}, known: false, shine: isShine(c.job), labels: { main: "Main stat", sub: "Secondary stat", third: null, atk: "Attack" }, sacred: false, options: { ruinShield: false, oneHanded: false, magic: false }, hexa: [], out: none, efficiency: null, bosses: [] };
@@ -163,8 +170,8 @@ async function worked(c: StatsCharacter, input: StatsInput, level: number, level
   const bosses: BossRow[] = x
     ? all.map((b) => {
         const key = `${b.difficulty.toLowerCase()}_${b.name}`;
-        const clear = bossClear(b, all, level, input.stats.arcane + ev.arcane, input.stats.sacred + ev.sacred, x);
-        return { ...clear, key, boss: b.name, name: b.label, difficulty: b.difficulty, partyLimit: b.partyLimit, need: scoreNeeded(b, all, x), icon: bossFiles.has(`${key}.png`) ? `/item-icons/bosses/${key}.png` : null, phases: phasesOf(b) };
+        const clear = bossClear(b, level, input.stats.arcane + ev.arcane, input.stats.sacred + ev.sacred, x);
+        return { ...clear, key, boss: b.name, name: b.label, difficulty: b.difficulty, partyLimit: b.partyLimit, need: scoreNeeded(b, x), icon: bossFiles.has(`${key}.png`) ? `/item-icons/bosses/${key}.png` : null, phases: phasesOf(b) };
       })
     : [];
   const nodes = hexa.nodes.filter((n) => n.key !== "janus").sort((a, b) => HEXA_ORDER.indexOf(a.key) - HEXA_ORDER.indexOf(b.key));

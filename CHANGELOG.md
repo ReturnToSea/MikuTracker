@@ -2,6 +2,23 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v4.4.0: the boss clears for v.272, Mayrin, and Cooldown Not Applied (2026-11-17)
+
+- **The boss clears are GMS v.272's:**
+  - **From mapledoro's v.272 table** (15–16 Nov): no boss's cut changed; their difficulty rates did (most a little easier; **Hard Black Mage about 2.2× easier**, from v.272's ~64.9% HP cut, checked against the patch notes).
+  - **Then corrected from MapleScouter's own answers**: mapledoro's table read most current bosses 5–20% harder than MapleScouter's live rates for the owner's two captured sheets (Lethe and Ren). For each boss, the rebuild works out what its rate needs for our calculation, given MapleScouter's own damage figures, to land on MapleScouter's rate; the two classes agree to a median 0.2% (at most 1.4%), and the rebuild refuses anything under two classes or past 3% apart. MapleScouter's rates are now matched within 1.5% on every boss for the kept Lethe sheet.
+  - **Champion Black Mage** comes straight from the figures (Hard × 0.75 in MapleScouter's own numbers since v.272); our own correction is gone.
+  - **Mayrin's figures are in the table like every boss's** (mapledoro's, from a second class, then corrected like the rest), where MapleScouter's list places it; still on Challenger characters only (the owner). Hard lets you in from level 280. Normal Kai is left out.
+  - **A line under the tiles** says which figures they are: "Boss figures: GMS v.272, as of" the day we rebuilt them.
+  - The bosses' HP per phase came from the owner's capture of MapleScouter's results page (no Boss Info capture needed): unchanged by v.272.
+- **Cooldown Skip is "Cooldown Not Applied"**, the game's name, and **at most 27.5%** (MapleScouter's). Any box typed past its limit now says "At most …" under it until it's typed in again.
+- **Power of the Adversary's picture** (MapleScouter's), from the owner's captures.
+- Ursus's source note says 1 entry a day (v.272; it was already counted once).
+- **From the review pass** (10 findings, 9 fixed): a sheet saved with Cooldown Not Applied over 27.5 would have read as the defaults (and the next save kept them); it now reads with 27.5 and the rest kept. The rebuild now needs two classes' rates for every boss (not just overall), counts a calculation recorded twice once, refuses a rate that isn't a positive number, skips Challenger-mode sheets, takes the patch it's for (`--patch`, shown on the page) and leaves out only Normal Kai. The "At most" note goes with the value it was about (Reset to saved clears it) and shows only in the sheet's fields. Tidying: an unused parameter, the plan's finished section and an old command. Not changed: the test against MapleScouter's rates uses a sheet the corrections came from (there's no third sheet without an Ascent core; the rebuild's two-class agreement is the real check).
+- **Mutation testing: 100%** on every changed file (the boss clears' maths and figures, the Stats service, the shared rules); its two survivors: a test now checks every Champion's HP, and one marked (an exact tie between the two scales, where either is as small a change). The new tests were each seen to fail with their fix taken out.
+- **The after-patch routine** (CLAUDE.md): read the patch notes first and change only what they touch; the EXP table only when the EXP needed to level changes.
+- **Planned:** v4.5.0 for every class's score curve below ~33,000 (our scores up to ~19% too high under ~25,000, found from the owner's captures) and checking our scores against MapleScouter's; the Star Force steps move to v4.6.0.
+
 ## v4.3.0: Lethe's Stats and HEXA, and v.272's weekly changes (2026-11-17)
 
 - **Lethe is worked out like every class:**
