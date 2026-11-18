@@ -1,14 +1,15 @@
 import { STAT_LINKS, STATS_DEFAULTS } from "@miku/shared";
 import { describe, expect, it } from "vitest";
 import reference from "../../test/fixtures/stats-mapledoro.json";
-import { cooldownRefs, statLinks, statsJob } from "../gameFigures/stats";
+import { cooldownRefs, mapledoroJob, statLinks, statsJob } from "../gameFigures/stats";
 import { cooldownBonus, finalDamage, generalRange, groups, heroicBonus, splineAt, splineReach, statsScore, tableBonus } from "./stats";
 
 describe("statsScore against mapledoro's engine (the reference)", () => {
   it("every job, random sheets: the same damage, and the same score at 380% and 300%", () => {
     let worst = 0;
     for (const c of reference.cases) {
-      const got = statsScore(statsJob(c.job)!, c.input as never, c.ctx, statLinks(), cooldownRefs());
+      // (mapledoro's own curves: ours differ on purpose, v4.5.0)
+      const got = statsScore(mapledoroJob(c.job)!, c.input as never, c.ctx, statLinks(), cooldownRefs());
       worst = Math.max(worst, Math.abs(got.damage / c.expected.damage - 1), Math.abs(got.damage300 / c.expected.damage300 - 1));
       expect([got.score380, got.score300], c.job).toEqual([c.expected.score380, c.expected.score300]);
     }

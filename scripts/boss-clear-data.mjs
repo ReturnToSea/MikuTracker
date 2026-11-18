@@ -1,4 +1,4 @@
-// npx tsx scripts/boss-clear-data.mjs --patch v.272 <MapleScouter captures (.har)…>: rebuilds the boss clears' figures
+// npx tsx scripts/boss-clear-data.mjs --patch v.272 <MapleScouter captures (.har) and saved answers (.jsonl)…>: rebuilds the boss clears' figures
 // (server/src/gameFigures/boss-clear.json), by hand, after a GMS patch or a MapleScouter update. Never part
 // of the app or its tests: the app only reads the file this writes.
 //
@@ -17,7 +17,11 @@
 //     and no Genesis Pass buff. Each boss's difficulty rate is corrected so that our calculation, given
 //     MapleScouter's own damage figures, gives MapleScouter's rate (calc/bossClear.ts scouterCorrection),
 //     averaged over the sheets: for every boss, rates from at least two classes, which must agree within 3%.
-//     (Not Challenger mode's: it raises MapleScouter's rates ~1.2%.)
+//     (Not Challenger mode's: it raises MapleScouter's rates ~1.2%.) Answers saved from Claude's sessions in the
+//     owner's browser (.jsonl, one per line: { core: { cls, d380, d300, kaling, nd380 }, date, level, arcane,
+//     sacred, ascent, genesisPass, sacredBonus, challengers, rates: [[boss, difficulty, rate]…] }) count the same
+//     way; one missing what it had on is reported. `--leave-out <class,…>`: classes whose rates disagree with
+//     the others (e.g. from a curve not measured yet), named in the file's source.
 //   - the GMS patch the figures are for (--patch), shown on the page with the day they were rebuilt.
 //     (Run with tsx: it uses the app's own calculation.) mapledoro's table is the start: re-check it when
 //     they update, and compare.
@@ -33,9 +37,22 @@ const SOURCE = "https://raw.githubusercontent.com/chablades/mapledoro/main/src/f
 const ENGINE = "https://raw.githubusercontent.com/chablades/mapledoro/main/public/data/scouter-engine.json";
 const args = process.argv.slice(2);
 const patch = args.includes("--patch") ? args[args.indexOf("--patch") + 1] : undefined;
-const hars = args.filter((a, i) => a !== "--patch" && args[i - 1] !== "--patch");
+// (--leave-out "Xenon,Mechanic": classes whose rates disagree with the others, e.g. from a curve not yet measured)
+const leftOut = args.includes("--leave-out") ? (args[args.indexOf("--leave-out") + 1] ?? "").split(",").filter(Boolean) : [];
+if (args.includes("--leave-out") && leftOut.length === 0) {
+  console.log("--leave-out needs the classes, e.g. --leave-out \"Xenon,Mechanic\"");
+  process.exit(1);
+}
+for (const j of leftOut)
+  if (!Object.hasOwn(jobFigures.jobs, j)) {
+    console.log(`--leave-out: "${j}" isn't one of our jobs (${Object.keys(jobFigures.jobs).slice(0, 3).join(", ")}, …)`);
+    process.exit(1);
+  }
+const files = args.filter((a, i) => !["--patch", "--leave-out"].includes(a) && !["--patch", "--leave-out"].includes(args[i - 1]));
+const hars = files.filter((f) => !f.endsWith(".jsonl"));
+const saved = files.filter((f) => f.endsWith(".jsonl"));
 if (hars.length === 0 || !/^v\.\d+$/.test(patch ?? "")) {
-  console.log("Usage: npx tsx scripts/boss-clear-data.mjs --patch v.272 <capture.har> [more.har…]");
+  console.log("Usage: npx tsx scripts/boss-clear-data.mjs --patch v.272 [--leave-out <class,class>] <capture.har> [more.har…] [answers.jsonl…]");
   process.exit(1);
 }
 // (most within this of each other: the sheets' corrections for one boss)
@@ -133,6 +150,27 @@ for (const { file, e } of entries) {
   if (sheets.some((x) => x.job === job && x.d380 === d.calculatedHexaDamage_380 && x.level === Number(u.stat.level))) continue;
   sheets.push({ job, level: Number(u.stat.level), arcane: Number(u.stat.arcaneForce), sacred: Number(u.stat.authenticForce), d380: d.calculatedHexaDamage_380, d300: d.calculatedHexaDamage_300, kaling: d.calculatedHexaDamage_kaling, normal380: d.calculatedDamage_380, rates });
 }
+for (const file of saved)
+  for (const line of readFileSync(file, "utf8").trim().split("\n")) {
+    const a = JSON.parse(line);
+    // (every answer says what it had on: one that doesn't can't be told apart, so it's reported, not guessed)
+    if (typeof a.ascent !== "number" || typeof a.genesisPass !== "boolean" || typeof a.sacredBonus !== "boolean" || typeof a.challengers !== "boolean" || !a.date) {
+      problems.push(`${file}: an answer without its ascent, genesisPass, sacredBonus, challengers or date: ${line.slice(0, 80)}…`);
+      continue;
+    }
+    if (a.ascent !== 0 || a.genesisPass || a.sacredBonus || a.challengers) continue;
+    const job = jobOf(a.core.cls);
+    if (!job) {
+      problems.push(`${file}: an answer for "${a.core.cls}", which isn't one of our jobs`);
+      continue;
+    }
+    if (sheets.some((x) => x.job === job && x.d380 === a.core.d380 && x.level === a.level)) continue;
+    const rates = Object.fromEntries(a.rates.filter(([boss]) => korean[boss]).map(([boss, difficulty, rate]) => [`${korean[boss]} ${difficulty}`, rate]));
+    sheets.push({ job, date: a.date, level: a.level, arcane: a.arcane, sacred: a.sacred, d380: a.core.d380, d300: a.core.d300, kaling: a.core.kaling, normal380: a.core.nd380, rates });
+  }
+const counted = sheets.filter((s) => !leftOut.includes(s.job));
+if (leftOut.length) console.log(`Left out (--leave-out): ${leftOut.map((j) => `${j} (${sheets.filter((s) => s.job === j).length} sheets)`).join(", ")}`);
+sheets.splice(0, sheets.length, ...counted);
 const corrections = {};
 for (const b of bosses) {
   const rated = sheets.filter((s) => s.rates[`${b.name} ${b.difficulty}`] > 0);
@@ -145,7 +183,7 @@ for (const b of bosses) {
     problems.push(`${b.name} ${b.difficulty}: a correction that isn't a positive number (${each.join(", ")})`);
     continue;
   }
-  if (Math.max(...each) / Math.min(...each) - 1 > AGREE) problems.push(`${b.name} ${b.difficulty}: the sheets disagree (${each.map((c) => c.toFixed(4)).join(", ")})`);
+  if (Math.max(...each) / Math.min(...each) - 1 > AGREE) problems.push(`${b.name} ${b.difficulty}: the sheets disagree (${each.map((c, i) => `${rated[i].job} ${c.toFixed(4)}`).join(", ")})`);
   const k = each.reduce((a, c) => a * c, 1) ** (1 / each.length); // (their geometric mean)
   corrections[`${b.name} ${b.difficulty}`] = Number(k.toFixed(6));
   b.easyRate = Number((b.easyRate * k).toPrecision(9));
@@ -156,9 +194,10 @@ if (problems.length) {
 }
 const generated = new Date().toISOString().slice(0, 10);
 const captured = [...new Set(entries.filter(({ e }) => e.request.url.includes("/api/calc/dmg")).map(({ e }) => e.startedDateTime.slice(0, 10)))].sort().at(-1);
+const savedDay = sheets.map((s) => s.date).filter(Boolean).sort().at(-1);
 writeFileSync(
   OUT,
-  `${JSON.stringify({ generated, patch, sources: { cuts: SOURCE, hp: "MapleScouter's boss script (the owner's capture)", rates: `MapleScouter's clear rates for ${sheets.length} sheets of ${new Set(sheets.map((s) => s.job)).size} classes (the owner's captures, ${captured}): each boss's difficulty rate × its correction` }, corrections, bosses, hp })}\n`,
+  `${JSON.stringify({ generated, patch, sources: { cuts: SOURCE, hp: "MapleScouter's boss script (the owner's capture)", rates: `MapleScouter's clear rates for ${sheets.length} sheets of ${new Set(sheets.map((s) => s.job)).size} classes (the owner's captures, ${captured}${savedDay ? `; and answers saved from Claude's sessions in the owner's browser, ${savedDay}` : ""}${leftOut.length ? `; left out: ${leftOut.join(", ")}` : ""}): each boss's difficulty rate × its correction` }, corrections, bosses, hp })}\n`,
 );
 console.log(`${bosses.length} bosses and ${Object.keys(hp).length} difficulties' phase HP written to ${OUT}, corrected from ${sheets.length} of MapleScouter's answers:`);
 for (const [key, k] of Object.entries(corrections)) console.log(`  ${key.padEnd(24)} ×${k.toFixed(4)}`);

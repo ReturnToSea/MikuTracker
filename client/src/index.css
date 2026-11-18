@@ -897,6 +897,8 @@ select { font: inherit; color: var(--text); padding: 4px 6px; border: var(--bord
 .stp-change { margin: 8px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stp-views { margin: 0 0 12px; }
 .stp-testbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; margin: 0 0 12px; border: var(--border-width) dashed var(--accent); border-radius: 8px; background: var(--surface); }
+.stp-sources { margin-top: 24px; display: flex; flex-direction: column; gap: 2px; }
+.stp-sources p { margin: 0; }
 .bc-wrap { display: grid; grid-template-columns: max-content minmax(300px, 1fr); gap: 16px; align-items: start; }
 .bc-wrap > .block { margin-bottom: 0; }
 @media (max-width: 1100px) { .bc-wrap { grid-template-columns: minmax(0, 1fr); } }

@@ -14,7 +14,7 @@ import { gearFile } from "../gameFigures/gear";
 import { CORE_OF, HEXA_FIGURES, type HexaJob, hexaJob, isShine } from "../gameFigures/hexa";
 import { jobStats } from "../gameFigures/jobStats";
 import { SYMBOLS } from "../gameFigures/symbols";
-import { cooldownRefs, STATS_FIGURES, statLinks, statsJob } from "../gameFigures/stats";
+import { type CurveSource, cooldownRefs, curveSource, STATS_FIGURES, statLinks, statsJob } from "../gameFigures/stats";
 import { ownCharacter } from "./characters";
 import { savedInput as hexaInputOf } from "./hexa";
 import { equippedItems } from "./gear";
@@ -49,6 +49,7 @@ export interface StatsBoard {
   efficiency: Efficiency | null;
   bosses: BossRow[];
   bossFigures: { patch: string; date: string }; // the boss clears' figures: the GMS patch, and the day we rebuilt them
+  curveFigures: { source: CurveSource; date: string } | null; // where the job's score curve comes from, and the day we rebuilt the curves (null: no curve)
   source: string;
 }
 export interface BossRow extends BossClear {
@@ -149,10 +150,10 @@ async function worked(c: StatsCharacter, input: StatsInput, level: number, level
   const rings = Object.fromEntries(
     Object.entries(RING_ITEMS).map(([k, id]) => [k, icons[RING_PICS[k as keyof typeof RING_PICS]] ?? (existsSync(path.join(dir, `${id}.png`)) ? `/item-icons/${id}.png` : null)]),
   ) as StatsBoard["rings"];
-  const base = { input, level, heroic, rings, bossFigures: { patch: BOSS_FIGURES.patch, date: BOSS_FIGURES.generated }, source: `MapleScouter's formula and figures (mapledoro's copy, read ${STATS_FIGURES.generated}); the HEXA cores' (read ${HEXA_FIGURES.generated}); the boss cuts (read ${BOSS_FIGURES.generated})` };
+  const base = { input, level, heroic, rings, bossFigures: { patch: BOSS_FIGURES.patch, date: BOSS_FIGURES.generated }, curveFigures: curveSource(c.job), source: `MapleScouter's formula and figures (mapledoro's copy, read ${STATS_FIGURES.generated}); the HEXA cores' (read ${HEXA_FIGURES.generated}); the boss cuts (read ${BOSS_FIGURES.generated})` };
   if (!f) {
     const none = { finalDamage: 0, generalRange: 0, atkTotal: 0, score380: null, score300: null, normal380: null, normal300: null };
-    return { ...base, icons: {}, known: false, shine: isShine(c.job), labels: { main: "Main stat", sub: "Secondary stat", third: null, atk: "Attack" }, sacred: false, options: { ruinShield: false, oneHanded: false, magic: false }, hexa: [], out: none, efficiency: null, bosses: [] };
+    return { ...base, curveFigures: null, icons: {}, known: false, shine: isShine(c.job), labels: { main: "Main stat", sub: "Secondary stat", third: null, atk: "Attack" }, sacred: false, options: { ruinShield: false, oneHanded: false, magic: false }, hexa: [], out: none, efficiency: null, bosses: [] };
   }
   const { job, hexa, rows, sacred, counted, ctx, hpMain } = f;
   const hexaFiles = iconFiles("hexa");

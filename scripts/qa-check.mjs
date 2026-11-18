@@ -1173,7 +1173,18 @@ try {
   check("Boss clear", "every boss MapleScouter covers: 55 tiles with Show all, in its order (Hard Jupiter first)", (await bossBox.locator(".bc-tile").count()) === 55 && (await bossBox.locator(".bc-tile").first().getAttribute("aria-label")) === "Hard Jupiter" && sb.bosses.length === 55);
   // MikuBeam (the fake Nexon) is below Hard Jupiter's Lv. 295: its tile has "Lvl"
   check("Boss clear", "below a boss's level: the Lvl badge, saying the level for full damage", (await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).count()) === 1 && /For full damage: Level \d+ \/ 300/.test((await bossBox.locator(".bc-tile").first().locator(".bc-badge", { hasText: "Lvl" }).getAttribute("title")) ?? ""));
-  check("Boss clear", "under the tiles, which figures they use: GMS v.272 and the day they were rebuilt (the API's)", (await bossBox.locator(".bc-asof").innerText()) === `Boss figures: GMS v.272, as of ${sb.bossFigures.date}` && sb.bossFigures.patch === "v.272", await bossBox.locator(".bc-asof").innerText());
+  // (v4.5.0: the figures' sources at the very bottom of the page, under every view)
+  const sources = page.locator(".stp-sources");
+  const curveWords = { measured: "measured against MapleScouter", fitted: "mapledoro's, the low end fitted to MapleScouter's answers", mapledoro: "mapledoro's, the low end from MapleScouter's shared shape" };
+  const sourceLines = await sources.locator("p").allInnerTexts();
+  check(
+    "Stats",
+    "at the very bottom: where the score curve comes from and the boss figures (GMS v.272), each with the day rebuilt (the API's)",
+    sb.curveFigures !== null && sourceLines[0] === `Score curve: ${curveWords[sb.curveFigures.source]}, as of ${sb.curveFigures.date}` && sourceLines[1] === `Boss figures: GMS v.272, as of ${sb.bossFigures.date}` && sb.bossFigures.patch === "v.272",
+    sourceLines.join(" | "),
+  );
+  const below = async () => (await sources.boundingBox()).y > (await page.locator(".bc-wrap").boundingBox()).y + (await page.locator(".bc-wrap").boundingBox()).height - 1;
+  check("Stats", "the sources block sits below the boss clears, and no figures line is left under the tiles", (await below()) && (await bossBox.locator(".bc-asof").count()) === 0);
   check("Boss clear", "not on Challenger: no Mayrin (Challenger's own)", !sb.bosses.some((x) => x.boss === "maerin") && (await bossBox.locator(".bc-tile", { hasText: "Mayrin" }).count()) === 0);
   const shownApi = sb.bosses.filter((x) => (x.partyOnly ? x.rate / x.partyLimit <= 10 && x.rate >= 0.85 / x.partyLimit : x.rate <= 10 && x.rate >= 0.15)).length;
   await allBosses.uncheck();

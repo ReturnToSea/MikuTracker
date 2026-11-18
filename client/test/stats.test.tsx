@@ -44,6 +44,7 @@ const BOARD: StatsBoard = {
     { key: "normal_lotus", boss: "lotus", name: "Lotus", difficulty: "Normal", partyLimit: 6, partyOnly: false, rate: 451.7, shown: 451.7, tag: "Easy", bossStat: 45_409, need: 900, icon: null, loss: 0, gaps: [{ kind: "level", you: 286, boss: 210, full: 215, loss: 0 }], phases: null, cannotEnter: false },
   ],
   bossFigures: { patch: "v.272", date: "2026-11-17" },
+  curveFigures: { source: "measured", date: "2026-11-18" },
   source: "MapleScouter's (read 2026-11-03)",
 };
 
@@ -294,11 +295,33 @@ describe("the Stats page's views (v4.1.0)", () => {
     expect(seren.className).toContain("champion");
   });
 
-  it("under the boss clears: which figures they use (the GMS patch, and the day they were rebuilt)", async () => {
+  it("at the very bottom, on every view: where the score curve and the boss figures come from, and when (v4.5.0)", async () => {
     show();
+    for (const v of ["Stats sheet", "Boss clear", "Efficiency"]) {
+      await view(v);
+      const curve = await screen.findByText(/^Score curve:/);
+      expect(curve.textContent).toMatch(/measured against MapleScouter.*2026-11-18/);
+      expect(screen.getByText(/^Boss figures:/).textContent).toMatch(/v\.272.*2026-11-17/);
+      // (below everything else on the page: the last thing in it)
+      const block = curve.closest("footer")!;
+      expect(block.parentElement!.lastElementChild).toBe(block);
+      expect(block.compareDocumentPosition(screen.getByRole("group", { name: "View" })) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    }
+    // (not under the boss tiles any more)
     await view("Boss clear");
-    const r = await region("Boss clear");
-    expect(r.getByText(/v\.272/).textContent).toContain("2026-11-17");
+    expect((await region("Boss clear")).queryByText(/v\.272/)).toBeNull();
+  });
+
+  it("the score curve's source in words: mapledoro's with its low end fitted, or from the shared shape; none without a curve", async () => {
+    show({ ...BOARD, curveFigures: { source: "fitted", date: "2026-11-18" } });
+    expect((await screen.findByText(/^Score curve:/)).textContent).toMatch(/mapledoro's, the low end fitted to MapleScouter's answers/);
+    cleanup();
+    show({ ...BOARD, curveFigures: { source: "mapledoro", date: "2026-11-18" } });
+    expect((await screen.findByText(/^Score curve:/)).textContent).toMatch(/mapledoro's, the low end from MapleScouter's shared shape/);
+    cleanup();
+    show({ ...BOARD, curveFigures: null });
+    await screen.findByText(/^Boss figures:/);
+    expect(screen.queryByText(/^Score curve:/)).toBeNull();
   });
 
   it("the picked boss's details: the first one to start; its HP by phase (each HP bar), and the damage lost", async () => {

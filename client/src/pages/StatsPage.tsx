@@ -504,12 +504,31 @@ function BossClear({ b }: { b: StatsBoard }) {
             ))}
           </div>
         )}
-        <p className="tiny muted bc-asof">
-          Boss figures: GMS {b.bossFigures.patch}, as of {b.bossFigures.date}
-        </p>
       </section>
       {shown && <BossPanel x={shown} />}
     </div>
+  );
+}
+
+// Where the figures come from, at the very bottom (the owner: there to check, out of the way); only for a job
+// the page works out (with the rest of the page).
+const CURVE_SOURCE = {
+  measured: "measured against MapleScouter",
+  fitted: "mapledoro's, the low end fitted to MapleScouter's answers",
+  mapledoro: "mapledoro's, the low end from MapleScouter's shared shape",
+} as const;
+function Sources({ b }: { b: StatsBoard }) {
+  return (
+    <footer className="tiny muted stp-sources">
+      {b.curveFigures && (
+        <p>
+          Score curve: {CURVE_SOURCE[b.curveFigures.source]}, as of {b.curveFigures.date}
+        </p>
+      )}
+      <p>
+        Boss figures: GMS {b.bossFigures.patch}, as of {b.bossFigures.date}
+      </p>
+    </footer>
   );
 }
 
@@ -674,6 +693,7 @@ export function StatsPage() {
           {view === "boss" && <BossClear b={b} />}
           {/* (each character's own amounts) */}
           {view === "eff" && <Efficiency key={c.id} b={b} />}
+          <Sources b={b} />
         </Saved.Provider>
       )}
     </div>

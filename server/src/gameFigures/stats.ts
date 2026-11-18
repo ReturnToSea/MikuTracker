@@ -1,3 +1,4 @@
+import curves from "./score-curves.json";
 import figures from "./stats-jobs.json";
 
 // The Stats page (v4.0.0): MapleScouter's damage formula and score, the game's Final Damage and damage
@@ -37,10 +38,33 @@ export interface StatsJob {
 }
 export type CooldownRefs = Record<string, { rows: { h0: number; bonus: Record<string, number> }[]; norm2: number }>;
 
-// A job's figures by the name Nexon's rankings use (null: none).
+// A job's figures by the name Nexon's rankings use (null: none), with its score curves from score-curves.json
+// (v4.5.0, rebuilt by hand with scripts/curve-data.mjs, dated): measured from MapleScouter's answers for the
+// classes measured in full, else mapledoro's from 33,228 up and MapleScouter's shared shape below.
+const withCurves = new Map<string, StatsJob>();
 export function statsJob(name: string): StatsJob | null {
   const jobs = figures.jobs as unknown as Record<string, StatsJob>;
+  if (!Object.hasOwn(jobs, name)) return null;
+  const known = withCurves.get(name);
+  if (known) return known;
+  const c = (curves.classes as Record<string, ScoreCurves>)[name];
+  const job = c ? { ...jobs[name]!, spline380: c.spline380, spline300: c.spline300 } : jobs[name]!;
+  withCurves.set(name, job);
+  return job;
+}
+// A job's figures with mapledoro's own curves (null: none): what its engine gives, for checking ours against.
+export function mapledoroJob(name: string): StatsJob | null {
+  const jobs = figures.jobs as unknown as Record<string, StatsJob>;
   return Object.hasOwn(jobs, name) ? jobs[name]! : null;
+}
+type ScoreCurves = { source: CurveSource; spline380: Spline; spline300: Spline };
+// measured: from MapleScouter's answers in full; fitted: mapledoro's, its low end fitted to the class's own
+// answers; mapledoro: mapledoro's, its low end the shared shape
+export type CurveSource = "measured" | "fitted" | "mapledoro";
+// Where a job's score curve comes from, and the day the curves were rebuilt (null: no curve).
+export function curveSource(name: string): { source: CurveSource; date: string } | null {
+  const c = (curves.classes as Record<string, ScoreCurves>)[name];
+  return c ? { source: c.source, date: curves.generated } : null;
 }
 export const STATS_FIGURES = { generated: figures.generated };
 export const statLinks = (): Readonly<Record<string, Readonly<Record<string, number>>>> => figures.links;

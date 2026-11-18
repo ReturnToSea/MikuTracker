@@ -8,6 +8,8 @@ import { statsScore } from "../src/calc/stats";
 import { db } from "../src/db";
 import { bossFigures } from "../src/gameFigures/bossClear";
 import bossClearFigures from "../src/gameFigures/boss-clear.json";
+import scoreCurves from "../src/gameFigures/score-curves.json";
+import statsJobFigures from "../src/gameFigures/stats-jobs.json";
 import { CORE_OF, hexaJob } from "../src/gameFigures/hexa";
 import { SYMBOLS } from "../src/gameFigures/symbols";
 import { cooldownRefs, statLinks, statsJob } from "../src/gameFigures/stats";
@@ -56,6 +58,8 @@ describe("GET /api/stats/:id", () => {
     expect(b.hexa.some((n: { node: string }) => n.node === "janus")).toBe(false);
     expect(b.out).toMatchObject({ generalRange: 0, atkTotal: 0 });
     expect(b.source).toMatch(/MapleScouter/);
+    // (each figures file's day: the Stats figures', the HEXA cores', the boss cuts')
+    expect(b.source).toContain(`(mapledoro's copy, read ${statsJobFigures.generated})`);
   });
 
   it("the screenshot's sheet: Final Damage 139.35%, General Range 272,801,300 and ATT 9,830 (MapleScouter's boxes), and the score", async () => {
@@ -143,7 +147,7 @@ describe("GET /api/stats/:id", () => {
 
   it("a SHINE class, or a job the figures don't have: not worked out, saying which", async () => {
     const sia = await get(`/api/stats/${await character("Sia Astelle")}`);
-    expect([sia.known, sia.shine, sia.hexa, sia.out.score380]).toEqual([false, true, [], null]);
+    expect([sia.known, sia.shine, sia.hexa, sia.out.score380, sia.curveFigures]).toEqual([false, true, [], null, null]);
     const jett = await get(`/api/stats/${await character("Jett")}`);
     expect(jett).toMatchObject({
       known: false,
@@ -156,6 +160,7 @@ describe("GET /api/stats/:id", () => {
       out: { finalDamage: 0, generalRange: 0, atkTotal: 0, score380: null, score300: null, normal380: null, normal300: null },
       efficiency: null,
       bosses: [],
+      curveFigures: null,
     });
     expect(jett.input).toEqual(STATS_DEFAULTS);
   });
@@ -318,6 +323,8 @@ describe("GET /api/stats/:id: the boss clears (v4.1.0)", () => {
     const b = await get(`/api/stats/${id}`);
     expect(b.bosses.map((x: Boss) => `${x.difficulty} ${x.boss}`)).toEqual(bossFigures().filter((x) => x.name !== "maerin").map((x) => `${x.difficulty} ${x.name}`));
     expect(b.bossFigures).toEqual({ patch: "v.272", date: bossClearFigures.generated });
+    // (v4.5.0: where the job's score curve comes from; Mercedes's: mapledoro's, with the shared shape)
+    expect(b.curveFigures).toEqual({ source: "mapledoro", date: scoreCurves.generated });
     // Normal Kalos: level 280, Sacred 300 (the figures); the screenshot's Sacred Force 660
     const kalos = bossOf(b, "Normal", "kalos");
     expect(kalos.key).toBe("normal_kalos");

@@ -4,7 +4,7 @@ import scouter from "../../test/fixtures/maplescouter-bosses.json";
 import { type BossFigure, bossesFor, bossFigures, PARTY_TAGS, phasesOf, SOLO_MIN, SOLO_TAGS } from "../gameFigures/bossClear";
 import figures from "../gameFigures/boss-clear.json";
 import jobFigures from "../gameFigures/stats-jobs.json";
-import { cooldownRefs, statLinks, statsJob } from "../gameFigures/stats";
+import { cooldownRefs, mapledoroJob, statLinks, statsJob } from "../gameFigures/stats";
 import { bossClear, clearInputs, type ScouterSheet, scouterCorrection, scoreNeeded } from "./bossClear";
 import { splineAt } from "./stats";
 
@@ -18,7 +18,8 @@ describe("bossClear against mapledoro's code (the reference)", () => {
     const all = bossFigures();
     let n = 0;
     for (const c of reference.cases) {
-      const job = statsJob(c.job)!;
+      // (mapledoro's own curves: ours differ on purpose, v4.5.0)
+      const job = mapledoroJob(c.job)!;
       const x = clearInputs(job, c.input as never, c.ctx, c.ascentLess, c.normal, new Set(c.maxed), c.job === "Demon Avenger", statLinks(), cooldownRefs())!;
       all.forEach((b, i) => {
         const [rate, shown, tag, bossStat, need, lv, af, sf] = c.bosses[i] as [number, number, string, number, number, number, number, number];
@@ -67,13 +68,21 @@ describe("a party-only boss (Hard Jupiter, 3 at most) you could solo", () => {
     expect([weak.shown, weak.tag]).toEqual([weak.rate, "2p Min Cut"]);
   });
   it("exactly at the solo cut counts as solo (\"Solo Min\")", () => {
-    const base = at(1).rate;
-    // (the damage nudged one step at a time until the solo rate lands on the cut exactly)
+    // (the damage nudged one step at a time until the solo rate lands on the cut exactly; whether one does
+    // depends on the sheet and the figures, so a few sheets are tried)
     const divisor = PARTY_TAGS[3]![0]![0] / SOLO_MIN;
     let exact = null;
-    for (let n = -200; n <= 200 && !exact; n++) {
-      const got = at(((SOLO_MIN * divisor) / base) * (1 + n * Number.EPSILON));
-      if (got.rate / divisor === SOLO_MIN) exact = got;
+    for (const c of reference.cases.slice(0, 20)) {
+      const from = (k: number) => {
+        const x = { ...inputsOf(c), ascent: 0 };
+        return bossClear(jupiter, 300, 0, 2000, { ...x, d380: x.d380 * k, d300: x.d300 * k, kaling: x.kaling * k });
+      };
+      const base = from(1).rate;
+      for (let n = -200; n <= 200 && !exact; n++) {
+        const got = from(((SOLO_MIN * divisor) / base) * (1 + n * Number.EPSILON));
+        if (got.rate / divisor === SOLO_MIN) exact = got;
+      }
+      if (exact) break;
     }
     expect(exact).not.toBeNull();
     expect([exact!.shown, exact!.tag]).toEqual([SOLO_MIN, "Solo Min"]);
