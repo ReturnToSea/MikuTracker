@@ -2,6 +2,11 @@
 
 Every version gets an entry here, the same `version` in every `package.json`, and an annotated tag `vX.Y.Z`.
 
+## v4.6.1: the boss list in MapleScouter's order (2026-11-19)
+
+- **The boss clears are in MapleScouter's own order again** (the owner noticed Normal Mayrin after Normal Will): the order came from mapledoro's copy of MapleScouter's boss table, which had Mayrin added at its end (now Hard Mayrin after Normal Adversary, Normal Mayrin after Champion Black Mage, as MapleScouter) and a few bosses a place or two off (Normal Bardrix before Hard Kaling, and so on). The boss script now takes the order from MapleScouter's newest answer (every answer lists every boss) and reports a boss its list doesn't have. Only the order changed: every boss's figures, the corrections and the HP are as before. A test holds the list to MapleScouter's (its answer of 2026-11-18).
+- **Planned for later:** a Curve view on the Stats page, after every class is measured (the owner).
+
 ## v4.6.0: our damage, recalibrated against MapleScouter (2026-11-19)
 
 - **Our damage is MapleScouter's again for Ren, Lethe and Night Walker:** every saved answer within 0.1% (101 of them, held-out check sheets included), but three within 0.2% (Lethe's two mixed-HEXA check sheets, Ren's weakest v4.5.0 curve sheet). Their scores followed: Ren's was ~0.5% off, Lethe's ~0.5% too; now within ~0.15%. Our formula was mapledoro's copy of MapleScouter's (October); MapleScouter changed since (v.272, and again in November) and no longer sends its figures, so they were measured from its answers: six sessions in the owner's Chrome (the owner watching, about one a minute, 61 calculations on made-up sheets; two "are you human" checks the owner cleared), each changing one thing, each answer's efficiencies giving MapleScouter's total for every group.

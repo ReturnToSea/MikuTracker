@@ -5,7 +5,7 @@
 // What it takes (decided with the owner, 2026-11-04; research in tempdata/v41/):
 //   - chablades/mapledoro's copy of MapleScouter's boss cuts (src/features/characters/scouter/
 //     bosscut-data.generated.ts, read as data): each boss difficulty's level, defense, Arcane and Sacred
-//     Force, party size, cut and difficulty rate, in MapleScouter's order. Since MapleScouter moved its cuts
+//     Force, party size, cut and difficulty rate (in its order, but put in MapleScouter's own below). Since MapleScouter moved its cuts
 //     to its server (Nov 2026) mapledoro updates it by hand. (mapledoro's own estimated older bosses are left
 //     out: the owner, too easy for any character; so is Normal Kai.)
 //   - the phase HP: MapleScouter's boss script, from a capture the owner saves of a MapleScouter page that
@@ -187,6 +187,21 @@ for (const b of bosses) {
   const k = each.reduce((a, c) => a * c, 1) ** (1 / each.length); // (their geometric mean)
   corrections[`${b.name} ${b.difficulty}`] = Number(k.toFixed(6));
   b.easyRate = Number((b.easyRate * k).toPrecision(9));
+}
+// The order (v4.6.1): MapleScouter's own, from its newest answer in the captures or the saved answers (every answer lists
+// every boss: its bossCuts, a saved answer's rates), not mapledoro's table's (which had fallen behind it: Mayrin added at
+// its end, a few bosses a place or two off). A boss MapleScouter's list doesn't have is reported.
+const lists = [
+  ...entries.filter(({ e }) => e.request.method === "POST" && e.request.url.includes("/api/calc/dmg") && e.response.content?.text).map(({ e }) => ({ at: e.startedDateTime, list: JSON.parse(textOf(e.response.content)).calculatedData?.bossCuts?.map((c) => [c.boss, c.difficulty]) })),
+  ...saved.flatMap((file) => readFileSync(file, "utf8").trim().split("\n").map((l) => JSON.parse(l)).map((a) => ({ at: a.date ?? "", list: a.rates?.map(([boss, difficulty]) => [boss, difficulty]) }))),
+].filter((x) => x.list?.length);
+const newest = lists.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))[0];
+if (!newest) problems.push("no MapleScouter answer to take the boss order from");
+else {
+  const place = new Map(newest.list.map(([boss, difficulty], i) => [`${korean[boss] ?? boss} ${difficulty}`, i]));
+  for (const b of bosses) if (!place.has(`${b.name} ${b.difficulty}`)) problems.push(`${b.name} ${b.difficulty}: not in MapleScouter's boss list (its answer of ${newest.at})`);
+  bosses.sort((a, b) => (place.get(`${a.name} ${a.difficulty}`) ?? 1e9) - (place.get(`${b.name} ${b.difficulty}`) ?? 1e9));
+  console.log(`The order: MapleScouter's, from its answer of ${newest.at}`);
 }
 if (problems.length) {
   console.log(`Not written:\n- ${problems.join("\n- ")}`);

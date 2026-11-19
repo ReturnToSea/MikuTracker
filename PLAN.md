@@ -239,6 +239,9 @@ A major version, in smaller steps, after HEXA (v3: its levels are needed) (the o
 - **Mutation testing's crash (2026-11-19):** a test worker segfaulted in Stryker's first test run, with two workers both times and once with one (plain test runs never: three clean in a row); one worker got through on a retry. Find out why (the SQLite driver under Stryker's coverage? Node 25.6?) before the next version's run.
 - **Left open (2026-11-19):** Lethe's HEXA cores' own shares (her figures are scaled per level to MapleScouter's calculation, every core at one level; two mixed-level sheets are ±0.16%): measuring each core would take ~12 cores × a few levels. Ren's weakest v4.5.0 curve sheet (+0.12%). Lethe's sheet with Mastery 2 at 2: MapleScouter's calculation ignores that level, though its own HEXA order counts it. (Night Walker's check sheet: settled, its Illium link.)
 
+### For later (the owner, 2026-11-19): a Curve view on the Stats page
+A fourth view after Efficiency showing the class's score curve (damage → score), maybe with the character's own point on it. Only after every class's figures and curves are measured (the owner): plan it then. Questions for then: what it shows (380% and 300%, the measured points against the curve, where the character sits), and whether it says which parts are measured.
+
 ### v4.7.0: the Upgrades page's Star Force steps, and 1 s of cooldown
 Moved out of v4.2.0 on 2026-11-10 (the owner); v4.3.0, then v4.4.0 and v4.5.0, until 2026-11-17 (v.272's changes went first); v4.6.0 until 2026-11-19 (the damage recalibration went first).
 

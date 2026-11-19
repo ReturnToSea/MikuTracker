@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import reference from "../../test/fixtures/boss-mapledoro.json";
 import scouter from "../../test/fixtures/maplescouter-bosses.json";
+import scouterOrder from "../../test/fixtures/maplescouter-boss-order.json";
 import { type BossFigure, bossesFor, bossFigures, PARTY_TAGS, phasesOf, SOLO_MIN, SOLO_TAGS } from "../gameFigures/bossClear";
 import figures from "../gameFigures/boss-clear.json";
 import jobFigures from "../gameFigures/stats-jobs.json";
@@ -12,6 +13,18 @@ import { splineAt } from "./stats";
 // rounded score, we from the unrounded damage: 0.035% apart at most).
 const THRESHOLDS = [...Object.values(SOLO_TAGS), ...Object.values(PARTY_TAGS)].flat().map(([t]) => t);
 const nearThreshold = (rate: number) => THRESHOLDS.some((t) => Math.abs(rate / t - 1) < 5e-4);
+
+describe("the boss list's order (v4.6.1)", () => {
+  it("is MapleScouter's own (its newest answer's list), leaving out the bosses we don't have (Bellona, Normal Kai): Mayrin where it puts it", () => {
+    const ours = bossFigures().map((b) => `${b.difficulty} ${b.name}`);
+    const theirs = scouterOrder.order.map(([id, difficulty]) => `${difficulty} ${id}`).filter((k) => ours.includes(k));
+    expect(ours).toEqual(theirs);
+    // (every boss of ours is in MapleScouter's list; Hard Mayrin after Normal Adversary, Normal Mayrin after Champion Black Mage)
+    expect(theirs).toHaveLength(ours.length);
+    expect(ours.indexOf("Hard maerin")).toBe(ours.indexOf("Normal adversary") + 1);
+    expect(ours.indexOf("Normal maerin")).toBe(ours.indexOf("Champion blackMage") + 1);
+  });
+});
 
 describe("bossClear against mapledoro's code (the reference)", () => {
   it("every job, random sheets, every boss: the same clear rate, tag, adjusted score, score needed and gaps", () => {
