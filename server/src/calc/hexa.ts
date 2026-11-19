@@ -233,6 +233,21 @@ export function buildOrder(nodes: readonly { key: string; costs: CostTable; free
   }
 }
 
+// A given order (v4.6.0: MapleScouter's own, for a class we have it for), each step with the final damage it adds
+// there (%), from every node at its free level; a step that doesn't follow on from its node's level is left out, and
+// never a loss shown (as buildOrder's).
+export function replayOrder(nodes: readonly { key: string; free: number }[], steps: readonly { node: string; from: number; to: number }[], damage: (levels: Readonly<Record<string, number>>) => number): { node: string; from: number; to: number; fd: number }[] {
+  const at: Record<string, number> = Object.fromEntries(nodes.map((n) => [n.key, n.free]));
+  const out: { node: string; from: number; to: number; fd: number }[] = [];
+  for (const s of steps) {
+    if (at[s.node] !== s.from || !(s.to > s.from)) continue;
+    const before = damage(at);
+    at[s.node] = s.to;
+    out.push({ node: s.node, from: s.from, to: s.to, fd: Math.max(0, (damage(at) / before - 1) * 100) });
+  }
+  return out;
+}
+
 // The job's order with the same node several steps in a row as one step, to the last one's level (their
 // gains multiply). HEXA Stat steps are never joined.
 export function joinRuns(steps: readonly HexaStep[]): HexaStep[] {

@@ -5,7 +5,7 @@ import { forgetHexa, jobOrder, orderFor } from "../services/hexa";
 import hoyoungCapture from "../../test/fixtures/maplescouter-hoyoung.json";
 import letheCapture from "../../test/fixtures/maplescouter-lethe.json";
 import renCapture from "../../test/fixtures/maplescouter-ren.json";
-import { addCost, bestStats, buildOrder, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
+import { addCost, bestStats, buildOrder, coreAttAt, replayOrder, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, statExpected, statFd, statOutcomes, statSpent } from "./hexa";
 
 // (mulberry32, a small generator good enough for these simulations; a plain multiply-and-add one was 0.9% off)
 function generator(start: number): () => number {
@@ -276,6 +276,26 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     expect(order[0]).toMatchObject({ node: "a", from: 0, to: 2 });
     expect(order[0]!.fd).toBeCloseTo(20, 12);
   });
+  it("replayOrder (v4.6.0): a given order's steps, each with its gain there; a step that doesn't follow on is left out", () => {
+    // (and one that goes nowhere: b 1 → 1)
+    const steps = [{ node: "a", from: 0, to: 5 }, { node: "a", from: 7, to: 9 }, { node: "b", from: 1, to: 1 }, { node: "b", from: 1, to: 2 }, { node: "a", from: 5, to: 9 }];
+    const order = replayOrder([{ key: "a", free: 0 }, { key: "b", free: 1 }], steps, (lv) => 1 + lv.a! * 0.01 + lv.b! * 0.1);
+    expect(order.map((s) => [s.node, s.from, s.to])).toEqual([["a", 0, 5], ["b", 1, 2], ["a", 5, 9]]);
+    expect(order[0]!.fd).toBeCloseTo((1.15 / 1.1 - 1) * 100, 9);
+    expect(order[2]!.fd).toBeCloseTo((1.29 / 1.25 - 1) * 100, 9);
+  });
+  it("a kept order that doesn't follow on from the free levels (a capture from other levels): built instead, no node left out (review)", () => {
+    const lethe = hexaJob("Lethe")!;
+    const odd = { ...lethe, order: [{ node: "mastery1" as const, from: 5, to: 9 }, ...lethe.order!] };
+    expect(orderFor(odd)).toEqual(orderFor({ ...lethe, order: null }));
+    expect(orderFor(lethe).length).toBe(lethe.order!.length);
+  });
+  it("Lethe's order is MapleScouter's own (v4.6.0: her figures scaled to its calculation would otherwise shift it); a class without one has none", () => {
+    const lethe = hexaJob("Lethe")!;
+    expect(lethe.order!.length).toBeGreaterThan(150);
+    expect(lethe.order!.slice(0, 3)).toEqual([{ node: "mastery4", from: 0, to: 1 }, { node: "mastery3", from: 0, to: 1 }, { node: "mastery1", from: 0, to: 1 }]);
+    expect(hexaJob("Ren")!.order).toBeNull();
+  });
   it("starts from each node's free level (Origin 1)", () => {
     const t: CostTable = { erda: Array(30).fill(1), frags: Array(30).fill(10) };
     const order = buildOrder([{ key: "o", costs: t, free: 1 }], (lv) => 1 + lv.o! * 0.01);
@@ -312,15 +332,14 @@ describe("buildOrder: each time the jump with the most damage per fragment", () 
     expect(g.average).toBeLessThan(0.1);
     expect(g.most).toBeLessThanOrEqual(16);
   });
-  it("Lethe's too (v4.3.0: her levels from MapleScouter's own order, the owner's capture): an eighth of a level a node on average (0.115; 0.44 on mapledoro's figures and Ren's shape)", () => {
+  it("Lethe's is MapleScouter's own order (v4.6.0; built from her figures it was 0.115 of a level a node off, until they were scaled to its calculation: then 0.44), its gains ours: within 3% of the order's", () => {
     const ours = built("Lethe") as HexaStep[];
     const g = gap(ours, letheCapture.steps as HexaStep[]);
-    // (what's left: the three Boosts, worth almost the same, taken in another order for a while)
-    expect(g.average).toBeLessThan(0.12);
-    expect(g.most).toBeLessThanOrEqual(16);
-    // its first steps exactly (Majeure, Dread Knight, Assize, Sol Hecate), with MapleScouter's gains to 0.01
+    expect(g.average).toBe(0);
     expect(ours.slice(0, 4).map((s) => ("node" in s ? [s.node, s.from, s.to] : []))).toEqual([["mastery4", 0, 1], ["mastery3", 0, 1], ["mastery1", 0, 1], ["hecate", 0, 1]]);
-    ours.slice(0, 4).forEach((s, i) => expect((s as { fd: number }).fd).toBeCloseTo((letheCapture.steps[i] as { fd: number }).fd, 2));
+    // (MapleScouter's order is a little off its own calculation, which her figures follow now: on a first step's small
+    // gain, up to 2.6% of it)
+    ours.slice(0, 4).forEach((s, i) => expect(Math.abs((s as { fd: number }).fd / (letheCapture.steps[i] as { fd: number }).fd - 1)).toBeLessThan(0.03));
   });
   it("a job's nodes: MapleScouter's icon names (none for Mo Xuan: MapleScouter has none)", () => {
     expect(hexaJob("Night Walker")!.nodes.map((n) => n.icon)).toEqual(["NightWalker_1", "NightWalker_10", "NightWalker_2", "NightWalker_7", "NightWalker_8", "NightWalker_9", "NightWalker_3", "NightWalker_4", "NightWalker_5", "NightWalker_6", "General_1_0", "General_2", "NightWalker_11"]);

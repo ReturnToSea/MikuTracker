@@ -92,13 +92,13 @@ describe("the score curves: facts that always hold", () => {
 });
 
 describe("statsJob and the curves", () => {
-  it("statsJob gives the class's curves from score-curves.json; mapledoroJob, mapledoro's own; the rest the same", () => {
+  it("statsJob gives the class's curves from score-curves.json; mapledoroJob, mapledoro's own; the rest the same (but a measured class's own figures, v4.6.0: calc/measuredClasses.test.ts)", () => {
     const [ours, theirs] = [statsJob("Ren")!, mapledoroJob("Ren")!];
     expect(ours.spline380).toEqual(curves.classes.Ren.spline380);
     expect(ours.spline300).toEqual(curves.classes.Ren.spline300);
     expect(theirs.spline380).toEqual(jobFigures.jobs.Ren.spline380);
-    const { spline380: _a, spline300: _b, ...rest } = ours;
-    const { spline380: _c, spline300: _d, ...was } = theirs;
+    const { spline380: _a, spline300: _b, dmg: _e, atkPct: _f, scale: _g, angel: _h, defenseK: _l, restraint: _n, illium: _p, ...rest } = ours;
+    const { spline380: _c, spline300: _d, dmg: _i, atkPct: _j, scale: _k, defenseK: _m, restraint: _o, ...was } = theirs;
     expect(rest).toEqual(was);
     // (the same object each time)
     expect(statsJob("Ren")).toBe(ours);

@@ -1,3 +1,4 @@
+import measured from "./measured-classes.json";
 import curves from "./score-curves.json";
 import figures from "./stats-jobs.json";
 
@@ -35,24 +36,47 @@ export interface StatsJob {
   weapon: number | { oneHanded: number; twoHanded: number }; // the damage range's weapon multiplier
   magic: boolean; // its range counts Magic ATT
   kalingAscent?: number; // the Ascent core's share Kaling's figure is measured at (mapledoro's fit; v4.1.0)
+  // Angelic Buster's link at level 2, damage % points: at buff duration 0, and per point of buff duration (v4.6.0:
+  // the only thing buff duration changes in MapleScouter's damage). Measured classes have their own; the rest: angelLink's defaults.
+  angel?: { base: number; perBuffDuration: number };
+  // (v4.6.0) Illium's link by level, where MapleScouter counts it otherwise for the class (it stacks as you move): a measured class's own
+  illium?: Readonly<Record<string, number>>;
 }
 export type CooldownRefs = Record<string, { rows: { h0: number; bonus: Record<string, number> }[]; norm2: number }>;
 
-// A job's figures by the name Nexon's rankings use (null: none), with its score curves from score-curves.json
-// (v4.5.0, rebuilt by hand with scripts/curve-data.mjs, dated): measured from MapleScouter's answers for the
-// classes measured in full, else mapledoro's from 33,228 up and MapleScouter's shared shape below.
-const withCurves = new Map<string, StatsJob>();
+// A job's figures by the name Nexon's rankings use (null: none): mapledoro's, with the figures we measured from
+// MapleScouter's answers for the classes in measured-classes.json (v4.6.0, rebuilt by hand with
+// scripts/class-data.mjs, dated: the class's own damage %, Angelic Buster's link, ATT %, the Ring of Restraint's level 5,
+// its Illium link where MapleScouter counts it otherwise, and scale; and for every class the
+// shared defense factor measured there), and its score
+// curves from score-curves.json (v4.5.0, rebuilt by hand with scripts/curve-data.mjs, dated): measured from
+// MapleScouter's answers for the classes measured in full, else mapledoro's from 33,228 up and MapleScouter's
+// shared shape below.
+type MeasuredClass = Pick<StatsJob, "dmg" | "atkPct" | "restraint" | "scale" | "illium"> & { angel: NonNullable<StatsJob["angel"]>; how: string };
+const measuredClasses = measured.classes as Record<string, MeasuredClass>;
+const merged = new Map<string, StatsJob>();
 export function statsJob(name: string): StatsJob | null {
   const jobs = figures.jobs as unknown as Record<string, StatsJob>;
   if (!Object.hasOwn(jobs, name)) return null;
-  const known = withCurves.get(name);
+  const known = merged.get(name);
   if (known) return known;
   const c = (curves.classes as Record<string, ScoreCurves>)[name];
-  const job = c ? { ...jobs[name]!, spline380: c.spline380, spline300: c.spline300 } : jobs[name]!;
-  withCurves.set(name, job);
+  const m = Object.hasOwn(measuredClasses, name) ? measuredClasses[name]! : null;
+  const job: StatsJob = {
+    ...jobs[name]!,
+    // (every class: MapleScouter's 380% boss keeps a little more of its defense than mapledoro's figures say, v4.6.0:
+    // measured-classes.json's shared defenseKeep, ~0.2%)
+    defenseK: jobs[name]!.defenseK * measured.shared.defenseKeep,
+    ...(m && { dmg: m.dmg, atkPct: m.atkPct, restraint: m.restraint, scale: m.scale, angel: m.angel }),
+    ...(m?.illium && { illium: m.illium }),
+    ...(c && { spline380: c.spline380, spline300: c.spline300 }),
+  };
+  merged.set(name, job);
   return job;
 }
-// A job's figures with mapledoro's own curves (null: none): what its engine gives, for checking ours against.
+// A job's figures as mapledoro measured them, with its own curves (null: none), for checking ours against its engine:
+// through our formula they give its answers only where our rules are still its (v4.6.0: the Stat Potion on, Illium's and
+// Angelic Buster's links and buff duration at 0, no Final Attack; tempdata/stats/fixture/make.ts).
 export function mapledoroJob(name: string): StatsJob | null {
   const jobs = figures.jobs as unknown as Record<string, StatsJob>;
   return Object.hasOwn(jobs, name) ? jobs[name]! : null;
@@ -66,8 +90,21 @@ export function curveSource(name: string): { source: CurveSource; date: string }
   const c = (curves.classes as Record<string, ScoreCurves>)[name];
   return c ? { source: c.source, date: curves.generated } : null;
 }
+// Where a job's own figures come from: measured against MapleScouter's answers (measured-classes.json), or
+// mapledoro's (null: no figures).
+export type ClassFiguresSource = "measured" | "mapledoro";
+export function classFiguresSource(name: string): { source: ClassFiguresSource; date: string } | null {
+  if (!Object.hasOwn(figures.jobs, name)) return null;
+  return Object.hasOwn(measuredClasses, name) ? { source: "measured", date: measured.generated } : { source: "mapledoro", date: figures.generated };
+}
 export const STATS_FIGURES = { generated: figures.generated };
-export const statLinks = (): Readonly<Record<string, Readonly<Record<string, number>>>> => figures.links;
+// The links' damage % by level: mapledoro's (Angelic Buster's: angelLink, by class and buff duration). Illium's stacks as
+// you move, so MapleScouter counts it by class (v4.6.0's probes: Ren 7 / 10 / 13, Night Walker mapledoro's 3.5 / 5 / 6.5;
+// the wiki's full value would be 8 / 12 / 16): a measured class's own, its `illium` (the owner: mapledoro's for the rest
+// until each is measured). The fuller table, Ren's: ILLIUM_LINK.
+export const ILLIUM_LINK: Readonly<Record<string, number>> = { "0": 0, "1": 7, "2": 10, "3": 13 };
+const links = figures.links;
+export const statLinks = (): Readonly<Record<string, Readonly<Record<string, number>>>> => links;
 export const cooldownRefs = (): CooldownRefs => figures.cooldownRefs as CooldownRefs;
 
 // Each GMS buff's box on MapleScouter's page (chablades/mapledoro's mapping; the last ones aren't
@@ -91,7 +128,20 @@ export const BUFF_FLAT_ATT: Readonly<Record<string, number>> = {
   unionsPower: 30, urus: 30, extreme: 30, superPower: 30, legendHero: 30, fish: 30, sayram: 30, additional1: 15, collector: 44, moonshine: 20, tengu: 20, buff275: 60, apple: 100,
   believeInYourself: 20, gourmandPower: 30, enlightenedOne: 1.25, peerlessMarble: 30, ssiwsCheese: 22, witchStew: 40, energizerDrink: 25, energizerDrinkMagic: 30, attackPotionV: 10, magicPotionV: 10,
 };
-export const BUFF_DMG: Readonly<Record<string, number>> = { additional1: 15, sayram: 10, shiningRed: 20, authenticDmg: 20, house: 15, bigHero: 10, statPotion: 3 };
+export const BUFF_DMG: Readonly<Record<string, number>> = { additional1: 15, sayram: 10, shiningRed: 20, authenticDmg: 20, house: 15, bigHero: 10 };
+// The Advanced Stat Potion X (MapleScouter's one box, 30): +30 main and secondary stat before the stat %, and no
+// damage (v4.6.0's probes; it was +3% damage until then). mapledoro's figures had it inside every class's hidden
+// base stat, on or off: these are its measured amounts there (a class with nothing else hidden), taken back out
+// with the potion off, for a class whose hidden stats hold at least them (not Cannoneer's, nor Demon Avenger's
+// and Xenon's stat terms, which work differently: theirs stay as measured).
+export const STAT_POTION = { main: 29.95622435, sub: 29.75665399 } as const;
+export const STAT_POTION_ASIDE: ReadonlySet<string> = new Set(["demon_avenger", "xenon"]);
+// Angelic Buster's link (Soul Contract, 10 s of damage a minute: MapleScouter averages it): by level, a share of
+// level 2's (2 : 3 : 4, measured at 1, 2 and 3), the class's own amount at level 2 (measured classes), else the
+// measured classes' average at buff duration 0 and the class's mapledoro per-buff-duration figure × the share
+// MapleScouter's came to (the same, 0.805, for all three measured).
+export const ANGEL_LINK_SHARE = [0, 2 / 3, 1, 4 / 3] as const;
+export const ANGEL_LINK_DEFAULT = { base: measured.shared.angelBase, perBuffDurationShare: measured.shared.angelPerBuffDurationShare } as const;
 export const BUFF_CRIT_DMG: Readonly<Record<string, number>> = { sayram: 8, jangBi: 5 };
 export const BUFF_ATT_PCT: Readonly<Record<string, number>> = { sayram: 10, heroesHawl: 4 };
 export const BUFF_IED: Readonly<Record<string, number>> = { shiningBlue: 0.2, additional1: 0.15 };
@@ -135,9 +185,10 @@ export const RING_MAX = 6;
 // Liberated Genesis weapon and the Ruin Force Shield: 10% final damage each.
 export const GENESIS_FD = 1.1;
 export const RUIN_FORCE_SHIELD_FD = 1.1;
-// The jobs whose final attacks the Artifact's Final Attack boosts (measured on Ren: 30 → +0.136%).
+// The jobs whose final attacks the Artifact's Final Attack boosts: damage % points per 30 (v4.6.0's probes, on
+// Ren: 30 → +1.416; it was +0.136% final damage until then, measured before MapleScouter's November change).
 export const FINAL_ATTACK_CLASSES: ReadonlySet<string> = new Set(["hero", "paladin", "dark_knight", "arch_mage_f_p", "arch_mage_i_l", "bishop", "bow_master", "marksman", "blade_master", "buccaneer", "corsair", "aran", "evan", "mercedes", "demon_avenger", "battle_mage", "wild_hunter", "blaster", "mihile", "ren"]);
-export const FINAL_ATTACK_PER_30 = 0.00136;
+export const FINAL_ATTACK_PER_30 = 1.416;
 // Only Lara's damage moves with summon duration, up to 42%.
 export const SUMMON_CAP = 42;
 // Ignore elemental resistance: whole points, up to 5.

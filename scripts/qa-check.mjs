@@ -1176,11 +1176,13 @@ try {
   // (v4.5.0: the figures' sources at the very bottom of the page, under every view)
   const sources = page.locator(".stp-sources");
   const curveWords = { measured: "measured against MapleScouter", fitted: "mapledoro's, the low end fitted to MapleScouter's answers", mapledoro: "mapledoro's, the low end from MapleScouter's shared shape" };
+  const classWords = { measured: "measured against MapleScouter", mapledoro: "mapledoro's" };
   const sourceLines = await sources.locator("p").allInnerTexts();
   check(
     "Stats",
-    "at the very bottom: where the score curve comes from and the boss figures (GMS v.272), each with the day rebuilt (the API's)",
-    sb.curveFigures !== null && sourceLines[0] === `Score curve: ${curveWords[sb.curveFigures.source]}, as of ${sb.curveFigures.date}` && sourceLines[1] === `Boss figures: GMS v.272, as of ${sb.bossFigures.date}` && sb.bossFigures.patch === "v.272",
+    "at the very bottom: where the class figures (v4.6.0) and the score curve come from, and the boss figures (GMS v.272), each with its day (the API's)",
+    sb.classFigures !== null && sourceLines[0] === `Class figures: ${classWords[sb.classFigures.source]}, as of ${sb.classFigures.date}` &&
+      sb.curveFigures !== null && sourceLines[1] === `Score curve: ${curveWords[sb.curveFigures.source]}, as of ${sb.curveFigures.date}` && sourceLines[2] === `Boss figures: GMS v.272, as of ${sb.bossFigures.date}` && sb.bossFigures.patch === "v.272",
     sourceLines.join(" | "),
   );
   const below = async () => (await sources.boundingBox()).y > (await page.locator(".bc-wrap").boundingBox()).y + (await page.locator(".bc-wrap").boundingBox()).height - 1;

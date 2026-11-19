@@ -517,9 +517,15 @@ const CURVE_SOURCE = {
   fitted: "mapledoro's, the low end fitted to MapleScouter's answers",
   mapledoro: "mapledoro's, the low end from MapleScouter's shared shape",
 } as const;
+const CLASS_SOURCE = { measured: "measured against MapleScouter", mapledoro: "mapledoro's" } as const;
 function Sources({ b }: { b: StatsBoard }) {
   return (
     <footer className="tiny muted stp-sources">
+      {b.classFigures && (
+        <p>
+          Class figures: {CLASS_SOURCE[b.classFigures.source]}, as of {b.classFigures.date}
+        </p>
+      )}
       {b.curveFigures && (
         <p>
           Score curve: {CURVE_SOURCE[b.curveFigures.source]}, as of {b.curveFigures.date}

@@ -1,6 +1,7 @@
 import { type EPIC_DUNGEONS, HEXA_LEVEL_MAX, HEXA_RANK_MAX, type HexaNode, type HexaStat } from "@miku/shared";
 import type { CoreKey, CurveKey, HexaModel } from "../calc/hexaDamage";
 import figures from "./hexa-jobs.json";
+import orders from "./hexa-scouter-orders.json";
 
 // The HEXA Matrix (6th job), GMS, read 2026-10-29 (research in tempdata/hexa/RESEARCH.md).
 // - Which nodes: Nexon's 6th Job page (two Skill Nodes, Origin and Ascent; four Mastery; four Boost;
@@ -68,6 +69,7 @@ const ICON_NUMBER: Readonly<Record<string, number>> = { origin: 1, ascent: 10, m
 // Hoyoung's Universal Harmony final damage +1 every 6 levels, Dark Knight's Gungnir's Descent ignore
 // defense at 4, 7, …, 28, and so on. By mapledoro's class id. (Worked out on first use, as everything
 // below: nothing runs when the file loads.)
+// Stryker disable next-line MethodExpression: levels past 30 are never reached, so keeping them counts no step
 const every = (step: number, from = step): number[] => Array.from({ length: 30 }, (_, i) => from + i * step).filter((L) => L <= 30);
 const TENS = [10, 20, 30];
 export const coreSteps = (classId: string): Partial<Record<CoreKey, number[]>> => stepsTable()[classId] ?? {};
@@ -104,6 +106,20 @@ export interface HexaJob {
   // the node that also gives flat ATT (v3.2.0), with MapleScouter's measured ATT by level (calc/hexa.ts
   // coreAttAt), or null: none does
   att: { node: HexaNode; points: (readonly [number, number])[] } | null;
+  // (v4.6.0) for a class whose levels come from MapleScouter's own HEXA order (Lethe): that order's steps (a node from
+  // one level to another), which the page's order then is, each step's gain worked out from these figures; null: none
+  order: readonly { node: HexaNode; from: number; to: number }[] | null;
+}
+// MapleScouter's order for the class, as steps of nodes (null: none kept; its HEXA Stat steps left out: the page places
+// HEXA Stat apart).
+function orderOf(classId: string): HexaJob["order"] {
+  const order = (orders.classes as unknown as Record<string, { steps: [string, number, number, number][] }>)[classId];
+  if (!order) return null;
+  const nodeOf = (core: string) => (Object.keys(CORE_OF) as (keyof typeof CORE_OF)[]).find((k) => CORE_OF[k] === core);
+  return order.steps.flatMap(([core, from, to]) => {
+    const node = nodeOf(core);
+    return node ? [{ node, from, to }] : [];
+  });
 }
 // A job's flat-ATT node from the figures (null: none, or a core no node is)
 export function attOf(coreAtt: JobFigures["coreAtt"]): HexaJob["att"] {
@@ -126,6 +142,7 @@ function job(f: JobFigures): HexaJob {
     ],
     model: { cores: f.cores, curves: figures.curves as Record<CurveKey, number[]>, steps: coreSteps(f.class) },
     att: attOf(f.coreAtt),
+    order: orderOf(f.class),
   };
 }
 

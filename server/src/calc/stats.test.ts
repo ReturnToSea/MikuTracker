@@ -35,9 +35,11 @@ describe("statsScore where the defense leaves nothing", () => {
     expect(s.score380).toBeNull();
   });
   it("exactly nothing left at 380% still gives 300%'s score (no division by 0)", () => {
-    // IED so the class keeps exactly all of it: 1 − 1 / k
-    const ied = (1 - 1 / job.defenseK) * 100;
-    const s = statsScore(job, { ...STATS_DEFAULTS, stats: { ...STATS_DEFAULTS.stats, main: { base: 5000, per: 300, abs: 0 }, atk: { base: 3000, per: 100, abs: 0 }, ied } }, ctx, statLinks(), cooldownRefs());
+    // IED so the class keeps exactly all of it: 1 − 1 / k, with a defense figure of exactly 2 (IED 50%: no rounding)
+    const two = { ...job, defenseK: 2 };
+    const sheet = { ...STATS_DEFAULTS, stats: { ...STATS_DEFAULTS.stats, main: { base: 5000, per: 300, abs: 0 }, atk: { base: 3000, per: 100, abs: 0 }, ied: 50 } };
+    expect(groups(two, sheet, ctx, statLinks()).keep).toBe(1);
+    const s = statsScore(two, sheet, ctx, statLinks(), cooldownRefs());
     expect(Math.abs(s.damage)).toBeLessThan(1e-3);
     expect(s.score380).toBeNull();
     expect(Number.isFinite(s.damage300)).toBe(true);

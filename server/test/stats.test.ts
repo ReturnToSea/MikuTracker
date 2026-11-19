@@ -8,6 +8,7 @@ import { statsScore } from "../src/calc/stats";
 import { db } from "../src/db";
 import { bossFigures } from "../src/gameFigures/bossClear";
 import bossClearFigures from "../src/gameFigures/boss-clear.json";
+import measuredClasses from "../src/gameFigures/measured-classes.json";
 import scoreCurves from "../src/gameFigures/score-curves.json";
 import statsJobFigures from "../src/gameFigures/stats-jobs.json";
 import { CORE_OF, hexaJob } from "../src/gameFigures/hexa";
@@ -147,7 +148,7 @@ describe("GET /api/stats/:id", () => {
 
   it("a SHINE class, or a job the figures don't have: not worked out, saying which", async () => {
     const sia = await get(`/api/stats/${await character("Sia Astelle")}`);
-    expect([sia.known, sia.shine, sia.hexa, sia.out.score380, sia.curveFigures]).toEqual([false, true, [], null, null]);
+    expect([sia.known, sia.shine, sia.hexa, sia.out.score380, sia.curveFigures, sia.classFigures]).toEqual([false, true, [], null, null, null]);
     const jett = await get(`/api/stats/${await character("Jett")}`);
     expect(jett).toMatchObject({
       known: false,
@@ -161,6 +162,7 @@ describe("GET /api/stats/:id", () => {
       efficiency: null,
       bosses: [],
       curveFigures: null,
+      classFigures: null,
     });
     expect(jett.input).toEqual(STATS_DEFAULTS);
   });
@@ -325,6 +327,10 @@ describe("GET /api/stats/:id: the boss clears (v4.1.0)", () => {
     expect(b.bossFigures).toEqual({ patch: "v.272", date: bossClearFigures.generated });
     // (v4.5.0: where the job's score curve comes from; Mercedes's: mapledoro's, with the shared shape)
     expect(b.curveFigures).toEqual({ source: "mapledoro", date: scoreCurves.generated });
+    // (v4.6.0: where its own figures come from; Mercedes's: mapledoro's, as of the day they were read; a measured class's: v4.6.0's fit)
+    expect(b.classFigures).toEqual({ source: "mapledoro", date: statsJobFigures.generated });
+    const ren = await get(`/api/stats/${await character("Ren", 278)}`);
+    expect(ren.classFigures).toEqual({ source: "measured", date: measuredClasses.generated });
     // Normal Kalos: level 280, Sacred 300 (the figures); the screenshot's Sacred Force 660
     const kalos = bossOf(b, "Normal", "kalos");
     expect(kalos.key).toBe("normal_kalos");

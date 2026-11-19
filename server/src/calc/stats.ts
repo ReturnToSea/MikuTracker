@@ -1,8 +1,8 @@
 import { STAT_BUFFS, STAT_EVENT_BUFFS, STATS_DEFAULTS, type StatsInput } from "@miku/shared";
 import {
-  AUTHENTIC_DMG_PCT, BUFF_ALL_STAT, BUFF_ATT_PCT, BUFF_CRIT_DMG, BUFF_DMG, BUFF_FLAT_ATT, BUFF_IED, BUFF_KEY, CHAMPION, CONTINUOUS_ATT, CONTINUOUS_BOSS, type CooldownRefs, CRIT_RATE_TO_CRIT_DMG, DA_BUFF_HP,
+  ANGEL_LINK_DEFAULT, ANGEL_LINK_SHARE, AUTHENTIC_DMG_PCT, BUFF_ALL_STAT, BUFF_ATT_PCT, BUFF_CRIT_DMG, BUFF_DMG, BUFF_FLAT_ATT, BUFF_IED, BUFF_KEY, CHAMPION, CONTINUOUS_ATT, CONTINUOUS_BOSS, type CooldownRefs, CRIT_RATE_TO_CRIT_DMG, DA_BUFF_HP,
   DA_HP_PER_CHAMPION_ALL, DA_PURE_HP, DEFAULT_WEIGHTS, ELEMENTAL_CAP, FINAL_ATTACK_CLASSES, FINAL_ATTACK_PER_30, GENESIS_FD, GUILD_PER_LEVEL, HEROIC_FD, HEROIC_FD_TOP, MAGICIAN_LINK, RESTRAINT_LV6_OVER_LV5,
-  RESTRAINT_SHAPE, RING_MAX, RUIN_FORCE_SHIELD_FD, STAT_WEIGHTS, type StatsJob, SUMMON_CAP, UNDER_260, WILD_HUNTER_DMG, WILD_HUNTER_RANKS,
+  RESTRAINT_SHAPE, RING_MAX, RUIN_FORCE_SHIELD_FD, STAT_POTION, STAT_POTION_ASIDE, STAT_WEIGHTS, type StatsJob, SUMMON_CAP, UNDER_260, WILD_HUNTER_DMG, WILD_HUNTER_RANKS,
 } from "../gameFigures/stats";
 
 // The Stats page's maths (v4.0.0): MapleScouter's damage formula and score, as chablades/mapledoro rebuilt
@@ -28,12 +28,12 @@ export interface StatsContext {
 
 const sum = (values: Iterable<number>) => [...values].reduce((a, v) => a + v, 0);
 const on = (yes: boolean, factor = 1) => (yes ? factor : 1);
-// The buffs on, as MapleScouter's boxes: those ticked, each group's pick, the Advanced Stat Potion, the
-// event ones while the event stats are on, and the sacred symbol buff.
+// The buffs on, as MapleScouter's boxes: those ticked, each group's pick, the event ones while the event stats
+// are on, and the sacred symbol buff. (The Advanced Stat Potion is stat, not a box's: potionAside, v4.6.0.)
 // (a name no table has, a group without a pick, adds nothing: every table is read with ?? 0)
 function ticked(input: StatsInput, sacred: boolean): (string | undefined)[] {
   const events = STAT_EVENT_BUFFS.filter((k) => input.eventOn && input.events[k]);
-  return [...STAT_BUFFS.filter((k) => input.buffs[k]), input.buffA, input.buffB, ...events].map((k) => BUFF_KEY[String(k)]).concat(input.statPotion ? "statPotion" : undefined, sacred ? "authenticDmg" : undefined);
+  return [...STAT_BUFFS.filter((k) => input.buffs[k]), input.buffA, input.buffB, ...events].map((k) => BUFF_KEY[String(k)]).concat(sacred ? "authenticDmg" : undefined);
 }
 // What the event stats typed add (nothing while they're off).
 const eventStats = (input: StatsInput): StatsInput["eventStats"] => (input.eventOn ? input.eventStats : STATS_DEFAULTS.eventStats);
@@ -60,8 +60,9 @@ export function buffTotals(input: StatsInput, classId: string, links: Readonly<R
   let dmg = from(BUFF_DMG) + GUILD_PER_LEVEL * (n.bossSlayers + n.forTheGuild) + CHAMPION.boss * c.boss;
   // Wild Hunter Legion card: per rank reached
   dmg += WILD_HUNTER_DMG * WILD_HUNTER_RANKS.filter((L) => input.wildHunter >= L).length;
-  // (a link at 0 adds nothing: the tables' level 0 is 0)
+  // (a link at 0 adds nothing: the tables' level 0 is 0; Angelic Buster's is the class's: angelLink, in groups)
   for (const [link, level] of Object.entries(input.links)) {
+    if (link === "angel") continue;
     if (link === "magician") {
       // (every 2 levels, rounded up)
       const steps = Math.ceil(level / 2);
@@ -87,6 +88,33 @@ export function restraintPts(ring: StatsJob["restraint"], level: number): number
   return level >= RING_MAX - 1 ? ring.lv5 : ring.lv4 * RESTRAINT_SHAPE[level]!;
 }
 
+// Angelic Buster's link, damage % points: its level's share of level 2's, which is the class's at buff duration 0
+// plus its own per point of buff duration (MapleScouter: buff duration changes nothing else), or for a class
+// not measured, the measured classes' average plus its mapledoro per-buff-duration figure × the measured share.
+export function angelLink(job: StatsJob, level: number, buffDuration: number): number {
+  // (mapledoro's per-buff-duration figure is a fraction of 1: × 100 for points)
+  const a = job.angel ?? { base: ANGEL_LINK_DEFAULT.base, perBuffDuration: job.dmgPerBuffDuration * 100 * ANGEL_LINK_DEFAULT.perBuffDurationShare };
+  return ANGEL_LINK_SHARE[level]! * (a.base + a.perBuffDuration * buffDuration);
+}
+// The link tables with a class's own Illium, made once per tables and class.
+const ownIllium = new WeakMap<object, WeakMap<object, Readonly<Record<string, Readonly<Record<string, number>>>>>>();
+function withIllium(links: Readonly<Record<string, Readonly<Record<string, number>>>>, illium: Readonly<Record<string, number>>) {
+  const byLinks = ownIllium.get(links) ?? new WeakMap();
+  // Stryker disable next-line CallExpression: only keeps the tables for next time; without it each call copies them again, the same
+  ownIllium.set(links, byLinks);
+  const known = byLinks.get(illium) ?? { ...links, illium };
+  // Stryker disable next-line CallExpression: as above
+  byLinks.set(illium, known);
+  return known;
+}
+// The Advanced Stat Potion's part of a class's hidden base stat, taken out while it's off (its constant's notes).
+export function potionAside(job: StatsJob, input: StatsInput): { main: number; sub: number } {
+  const h = job.stat.hiddenBase;
+  // (to a millionth: mapledoro's figures carry the potion's amount with float noise in the last digits)
+  const holds = !STAT_POTION_ASIDE.has(job.class) && (h.main ?? 0) >= STAT_POTION.main - 1e-6 && (h.sub ?? 0) >= STAT_POTION.sub - 1e-6;
+  return !input.statPotion && holds ? STAT_POTION : { main: 0, sub: 0 };
+}
+
 // The groups, each from the class's hidden amount and what's typed, and the share of defense kept.
 export interface Groups {
   stat: number;
@@ -99,7 +127,8 @@ export interface Groups {
   other: number;
 }
 export function groups(job: StatsJob, input: StatsInput, ctx: StatsContext, links: Readonly<Record<string, Readonly<Record<string, number>>>>): { g: Groups; keep: number } {
-  const b = buffTotals(input, job.class, links, ctx.sacred);
+  // (a measured class's own Illium link, where MapleScouter counts it otherwise)
+  const b = buffTotals(input, job.class, job.illium ? withIllium(links, job.illium) : links, ctx.sacred);
   const s = input.stats;
   const ev = eventStats(input);
   const w = STAT_WEIGHTS[job.class] ?? DEFAULT_WEIGHTS;
@@ -109,8 +138,9 @@ export function groups(job: StatsJob, input: StatsInput, ctx: StatsContext, link
   // (event All Stats count as the buffs' do)
   const allStat = b.allStat + ev.allStat;
   const hidden = Object.entries(job.stat.hiddenBase) as [keyof typeof triple, number][];
+  const aside = potionAside(job, input);
   const stat =
-    hidden.reduce((t, [k, h]) => t + w[k] * (h + allStat + (k === "main" ? b.hp : 0)) * mult(k), 0) +
+    hidden.reduce((t, [k, h]) => t + w[k] * (h - (k === "ssub" ? 0 : aside[k]) + allStat + (k === "main" ? b.hp : 0)) * mult(k), 0) +
     (["main", "sub", "ssub"] as const).reduce((t, k) => t + w[k] * (triple[k].base * mult(k) + triple[k].abs), 0) +
     job.stat.flat +
     job.stat.perLevel * ctx.level * mult("main");
@@ -123,8 +153,12 @@ export function groups(job: StatsJob, input: StatsInput, ctx: StatsContext, link
     stat,
     flatAtk: job.flatAtk + s.atk.base + ev.att + b.flatAtk + ctx.coreAtt,
     atkPct: job.atkPct + (s.atk.per + b.atkPct + CONTINUOUS_ATT[ring]!) / 100 + restraintPts(job.restraint, input.rings.restraint),
-    // (buff duration keeps damage buffs up longer)
-    dmg: job.dmg + (s.dmg + ev.dmg + s.boss + ev.boss + s.statusDmg) / 100 + (CONTINUOUS_BOSS[ring]! + b.dmg) / 100 + job.dmgPerBuffDuration * s.buffDuration,
+    // (Angelic Buster's link: by class and buff duration; the Artifact's Final Attack, for the jobs with final attacks)
+    dmg:
+      job.dmg +
+      (s.dmg + ev.dmg + s.boss + ev.boss + s.statusDmg) / 100 +
+      (CONTINUOUS_BOSS[ring]! + b.dmg + angelLink(job, input.links.angel, s.buffDuration)) / 100 +
+      (FINAL_ATTACK_CLASSES.has(job.class) ? (FINAL_ATTACK_PER_30 * input.artifact.finalAttack) / 30 / 100 : 0),
     // (the formula assumes every hit crits: crit rate counts as 100 at least)
     crit: job.crit + (s.critDmg + ev.critDmg + critRateToDmg * Math.max(100, s.critRate) + b.crit) / 100,
     def: 1 - keep,
@@ -139,7 +173,6 @@ export function groups(job: StatsJob, input: StatsInput, ctx: StatsContext, link
       (1 + job.perCooldownPercent * s.cdPct) *
       (1 + job.perResetChance * s.cdSkip) *
       (1 + job.perSummonDuration * Math.min(SUMMON_CAP, s.summon)) *
-      (FINAL_ATTACK_CLASSES.has(job.class) ? 1 + (FINAL_ATTACK_PER_30 * input.artifact.finalAttack) / 30 : 1) *
       (ctx.level < 260 && !ctx.full ? UNDER_260 : 1),
   };
   return { g, keep };

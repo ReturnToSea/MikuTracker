@@ -1,0 +1,73 @@
+{
+ "generated": "2026-11-19",
+ "sources": [
+  "MapleScouter's answers since 2026-11-17 (maplescouterbosses.com.har, maplescouterbossesChal.com.har, maplescouterbossesChalkr.com.har, maplescouterbossesHP.com.har, maplescouterbossesall.com.har, maplescouterhexa.com.har, maplescouterhexa2.com.har, maplescoutermayrin.com.har, maplescoutermayrinren.com.har, maplescoutermayrinrennormal.com.har, maplescoutertest.com.har, maplescoutertestweak.com.har, maplescoutertestweak2.com.har, maplescoutertestweak3.com.har, probe-answers.jsonl, saved-answers.jsonl, session2-answers.jsonl)"
+ ],
+ "shared": {
+  "defenseKeep": 1.0019749218467826,
+  "angelBase": 22.505547883067212,
+  "angelPerBuffDurationShare": 0.8045965871074513
+ },
+ "classes": {
+  "Ren": {
+   "dmg": 1.2043550952283777,
+   "atkPct": 1.0000035631104818,
+   "restraint": {
+    "lv4": 0.2721324368895089,
+    "lv5": 0.3068297768896544
+   },
+   "scale": 0.019743812248945274,
+   "angel": {
+    "base": 21.151755352436755,
+    "perBuffDuration": 0.08225954067452233
+   },
+   "illium": {
+    "0": 0,
+    "1": 7,
+    "2": 10,
+    "3": 13
+   },
+   "how": "fitted to 66 MapleScouter answers since 2026-11-17 (1 held out to check, 0 left out): its own damage %, Angelic Buster's link (off, and at other buff durations), ATT % (the answers' middle gap), the Ring of Restraint's level 5 (2 answers with it), its own Illium link (measured by hand), then the scale"
+  },
+  "Lethe": {
+   "dmg": 1.645999999999505,
+   "atkPct": 0.9891915631104861,
+   "restraint": {
+    "lv4": 0.2721324368895089,
+    "lv5": 0.2988397496895417
+   },
+   "scale": 0.028723429932087003,
+   "angel": {
+    "base": 22.737314017993867,
+    "perBuffDuration": 0.06295771857706427
+   },
+   "illium": {
+    "0": 0,
+    "1": 7,
+    "2": 10,
+    "3": 13
+   },
+   "how": "fitted to 17 MapleScouter answers since 2026-11-17 (3 held out to check, 1 left out): its own damage %, Angelic Buster's link (off, and at other buff durations), ATT % (the answers' middle gap), the Ring of Restraint's level 5 (2 answers with it), its own Illium link (measured by hand), then the scale"
+  },
+  "Night Walker": {
+   "dmg": 1.5650819748999847,
+   "atkPct": 1.00000345927216,
+   "restraint": {
+    "lv4": 0.2659445407279036,
+    "lv5": 0.30407279029462814
+   },
+   "scale": 0.023310583155718396,
+   "angel": {
+    "base": 23.62757427877102,
+    "perBuffDuration": 0.07588369154225916
+   },
+   "illium": {
+    "0": 0,
+    "1": 3.5,
+    "2": 5,
+    "3": 6.5
+   },
+   "how": "fitted to 12 MapleScouter answers since 2026-11-17 (1 held out to check, 0 left out): its own damage %, Angelic Buster's link (off, and at other buff durations), ATT % (the answers' middle gap), the Ring of Restraint's level 5 (0 answers with it), its own Illium link (measured by hand), then the scale"
+  }
+ }
+}

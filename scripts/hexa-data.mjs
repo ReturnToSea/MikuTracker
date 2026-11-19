@@ -131,7 +131,7 @@ for (const job of jobs) {
 }
 // MapleScouter's orders: the ones kept, and any in the captures given (a newer capture replaces its class's)
 const orders = existsSync(ORDERS) ? JSON.parse(readFileSync(ORDERS, "utf8")).classes : {};
-const entries = process.argv.slice(2).flatMap((file) => JSON.parse(readFileSync(file, "utf8")).log.entries.map((e) => ({ file, e })));
+const entries = process.argv.slice(2).filter((f) => !f.endsWith(".jsonl")).flatMap((file) => JSON.parse(readFileSync(file, "utf8")).log.entries.map((e) => ({ file, e })));
 const posted = (e, part) => e.request.method === "POST" && e.request.url.includes(part) && e.response.content?.text;
 // (a browser may save an answer base64-encoded)
 const answerOf = (e) => JSON.parse(e.response.content.encoding === "base64" ? Buffer.from(e.response.content.text, "base64").toString("utf8") : e.response.content.text);
@@ -167,7 +167,10 @@ for (const { file, e } of entries) {
   }
   const table = Object.entries(answer.bossStatByMult).map(([k, v]) => [Number(k), v]).sort((x, y) => x[0] - y[0]);
   const [[x0, y0], [x1, y1]] = table;
-  orders[id] = { captured: e.startedDateTime.slice(0, 10), start: x0 - ((y0 - score) * (x1 - x0)) / (y1 - y0), steps };
+  // (the page replays the order from the free levels, Origin 1 and the rest 0: an order from other levels can't be)
+  const startLevels = JSON.parse(e.request.postData.text).myHexa;
+  if (CORES.some((c) => Number(startLevels[c]) !== (c === "skillCore1" ? 1 : 0))) problems.push(`${file}: MapleScouter's order for "${korean}" starts from other levels than Origin 1 and the rest 0`);
+  orders[id] = { ...orders[id], captured: e.startedDateTime.slice(0, 10), start: x0 - ((y0 - score) * (x1 - x0)) / (y1 - y0), steps };
 }
 for (const [id, { start, steps }] of Object.entries(orders)) {
   const job = Object.keys(out).find((j) => out[j].class === id);
@@ -189,14 +192,58 @@ for (const [id, { start, steps }] of Object.entries(orders)) {
     else known[from] = known[to] + (share - (i === 0 ? start : steps[i - 1][3]));
     if (known[from] < known[to]) problems.push(`${job}: MapleScouter's step ${i} (${core} ${from} → ${to}) loses damage`);
   }
-  // each level the order stops at; one it jumps over (Origin 23 → 30) gains nothing until the jump's end:
-  // MapleScouter took the levels together, so by its figures no part of the jump was worth more on its own
-  // (our maths would otherwise fill them in Ren's shape, and take them one at a time)
+  // each level the order stops at; one it jumps over (Mastery 9 → 14, Origin 23 → 30) on a straight line
+  // between the jump's ends (v4.6.0: MapleScouter's own damage at every core 10 says the levels inside a jump
+  // count; until then they gained nothing until its end, 2.2% under MapleScouter's there, the line 0.26%)
   for (const [core, levels] of Object.entries(loss)) {
     const stops = Object.keys(levels).map(Number).sort((x, y) => x - y);
-    for (let L = stops[0]; L < 30; L++) out[job].cores[`${core}=${L}`] = 1 - levels[stops.findLast((k) => k <= L)];
+    for (let L = stops[0]; L < 30; L++) {
+      const [a, b] = [stops.findLast((k) => k <= L), stops.find((k) => k > L)];
+      out[job].cores[`${core}=${L}`] = 1 - (levels[a] + (L === a ? 0 : ((levels[b] - levels[a]) * (L - a)) / (b - a)));
+    }
   }
   console.log(`${job}: levels from MapleScouter's order (${steps.length} steps, starting at ${start.toFixed(4)})`);
+}
+// (v4.6.0) MapleScouter's own calculation for a class read from its order: its HEXA share with every core at one level
+// (its damage over the same sheet's with every core at 30), from the captures' and saved answers' (.jsonl: { userStat,
+// calculatedData } a line) calculations. Its order is a little off its calculation (Lethe: 0.15–1.2% at levels 1–25), so
+// at each level measured every core's loss there is scaled to give the calculation's share (with Origin at 1 and the
+// rest at 0, for level 0), and between those on a straight line (from the last one measured to 30 as at it): each core
+// keeps its share of the loss from the order. Kept with the order (`levels`), so a rebuild without them keeps it.
+const calcs = [
+  ...entries.filter(({ e }) => posted(e, "/api/calc/dmg")).map(({ e }) => ({ u: JSON.parse(e.request.postData.text).userStat, d: answerOf(e).calculatedData })),
+  ...process.argv.slice(2).filter((f) => f.endsWith(".jsonl")).flatMap((f) => readFileSync(f, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)).map((a) => ({ u: a.userStat, d: a.calculatedData }))),
+];
+for (const [id, order] of Object.entries(orders)) {
+  const job = Object.keys(out).find((j) => out[j].class === id);
+  const korean = engine.classes[id]?.koreanName;
+  if (!job || !korean) continue;
+  const shares = { ...(order.levels ?? {}) };
+  for (const { u, d } of calcs) {
+    if (u?.stat?.myClass !== korean || !d?.calculatedDamage_380) continue;
+    const lv = CORES.map((c) => Number(u.hexa[c]) || 0);
+    const share = d.calculatedHexaDamage_380 / d.calculatedDamage_380;
+    if (lv.every((L) => L === lv[0]) && lv[0] > 0 && lv[0] < 30) shares[lv[0]] = share;
+    else if (lv[0] === 1 && lv.slice(1).every((L) => L === 0)) shares[0] = share;
+  }
+  order.levels = shares;
+  const cores = out[job].cores;
+  const loss = (c, L) => (L === 30 ? 0 : 1 - cores[`${c}=${L}`]);
+  const factor = {};
+  for (const L of Object.keys(shares).map(Number).filter((L) => L > 0)) factor[L] = (1 - shares[L]) / CORES.reduce((t, c) => t + loss(c, L), 0);
+  if (shares[0] !== undefined && factor[1] !== undefined) factor[0] = (1 - shares[0] - factor[1] * loss("skillCore1", 1)) / CORES.filter((c) => c !== "skillCore1").reduce((t, c) => t + loss(c, 0), 0);
+  const at = Object.keys(factor).map(Number).sort((a, b) => a - b);
+  if (at.length === 0) continue;
+  const f = (L) => {
+    if (L <= at[0]) return factor[at[0]];
+    if (L >= at.at(-1)) return factor[at.at(-1)];
+    const [a, b] = [at.findLast((k) => k <= L), at.find((k) => k > L)];
+    return factor[a] + ((factor[b] - factor[a]) * (L - a)) / (b - a);
+  };
+  for (const c of CORES) for (let L = 0; L < 30; L++) if (cores[`${c}=${L}`] !== undefined) cores[`${c}=${L}`] = 1 - f(L) * loss(c, L);
+  // (scaled, a core's loss still never grows with its level, so no level lowers damage)
+  for (const c of CORES) for (let L = 0; L < 29; L++) if (cores[`${c}=${L + 1}`] < cores[`${c}=${L}`] - 1e-12) problems.push(`${job}: scaled to MapleScouter's calculation, ${c} ${L} → ${L + 1} loses damage`);
+  console.log(`${job}: levels scaled to MapleScouter's calculation at ${at.join(", ")} (×${at.map((L) => factor[L].toFixed(4)).join(", ")})`);
 }
 if (problems.length) {
   console.log(`Not written:\n- ${problems.join("\n- ")}`);

@@ -54,16 +54,21 @@ describe("hexaDamage: a job's damage at given core levels, as a share of every c
     expect(hexaDamage(model(ren), at(CORE_KEYS.map((c) => (c === "generalCore3" ? 12 : 30))))).toBeCloseTo(ren.cores["generalCore3=12"]!, 12);
   });
 
-  it("Lethe (v4.3.0): at the start and after each of MapleScouter's 186 steps (the owner's capture), MapleScouter's own share of every core at 30", () => {
+  it("Lethe (v4.6.0): every core at one level gives MapleScouter's own calculation (kept with its order), and its order's shares within 1.2% (its order is a little off its calculation)", () => {
     const m = model(jobs.find((j) => j.class === "lethe")!);
+    const measured = (scouterOrders.classes.lethe as unknown as { levels: Record<string, number> }).levels;
+    expect(Object.keys(measured).map(Number).sort((a, b) => a - b)).toEqual([0, 1, 5, 10, 15, 20, 25]);
+    for (const [L, share] of Object.entries(measured)) {
+      // (level 0: Origin at 1, the rest at 0)
+      const lv = CORE_KEYS.map((c) => (L === "0" ? (c === "skillCore1" ? 1 : 0) : Number(L)));
+      expect(hexaDamage(m, at(lv)), `level ${L}`).toBeCloseTo(share, 9);
+    }
     const levels: Record<string, number> = Object.fromEntries(CORE_KEYS.map((c) => [c, c === "skillCore1" ? 1 : 0]));
-    expect(hexaDamage(m, at(CORE_KEYS.map((c) => levels[c]!)))).toBeCloseTo(letheCapture.start, 9);
-    // (HEXA Stat III's step changes no core: its gain is HEXA Stat's, added on from there)
     let [stat, before] = [0, letheCapture.start];
     for (const s of letheCapture.steps) {
       if ("node" in s) {
         levels[CORE_OF[s.node as keyof typeof CORE_OF]] = s.to;
-        expect(hexaDamage(m, at(CORE_KEYS.map((c) => levels[c]!))) + stat).toBeCloseTo(s.share, 9);
+        expect(Math.abs((hexaDamage(m, at(CORE_KEYS.map((c) => levels[c]!))) + stat) / s.share - 1)).toBeLessThan(0.012);
       } else stat += s.share - before;
       before = s.share;
     }

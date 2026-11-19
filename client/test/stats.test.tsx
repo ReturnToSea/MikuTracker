@@ -45,6 +45,7 @@ const BOARD: StatsBoard = {
   ],
   bossFigures: { patch: "v.272", date: "2026-11-17" },
   curveFigures: { source: "measured", date: "2026-11-18" },
+  classFigures: { source: "measured", date: "2026-11-19" },
   source: "MapleScouter's (read 2026-11-03)",
 };
 
@@ -322,6 +323,20 @@ describe("the Stats page's views (v4.1.0)", () => {
     show({ ...BOARD, curveFigures: null });
     await screen.findByText(/^Boss figures:/);
     expect(screen.queryByText(/^Score curve:/)).toBeNull();
+  });
+
+  it("the class figures' source (v4.6.0): first in the bottom block, measured against MapleScouter or mapledoro's, as of their day; none without", async () => {
+    show();
+    const line = await screen.findByText(/^Class figures:/);
+    expect(line.textContent).toMatch(/measured against MapleScouter.*2026-11-19/);
+    expect(line.closest("footer")!.firstElementChild).toBe(line);
+    cleanup();
+    show({ ...BOARD, classFigures: { source: "mapledoro", date: "2026-11-17" } });
+    expect((await screen.findByText(/^Class figures:/)).textContent).toMatch(/mapledoro's.*2026-11-17/);
+    cleanup();
+    show({ ...BOARD, classFigures: null });
+    await screen.findByText(/^Boss figures:/);
+    expect(screen.queryByText(/^Class figures:/)).toBeNull();
   });
 
   it("the picked boss's details: the first one to start; its HP by phase (each HP bar), and the damage lost", async () => {

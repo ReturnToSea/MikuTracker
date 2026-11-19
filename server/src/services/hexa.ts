@@ -1,5 +1,5 @@
 import { HEXA_DEFAULTS, HEXA_NODES, HEXA_STATS, type HexaInput, type HexaNode, type HexaStat, hexaInput } from "@miku/shared";
-import { addCost, bestStats, buildOrder, type Cost, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, type PriorityRow, statExpected, statFd, statOutcomes, statSpent } from "../calc/hexa";
+import { addCost, bestStats, buildOrder, replayOrder, type Cost, coreAttAt, daysFor, fdTogether, joinRuns, levelCost, NO_COST, placeStats, priority, type PriorityRow, statExpected, statFd, statOutcomes, statSpent } from "../calc/hexa";
 import { type CoreKey, hexaDamage } from "../calc/hexaDamage";
 import { db } from "../db";
 import { CORE_OF, DUNGEON_FRAGS, ERDA_REQUEST_FRAGS, HEXA_FIGURES, HEXA_ICONS, forgetHexaJobs, HEXA_MAX, type HexaGroup, type HexaJob, hexaJob, isShine, STAT_AMOUNTS, STAT_LEVEL, STAT_MAIN_NOT_WORKED_OUT, STAT_MAX_RANK, STAT_PRIMARY_CHANCE, STAT_RANK_COST, STAT_UNLOCK } from "../gameFigures/hexa";
@@ -109,17 +109,19 @@ export async function savedInput(characterId: number): Promise<HexaInput> {
   return parseSaved(row?.data, hexaInput) ?? structuredClone(HEXA_DEFAULTS);
 }
 
-// A job's order (calc/hexa.ts buildOrder) from its figures; a job with a node that also gives flat ATT
+// A job's order (calc/hexa.ts buildOrder) from its figures, or MapleScouter's own where we have it (replayOrder); a job with a node that also gives flat ATT
 // (v3.2.0), with that ATT's final damage too: `attWorth`, % final damage per 1 ATT (the character's 1 ATT
 // value), on top of the figures' (which leave it out).
 export function orderFor(job: HexaJob, attWorth = 0): ReturnType<typeof buildOrder> {
   // (every core is one node's)
   const cores = (levels: Readonly<Record<string, number>>) => Object.fromEntries(Object.entries(CORE_OF).map(([node, core]) => [core, levels[node]!])) as Record<CoreKey, number>;
   const att = job.att;
-  return buildOrder(
-    job.nodes.filter((n) => n.key !== "janus"),
-    (levels) => hexaDamage(job.model, cores(levels)) * (att ? 1 + (attWorth * coreAttAt(att.points, levels[att.node]!)) / 100 : 1),
-  );
+  const nodes = job.nodes.filter((n) => n.key !== "janus");
+  const damage = (levels: Readonly<Record<string, number>>) => hexaDamage(job.model, cores(levels)) * (att ? 1 + (attWorth * coreAttAt(att.points, levels[att.node]!)) / 100 : 1);
+  // (v4.6.0: a class with MapleScouter's own order, Lethe's: that order, its gains ours; built, should a step of it not
+  // follow on from the free levels, so no node is left out: hexa-data.mjs refuses such an order too)
+  const replayed = job.order && replayOrder(nodes, job.order, damage);
+  return replayed && replayed.length === job.order!.length ? replayed : buildOrder(nodes, damage);
 }
 // The same, built once per job (and 1 ATT's worth, for a job with an ATT node, to 4 decimals: stat values
 // typed again or another character's land on the same order) and kept (a third of a second each; null: a
